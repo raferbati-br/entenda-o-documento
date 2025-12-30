@@ -50,7 +50,7 @@ export default function AnalyzingPage() {
         <h2 className="text-2xl font-bold">Não foi possível analisar</h2>
         <p className="text-slate-700 whitespace-pre-wrap">{error}</p>
         <p className="text-sm text-slate-600">
-          Tente novamente. Se o erro continuar, envie uma foto mais próxima e com boa iluminação.
+          Tente novamente. Se o erro continuar, envie uma outra foto mais próxima e com boa iluminação.
         </p>
       </div>
     );
