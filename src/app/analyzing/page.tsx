@@ -4,6 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadCaptureId } from "@/lib/captureIdStore";
 import { saveResult } from "@/lib/resultStore";
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Container,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 export default function AnalyzingPage() {
   const router = useRouter();
@@ -46,25 +57,63 @@ export default function AnalyzingPage() {
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Não foi possível analisar</h2>
-        <p className="text-slate-700 whitespace-pre-wrap">{error}</p>
-        <p className="text-sm text-slate-600">
-          Tente novamente. Se o erro continuar, envie uma outra foto mais próxima e com boa iluminação.
-        </p>
-      </div>
+      <Container maxWidth="sm" sx={{ py: 3 }}>
+        <Card elevation={2}>
+          <CardContent>
+            <Stack spacing={2}>
+              <Typography variant="h5" fontWeight={800}>
+                Não foi possível analisar
+              </Typography>
+
+              <Alert severity="error">
+                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                  {error}
+                </Typography>
+              </Alert>
+
+              <Typography variant="body2" color="text.secondary">
+                Tente novamente. Se o erro continuar, envie outra foto mais próxima e com boa iluminação.
+              </Typography>
+
+              <Button variant="outlined" size="large" onClick={() => router.push("/camera")}>
+                Voltar para a câmera
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Container>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Analisando…</h2>
-      <p className="text-slate-700">
-        Estou lendo o documento e preparando a explicação.
-      </p>
-      <div className="rounded-xl border border-slate-200 p-4 text-slate-700">
-        ⏳ Isso pode levar alguns segundos.
-      </div>
-    </div>
+    <Container maxWidth="sm" sx={{ py: 3 }}>
+      <Card elevation={2}>
+        <CardContent>
+          <Stack spacing={2}>
+            <Typography variant="h5" fontWeight={800}>
+              Analisando…
+            </Typography>
+
+            <Typography color="text.secondary">
+              Estou lendo o documento e preparando a explicação.
+            </Typography>
+
+            <Box
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 3,
+                p: 2,
+              }}
+            >
+              <Stack direction="row" spacing={2} alignItems="center">
+                <CircularProgress size={22} />
+                <Typography color="text.secondary">⏳ Isso pode levar alguns segundos.</Typography>
+              </Stack>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Container>
   );
 }

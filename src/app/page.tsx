@@ -1,26 +1,34 @@
 import Link from "next/link";
-import { PrimaryButton } from "@/components/PrimaryButton";
+import { Button, Card, CardContent, Container, Stack, Typography } from "@mui/material";
 
 export default function HomePage() {
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold leading-tight">
-          Entenda o papel que chegou na sua casa
-        </h1>
-        <p className="text-lg text-slate-700">
-          Tire uma foto do documento e eu explico em português simples.
-        </p>
-      </header>
+    <Container maxWidth="sm" sx={{ py: 3 }}>
+      <Card elevation={2}>
+        <CardContent>
+          <Stack spacing={2.5}>
+            <Stack spacing={1}>
+              <Typography variant="h4" fontWeight={800} lineHeight={1.15}>
+                Entenda o papel que chegou na sua casa
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Tire uma foto do documento e eu explico em português simples.
+              </Typography>
+            </Stack>
 
-      <Link href="/camera" className="block">
-        <PrimaryButton label="Tirar foto do documento" />
-      </Link>
+            <Link href="/camera" style={{ textDecoration: "none" }}>
+              <Button variant="contained" size="large" fullWidth>
+                Tirar foto do documento
+              </Button>
+            </Link>
 
-      <p className="text-sm text-slate-600">
-        <strong>Aviso importante:</strong> esta ferramenta ajuda a entender
-        documentos. Ela não substitui advogado, médico ou servidor público.
-      </p>
-    </div>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Aviso importante:</strong> esta ferramenta ajuda a entender documentos.
+              Ela não substitui advogado, médico ou servidor público.
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Container>
   );
 }

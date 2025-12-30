@@ -2,21 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { SecondaryButton } from "@/components/SecondaryButton";
 import { saveCaptureId } from "@/lib/captureIdStore";
-
-// IMPORTANTE: agora usamos o preview base64 que vem pela URL (não armazenamos grande)
-// Vamos receber a imagem da página /camera via querystring? NÃO.
-// Então vamos manter o preview local: para isso, vamos ler a última imagem escolhida
-// diretamente do input na /camera e passar como sessionStorage (apenas preview JPEG pequeno).
-// MAS como você já tem preview na /camera, a forma mais rápida é:
-import { loadCapture, clearCapture } from "@/lib/captureStore"; // se você ainda tiver esse arquivo com Blob
+import { loadCapture, clearCapture } from "@/lib/captureStore";
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Container,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 export default function ConfirmPage() {
   const router = useRouter();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -43,6 +46,8 @@ export default function ConfirmPage() {
 
   async function useThis() {
     setLoading(true);
+    setErr(null);
+
     try {
       const payload = await loadCapture();
       if (!payload?.blob) {
@@ -67,35 +72,74 @@ export default function ConfirmPage() {
       router.push("/analyzing");
     } catch (e: any) {
       setLoading(false);
-      alert(e?.message || "Falha ao enviar imagem");
+      setErr(e?.message || "Falha ao enviar imagem");
     }
   }
 
   if (!previewUrl) return null;
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h2 className="text-2xl font-bold">A foto ficou boa?</h2>
-        <p className="text-slate-700">
-          Se o texto estiver borrado ou cortado, é melhor tirar outra foto.
-        </p>
-      </header>
+    <Container maxWidth="sm" sx={{ py: 3 }}>
+      <Card elevation={2}>
+        <CardContent>
+          <Stack spacing={2.5}>
+            <Stack spacing={1}>
+              <Typography variant="h5" fontWeight={800}>
+                A foto ficou boa?
+              </Typography>
+              <Typography color="text.secondary">
+                Se o texto estiver borrado ou cortado, é melhor tirar outra foto.
+              </Typography>
+            </Stack>
 
-      <div className="rounded-xl border border-slate-200 p-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={previewUrl} alt="Foto do documento" className="w-full rounded-lg" />
-      </div>
+            {err && (
+              <Alert severity="error">
+                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                  {err}
+                </Typography>
+              </Alert>
+            )}
 
-      <div className="space-y-3">
-        <PrimaryButton
-          label={loading ? "Enviando…" : "✅ Usar esta foto"}
-          onClick={useThis}
-          disabled={loading}
-        />
-        <SecondaryButton label="🔄 Tirar outra foto" onClick={retake} disabled={loading} />
-      </div>
-    </div>
+            <Box
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 3,
+                p: 1,
+                overflow: "hidden",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={previewUrl} alt="Foto do documento" style={{ width: "100%", display: "block" }} />
+            </Box>
+
+            <Stack spacing={1.5}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={useThis}
+                disabled={loading}
+              >
+                {loading ? "Enviando…" : "✅ Usar esta foto"}
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={retake}
+                disabled={loading}
+              >
+                🔄 Tirar outra foto
+              </Button>
+            </Stack>
+
+            <Typography variant="body2" color="text.secondary">
+              Privacidade: a imagem é usada apenas para gerar a explicação e não é armazenada permanentemente.
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Container>
   );
 }
 

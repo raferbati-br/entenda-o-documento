@@ -2,13 +2,21 @@
 
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { SecondaryButton } from "@/components/SecondaryButton";
 import { saveCapture } from "@/lib/captureStore";
+import {
+  Button,
+  Card,
+  CardContent,
+  Container,
+  Stack,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+} from "@mui/material";
 
 export default function CameraPage() {
   const router = useRouter();
-
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -38,47 +46,63 @@ export default function CameraPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h2 className="text-2xl font-bold">Enviar documento</h2>
-        <p className="text-slate-700">
-          Tire uma foto do documento ou escolha uma imagem já salva no seu celular.
-        </p>
+    <Container maxWidth="sm" sx={{ py: 3 }}>
+      <Card elevation={2}>
+        <CardContent>
+          <Stack spacing={2.5}>
+            <Stack spacing={1}>
+              <Typography variant="h5" fontWeight={800}>
+                Enviar documento
+              </Typography>
+              <Typography color="text.secondary">
+                Tire uma foto do documento ou escolha uma imagem já salva no seu celular.
+              </Typography>
+            </Stack>
 
-        <ul className="list-disc pl-6 text-slate-700">
-          <li>Fotografe o documento inteiro</li>
-          <li>Evite sombras e reflexos</li>
-          <li>Use um local bem iluminado</li>
-        </ul>
-      </header>
+            <List dense sx={{ bgcolor: "transparent", p: 0 }}>
+              <ListItem sx={{ px: 0 }}>
+                <ListItemText primary="• Fotografe o documento inteiro" />
+              </ListItem>
+              <ListItem sx={{ px: 0 }}>
+                <ListItemText primary="• Evite sombras e reflexos" />
+              </ListItem>
+              <ListItem sx={{ px: 0 }}>
+                <ListItemText primary="• Use um local bem iluminado" />
+              </ListItem>
+            </List>
 
-      {/* INPUTS ESCONDIDOS */}
-      <input
-        ref={cameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={onFileChange}
-      />
+            {/* INPUTS ESCONDIDOS */}
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              hidden
+              onChange={onFileChange}
+            />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={onFileChange}
+            />
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={onFileChange}
-      />
+            <Stack spacing={1.5}>
+              <Button variant="contained" size="large" onClick={openCamera}>
+                📸 Tirar foto
+              </Button>
+              <Button variant="outlined" size="large" onClick={openFiles}>
+                📎 Escolher arquivo
+              </Button>
+            </Stack>
 
-      <div className="space-y-3">
-        <PrimaryButton label="📸 Tirar foto" onClick={openCamera} />
-        <SecondaryButton label="📎 Escolher arquivo" onClick={openFiles} />
-      </div>
-
-      <p className="text-sm text-slate-600">
-        Dica: se o texto estiver pequeno, aproxime mais a câmera ou escolha uma
-        imagem com melhor qualidade.
-      </p>
-    </div>
+            <Typography variant="body2" color="text.secondary">
+              Dica: se o texto estiver pequeno, aproxime mais a câmera ou escolha uma imagem com melhor qualidade.
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Container>
   );
 }

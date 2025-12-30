@@ -3,11 +3,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { loadResult, clearResult, AnalysisResult } from "@/lib/resultStore";
 import { clearCaptureId } from "@/lib/captureIdStore";
+import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Divider,
+  Stack,
+  Typography,
+} from "@mui/material";
 
-type Card = {
+type CardT = {
   id: string;
   title: string;
   text: string;
@@ -33,50 +44,72 @@ export default function ResultPage() {
   }
 
   const cardMap = useMemo(() => {
-    if (!result?.cards) return {};
-    return Object.fromEntries(
-      (result.cards as Card[]).map((c) => [c.id, c])
-    );
+    if (!result?.cards) return {} as Record<string, CardT>;
+    return Object.fromEntries((result.cards as CardT[]).map((c) => [c.id, c]));
   }, [result]);
+
+  const confidence = result?.confidence ?? 0;
+
+  const confidenceInfo = useMemo(() => {
+    if (confidence < 0.45) return { label: "Baixa", color: "warning" as const };
+    if (confidence < 0.75) return { label: "Média", color: "info" as const };
+    return { label: "Alta", color: "success" as const };
+  }, [confidence]);
 
   if (!result) return null;
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h2 className="text-2xl font-bold">Explicação do documento</h2>
-        <p className="text-slate-700">Em português simples.</p>
-        <p className="text-xs text-slate-500">
-          Confiança estimada: {(result.confidence * 100).toFixed(0)}%
-        </p>
-      </header>
+    <Container maxWidth="sm" sx={{ py: 3 }}>
+      <Stack spacing={2.5}>
+        <Card elevation={2}>
+          <CardContent>
+            <Stack spacing={1}>
+              <Typography variant="h5" fontWeight={800}>
+                Explicação do documento
+              </Typography>
+              <Typography color="text.secondary">Em português simples.</Typography>
 
-      {renderCard(cardMap["whatIs"])}
-      {renderCard(cardMap["whatSays"])}
-      {renderCard(cardMap["dates"])}
-      {renderCard(cardMap["terms"])}
-      {renderCard(cardMap["whatUsuallyHappens"])}
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip size="small" label={`Confiança: ${confidenceInfo.label}`} color={confidenceInfo.color} />
+                <Typography variant="caption" color="text.secondary">
+                  ({Math.round(confidence * 100)}%)
+                </Typography>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <p className="font-semibold">⚠️ Aviso importante</p>
-        <p className="mt-1 text-slate-800">{result.notice}</p>
-      </div>
+        {renderCard(cardMap["whatIs"])}
+        {renderCard(cardMap["whatSays"])}
+        {renderCard(cardMap["dates"])}
+        {renderCard(cardMap["terms"])}
+        {renderCard(cardMap["whatUsuallyHappens"])}
 
-      <p className="text-sm text-slate-600">
-        <strong>Aviso importante:</strong> esta ferramenta ajuda a entender documentos.
-        Ela não substitui advogado, médico ou servidor público.
-      </p>
+        <Alert severity="warning" icon={false}>
+          <Typography fontWeight={700}>⚠️ Aviso importante</Typography>
+          <Typography sx={{ mt: 0.5 }}>{result.notice}</Typography>
+        </Alert>
 
-      <div className="space-y-3">
-        <PrimaryButton label="📸 Analisar outro documento" onClick={newDoc} />
-        <Link
-          className="block text-center text-sm text-emerald-700 underline"
-          href="/"
-        >
-          Voltar ao início
-        </Link>
-      </div>
-    </div>
+        <Box>
+          <Typography variant="body2" color="text.secondary">
+            <strong>Aviso importante:</strong> esta ferramenta ajuda a entender documentos.
+            Ela não substitui advogado, médico ou servidor público.
+          </Typography>
+        </Box>
+
+        <Divider />
+
+        <Stack spacing={1.5}>
+          <Button variant="contained" size="large" onClick={newDoc}>
+            📸 Analisar outro documento
+          </Button>
+
+          <Button component={Link} href="/" variant="text" size="large">
+            Voltar ao início
+          </Button>
+        </Stack>
+      </Stack>
+    </Container>
   );
 }
 
@@ -84,9 +117,13 @@ function renderCard(card?: { title: string; text: string }) {
   if (!card || !card.text) return null;
 
   return (
-    <section className="rounded-xl border border-slate-200 p-4">
-      <h3 className="text-lg font-semibold">{card.title}</h3>
-      <p className="mt-2 text-slate-800 whitespace-pre-wrap">{card.text}</p>
-    </section>
+    <Card elevation={1}>
+      <CardContent>
+        <Typography variant="h6" fontWeight={800}>
+          {card.title}
+        </Typography>
+        <Typography sx={{ mt: 1, whiteSpace: "pre-wrap" }}>{card.text}</Typography>
+      </CardContent>
+    </Card>
   );
 }
