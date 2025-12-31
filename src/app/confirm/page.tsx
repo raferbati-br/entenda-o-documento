@@ -26,6 +26,8 @@ import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
+import { compressBlobToDataUrl } from "@/lib/imageCompression";
+
 
 export default function ConfirmPage() {
   const router = useRouter();
@@ -67,7 +69,26 @@ export default function ConfirmPage() {
         return;
       }
 
-      const imageBase64 = await blobToDataUrl(payload.blob);
+      // 1) compressão/resize no client (MVP)
+      let { dataUrl, bytes } = await compressBlobToDataUrl(payload.blob, {
+        maxDimension: 1600,
+        quality: 0.78,
+        mimeType: "image/jpeg",
+      });
+
+      // 2) segundo passe se ainda estiver grande (evita 413 e melhora latência)
+      if (bytes > 1_700_000) {
+        const second = await compressBlobToDataUrl(payload.blob, {
+          maxDimension: 1400,
+          quality: 0.72,
+          mimeType: "image/jpeg",
+        });
+        dataUrl = second.dataUrl;
+        bytes = second.bytes;
+      }
+
+      // Continua compatível com seu /api/capture: manda DataURL
+      const imageBase64 = dataUrl;
 
       const res = await fetch("/api/capture", {
         method: "POST",
