@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
 import {
@@ -14,6 +14,7 @@ import {
   ListItem,
   ListItemText,
   Alert,
+  Divider,
 } from "@mui/material";
 
 export default function CameraPage() {
@@ -22,6 +23,11 @@ export default function CameraPage() {
 
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const source = useMemo(() => searchParams.get("source"), [searchParams]);
+  const isGalleryFlow = source === "gallery";
+
+  const [autoOpened, setAutoOpened] = useState(false);
 
   function openCamera() {
     cameraRef.current?.click();
@@ -32,13 +38,13 @@ export default function CameraPage() {
   }
 
   useEffect(() => {
-    // Se veio da home pedindo galeria, abre automaticamente
-    const source = searchParams.get("source");
-    if (source === "gallery") {
-      const t = setTimeout(() => openFiles(), 250);
+    // Se veio da home pedindo galeria, abre automaticamente (uma vez)
+    if (isGalleryFlow && !autoOpened) {
+      setAutoOpened(true);
+      const t = setTimeout(() => openFiles(), 200);
       return () => clearTimeout(t);
     }
-  }, [searchParams]);
+  }, [isGalleryFlow, autoOpened]);
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -47,7 +53,6 @@ export default function CameraPage() {
     // Permite escolher o mesmo arquivo novamente (especialmente no iOS)
     e.currentTarget.value = "";
 
-    // Salva imediatamente o blob para a tela /confirm
     await saveCapture({
       blob: file,
       createdAt: new Date().toISOString(),
@@ -63,24 +68,37 @@ export default function CameraPage() {
           <Stack spacing={2.5}>
             <Stack spacing={1}>
               <Typography variant="h5" fontWeight={900}>
-                Tire uma foto do documento
+                {isGalleryFlow ? "Escolha uma foto do documento" : "Tire uma foto do documento"}
               </Typography>
               <Typography color="text.secondary" variant="body1">
-                Pode ser conta, carta, comunicado ou aviso.
+                {isGalleryFlow
+                  ? "Escolha uma foto nítida, com boa luz, onde dê para ver as letras."
+                  : "Pode ser conta, carta, comunicado ou aviso."}
               </Typography>
             </Stack>
 
-            <List dense sx={{ bgcolor: "transparent", p: 0 }}>
-              <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="• Coloque o documento numa mesa" />
-              </ListItem>
-              <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="• Aproxime até as letras ficarem nítidas" />
-              </ListItem>
-              <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="• Evite sombras e reflexos (luz da janela ajuda)" />
-              </ListItem>
-            </List>
+            {!isGalleryFlow && (
+              <>
+                <List dense sx={{ bgcolor: "transparent", p: 0 }}>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText primary="• Coloque o documento numa mesa" />
+                  </ListItem>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText primary="• Aproxime até as letras ficarem nítidas" />
+                  </ListItem>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText primary="• Evite sombras e reflexos (luz da janela ajuda)" />
+                  </ListItem>
+                </List>
+
+                <Alert severity="info" icon={false}>
+                  <Typography fontWeight={800}>Dica rápida</Typography>
+                  <Typography sx={{ mt: 0.5 }}>
+                    Se o texto estiver pequeno, aproxime mais a câmera e tente manter a mão firme.
+                  </Typography>
+                </Alert>
+              </>
+            )}
 
             {/* INPUTS ESCONDIDOS */}
             <input
@@ -99,21 +117,53 @@ export default function CameraPage() {
               onChange={onFileChange}
             />
 
-            <Stack spacing={1.5}>
-              <Button variant="contained" size="large" onClick={openCamera} sx={{ py: 1.4 }}>
-                📸 Tirar foto agora
-              </Button>
-              <Button variant="outlined" size="large" onClick={openFiles} sx={{ py: 1.4 }}>
-                🖼️ Escolher foto da galeria
+            {/* CTA principal (evita duplicar a escolha que já existe na home) */}
+            <Stack spacing={1.2}>
+              {isGalleryFlow ? (
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={openFiles}
+                  sx={{ py: 1.4 }}
+                >
+                  🖼️ Escolher uma foto
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={openCamera}
+                  sx={{ py: 1.4 }}
+                >
+                  📸 Tirar foto agora
+                </Button>
+              )}
+
+              <Divider />
+
+              {/* Plano B discreto, sem competir com a ação principal */}
+              {isGalleryFlow ? (
+                <Button
+                  variant="text"
+                  size="large"
+                  onClick={() => router.push("/camera")}
+                >
+                  📸 Prefiro tirar foto com a câmera
+                </Button>
+              ) : (
+                <Button
+                  variant="text"
+                  size="large"
+                  onClick={() => router.push("/camera?source=gallery")}
+                >
+                  🖼️ Prefiro escolher da galeria
+                </Button>
+              )}
+
+              <Button variant="text" size="large" onClick={() => router.push("/")}>
+                Voltar ao início
               </Button>
             </Stack>
-
-            <Alert severity="info" icon={false}>
-              <Typography fontWeight={800}>Dica rápida</Typography>
-              <Typography sx={{ mt: 0.5 }}>
-                Se o texto estiver pequeno, aproxime mais a câmera e tente manter a mão firme.
-              </Typography>
-            </Alert>
 
             <Typography variant="body2" color="text.secondary">
               Privacidade: a foto é usada apenas para gerar a explicação e não é armazenada permanentemente.
