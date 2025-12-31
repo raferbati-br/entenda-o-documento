@@ -18,6 +18,15 @@ import {
   ListItemText,
 } from "@mui/material";
 
+import PremiumHeader from "@/components/PremiumHeader";
+import BottomActionBar from "@/components/BottomActionBar";
+
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
+import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import LockRoundedIcon from "@mui/icons-material/LockRounded";
+
 export default function ConfirmPage() {
   const router = useRouter();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -83,102 +92,110 @@ export default function ConfirmPage() {
   if (!previewUrl) return null;
 
   return (
-    <Container maxWidth="sm" sx={{ py: 3 }}>
-      <Card elevation={2}>
-        <CardContent>
-          <Stack spacing={2.5}>
-            <Stack spacing={1}>
-              <Typography variant="h5" fontWeight={900}>
-                A foto ficou boa?
-              </Typography>
-              <Typography color="text.secondary" variant="body1">
-                Se estiver escuro, borrado ou cortado, vale tirar outra foto.
-              </Typography>
-            </Stack>
+    <Container
+      maxWidth="sm"
+      sx={{
+        py: 3,
+        // espaço para o BottomActionBar fixo
+        pb: "calc(env(safe-area-inset-bottom) + 140px)",
+      }}
+    >
+      <PremiumHeader
+        title="A foto ficou boa?"
+        subtitle="Se estiver escuro, borrado ou cortado, vale tirar outra foto."
+        chips={[
+          { icon: <AutoAwesomeRoundedIcon />, label: "Melhor foto = melhor explicação" },
+          { icon: <LockRoundedIcon />, label: "Privacidade" },
+        ]}
+      />
 
-            {err && (
-              <Alert severity="error" icon={false}>
-                <Typography fontWeight={800}>Não deu certo</Typography>
-                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}>
-                  {err}
-                  {"\n"}
-                  Se puder, tente novamente com mais luz e aproximando mais o texto.
-                </Typography>
-              </Alert>
-            )}
-
-            <Box
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 3,
-                p: 1,
-                overflow: "hidden",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewUrl}
-                alt="Foto do documento"
-                style={{ width: "100%", display: "block" }}
-              />
-            </Box>
-
-            <Button
-              variant="text"
-              size="large"
-              onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}
-            >
-              🔎 Tocar para ampliar
-            </Button>
-
-            <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
-              <CardContent>
-                <Typography fontWeight={800} sx={{ mb: 1 }}>
-                  Antes de continuar, confira:
-                </Typography>
-                <List dense sx={{ p: 0 }}>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemText primary="• Consigo ver as letras" />
-                  </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemText primary="• Não está escuro" />
-                  </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemText primary="• O documento aparece inteiro" />
-                  </ListItem>
-                </List>
-              </CardContent>
-            </Card>
-
-            <Stack spacing={1.5}>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={useThis}
-                disabled={loading}
-                sx={{ py: 1.4 }}
-              >
-                {loading ? "Enviando…" : "✅ Usar esta foto"}
-              </Button>
-
-              <Button
-                variant="outlined"
-                size="large"
-                onClick={retake}
-                disabled={loading}
-                sx={{ py: 1.4 }}
-              >
-                🔄 Tirar outra foto
-              </Button>
-            </Stack>
-
-            <Typography variant="body2" color="text.secondary">
-              Privacidade: a imagem é usada apenas para gerar a explicação e não é armazenada permanentemente.
+      <Stack spacing={2.2}>
+        {err && (
+          <Alert severity="error" icon={false}>
+            <Typography fontWeight={900}>Não deu certo</Typography>
+            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}>
+              {err}
+              {"\n"}Tente novamente com mais luz e aproximando mais o texto.
             </Typography>
-          </Stack>
-        </CardContent>
-      </Card>
+          </Alert>
+        )}
+
+        <Card elevation={1}>
+          <CardContent>
+            <Stack spacing={1.2}>
+              <Box
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 3,
+                  overflow: "hidden",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewUrl}
+                  alt="Foto do documento"
+                  style={{ width: "100%", display: "block" }}
+                />
+              </Box>
+
+              <Button
+                variant="text"
+                size="large"
+                startIcon={<ZoomInRoundedIcon />}
+                onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}
+              >
+                Tocar para ampliar
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+
+        <Card elevation={1}>
+          <CardContent>
+            <Typography fontWeight={900} sx={{ mb: 1 }}>
+              Antes de continuar, confira:
+            </Typography>
+            <List dense sx={{ p: 0 }}>
+              <ListItem sx={{ px: 0 }}>
+                <ListItemText primary="• Consigo ver as letras" />
+              </ListItem>
+              <ListItem sx={{ px: 0 }}>
+                <ListItemText primary="• Não está escuro" />
+              </ListItem>
+              <ListItem sx={{ px: 0 }}>
+                <ListItemText primary="• O documento aparece inteiro" />
+              </ListItem>
+            </List>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1.2 }}>
+              Privacidade: a foto é usada apenas para gerar a explicação e não é armazenada permanentemente.
+            </Typography>
+          </CardContent>
+        </Card>
+      </Stack>
+
+      <BottomActionBar>
+        <Button
+          variant="contained"
+          size="large"
+          onClick={useThis}
+          disabled={loading}
+          startIcon={<CheckCircleRoundedIcon />}
+        >
+          {loading ? "Enviando…" : "Usar esta foto"}
+        </Button>
+
+        <Button
+          variant="outlined"
+          size="large"
+          onClick={retake}
+          disabled={loading}
+          startIcon={<ReplayRoundedIcon />}
+        >
+          Tirar outra foto
+        </Button>
+      </BottomActionBar>
     </Container>
   );
 }

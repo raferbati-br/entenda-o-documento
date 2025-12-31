@@ -16,6 +16,12 @@ import {
   Typography,
 } from "@mui/material";
 
+import PremiumHeader from "@/components/PremiumHeader";
+
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
+import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
+
 type FriendlyError = {
   title: string;
   message: string;
@@ -67,7 +73,6 @@ function buildFriendlyError(res: Response | null, data: any): FriendlyError {
     };
   }
 
-  // 500/502/unknown
   return {
     title: "Não consegui entender a foto agora",
     message: apiMsg || "Ocorreu um problema ao analisar o documento.",
@@ -95,7 +100,6 @@ export default function AnalyzingPage() {
   );
 
   useEffect(() => {
-    // etapas “humanas”
     const t = setInterval(() => {
       setStep((s) => (s < steps.length - 1 ? s + 1 : s));
     }, 1300);
@@ -134,17 +138,12 @@ export default function AnalyzingPage() {
         saveResult(data.result);
         router.replace("/result");
       } catch (e: any) {
-        if (e?.name === "AbortError") {
-          // usuário cancelou
-          return;
-        }
+        if (e?.name === "AbortError") return;
 
         const res: Response | null = e?.res ?? null;
         const data = e?.data ?? null;
 
-        // se falhou, por segurança/consistência: limpa captureId
         clearCaptureId();
-
         setFriendlyError(buildFriendlyError(res, data));
       }
     }
@@ -157,6 +156,15 @@ export default function AnalyzingPage() {
   if (friendlyError) {
     return (
       <Container maxWidth="sm" sx={{ py: 3 }}>
+        <PremiumHeader
+          title="Ops… aconteceu um problema"
+          subtitle="Vamos resolver juntos."
+          chips={[
+            { icon: <ErrorOutlineRoundedIcon />, label: "Erro ao analisar" },
+            { icon: <AutoAwesomeRoundedIcon />, label: "Tente novamente" },
+          ]}
+        />
+
         <Card elevation={2}>
           <CardContent>
             <Stack spacing={2}>
@@ -164,7 +172,7 @@ export default function AnalyzingPage() {
                 {friendlyError.title}
               </Typography>
 
-              <Alert severity="error">
+              <Alert severity="error" icon={false}>
                 <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
                   {friendlyError.message}
                 </Typography>
@@ -180,6 +188,7 @@ export default function AnalyzingPage() {
                 <Button
                   variant="contained"
                   size="large"
+                  startIcon={<CameraAltRoundedIcon />}
                   onClick={() => router.push(friendlyError.actionHref || "/camera")}
                   sx={{ py: 1.4 }}
                 >
@@ -199,6 +208,12 @@ export default function AnalyzingPage() {
 
   return (
     <Container maxWidth="sm" sx={{ py: 3 }}>
+      <PremiumHeader
+        title="Só um instante…"
+        subtitle="Isso pode levar alguns segundos. Se puder, não feche esta tela."
+        chips={[{ icon: <AutoAwesomeRoundedIcon />, label: "Analisando a foto" }]}
+      />
+
       <Card elevation={2}>
         <CardContent>
           <Stack spacing={2}>

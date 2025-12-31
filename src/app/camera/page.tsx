@@ -4,18 +4,26 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
 import {
+  Alert,
+  Box,
   Button,
   Card,
   CardContent,
   Container,
+  Divider,
   Stack,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
-  Alert,
-  Divider,
+  Chip,
 } from "@mui/material";
+
+import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
+import PhotoRoundedIcon from "@mui/icons-material/PhotoRounded";
+import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
+import CropFreeRoundedIcon from "@mui/icons-material/CropFreeRounded";
+import TextFieldsRoundedIcon from "@mui/icons-material/TextFieldsRounded";
+import LockRoundedIcon from "@mui/icons-material/LockRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import PremiumHeader from "@/components/PremiumHeader";
 
 export default function CameraPage() {
   const router = useRouter();
@@ -38,7 +46,6 @@ export default function CameraPage() {
   }
 
   useEffect(() => {
-    // Se veio da home pedindo galeria, abre automaticamente (uma vez)
     if (isGalleryFlow && !autoOpened) {
       setAutoOpened(true);
       const t = setTimeout(() => openFiles(), 200);
@@ -50,7 +57,6 @@ export default function CameraPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Permite escolher o mesmo arquivo novamente (especialmente no iOS)
     e.currentTarget.value = "";
 
     await saveCapture({
@@ -63,44 +69,50 @@ export default function CameraPage() {
 
   return (
     <Container maxWidth="sm" sx={{ py: 3 }}>
+      <PremiumHeader
+        title={isGalleryFlow ? "Escolha uma foto do documento" : "Tire uma foto do documento"}
+        subtitle={
+          isGalleryFlow
+            ? "Escolha uma foto nítida, com boa luz, onde dê para ver as letras."
+            : "Uma foto bem clara melhora muito a explicação."
+        }
+        chips={[
+          { icon: <AutoAwesomeRoundedIcon />, label: "Foto do documento" },
+          { icon: <LockRoundedIcon />, label: "Privacidade" },
+        ]}
+      />
+
       <Card elevation={2}>
         <CardContent>
-          <Stack spacing={2.5}>
-            <Stack spacing={1}>
-              <Typography variant="h5" fontWeight={900}>
-                {isGalleryFlow ? "Escolha uma foto do documento" : "Tire uma foto do documento"}
-              </Typography>
-              <Typography color="text.secondary" variant="body1">
-                {isGalleryFlow
-                  ? "Escolha uma foto nítida, com boa luz, onde dê para ver as letras."
-                  : "Pode ser conta, carta, comunicado ou aviso."}
-              </Typography>
-            </Stack>
-
+          <Stack spacing={2.2}>
             {!isGalleryFlow && (
-              <>
-                <List dense sx={{ bgcolor: "transparent", p: 0 }}>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemText primary="• Coloque o documento numa mesa" />
-                  </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemText primary="• Aproxime até as letras ficarem nítidas" />
-                  </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemText primary="• Evite sombras e reflexos (luz da janela ajuda)" />
-                  </ListItem>
-                </List>
+              <Stack spacing={1.2}>
+                <TipRow
+                  icon={<TextFieldsRoundedIcon />}
+                  title="Deixe as letras nítidas"
+                  subtitle="Aproxime a câmera até o texto ficar legível."
+                />
+                <TipRow
+                  icon={<LightModeRoundedIcon />}
+                  title="Use boa luz"
+                  subtitle="Evite sombra e reflexo. Luz da janela ajuda."
+                />
+                <TipRow
+                  icon={<CropFreeRoundedIcon />}
+                  title="Enquadre o documento"
+                  subtitle="Tente mostrar o documento inteiro."
+                />
 
-                <Alert severity="info" icon={false}>
-                  <Typography fontWeight={800}>Dica rápida</Typography>
+                <Alert severity="info" icon={false} sx={{ mt: 0.5 }}>
+                  <Typography fontWeight={900}>Dica rápida</Typography>
                   <Typography sx={{ mt: 0.5 }}>
-                    Se o texto estiver pequeno, aproxime mais a câmera e tente manter a mão firme.
+                    Se o texto estiver pequeno, aproxime mais e mantenha a mão firme.
                   </Typography>
                 </Alert>
-              </>
+              </Stack>
             )}
 
-            {/* INPUTS ESCONDIDOS */}
+            {/* INPUTS */}
             <input
               ref={cameraRef}
               type="file"
@@ -109,45 +121,33 @@ export default function CameraPage() {
               hidden
               onChange={onFileChange}
             />
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={onFileChange}
-            />
+            <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFileChange} />
 
-            {/* CTA principal (evita duplicar a escolha que já existe na home) */}
             <Stack spacing={1.2}>
               {isGalleryFlow ? (
                 <Button
                   variant="contained"
                   size="large"
+                  startIcon={<PhotoRoundedIcon />}
                   onClick={openFiles}
-                  sx={{ py: 1.4 }}
                 >
-                  🖼️ Escolher uma foto
+                  Escolher uma foto
                 </Button>
               ) : (
                 <Button
                   variant="contained"
                   size="large"
+                  startIcon={<CameraAltRoundedIcon />}
                   onClick={openCamera}
-                  sx={{ py: 1.4 }}
                 >
-                  📸 Tirar foto agora
+                  Tirar foto agora
                 </Button>
               )}
 
               <Divider />
 
-              {/* Plano B discreto, sem competir com a ação principal */}
               {isGalleryFlow ? (
-                <Button
-                  variant="text"
-                  size="large"
-                  onClick={() => router.push("/camera")}
-                >
+                <Button variant="text" size="large" onClick={() => router.push("/camera")}>
                   📸 Prefiro tirar foto com a câmera
                 </Button>
               ) : (
@@ -172,5 +172,37 @@ export default function CameraPage() {
         </CardContent>
       </Card>
     </Container>
+  );
+}
+
+function TipRow({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <Box
+      sx={{
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 3,
+        p: 1.6,
+        bgcolor: "background.paper",
+      }}
+    >
+      <Stack direction="row" spacing={1.4} alignItems="flex-start">
+        <Box sx={{ mt: "2px" }}>{icon}</Box>
+        <Box>
+          <Typography fontWeight={900}>{title}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {subtitle}
+          </Typography>
+        </Box>
+      </Stack>
+    </Box>
   );
 }

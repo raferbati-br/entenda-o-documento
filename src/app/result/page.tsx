@@ -18,6 +18,21 @@ import {
   Typography,
 } from "@mui/material";
 
+import PremiumHeader from "@/components/PremiumHeader";
+import BottomActionBar from "@/components/BottomActionBar";
+
+import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
+import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
+import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
+import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
+import EventRoundedIcon from "@mui/icons-material/EventRounded";
+import ListAltRoundedIcon from "@mui/icons-material/ListAltRounded";
+import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import LockRoundedIcon from "@mui/icons-material/LockRounded";
+import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+
 type CardT = {
   id: string;
   title: string;
@@ -31,7 +46,42 @@ function confidenceToInfo(confidence: number) {
 }
 
 function isSpeechSupported() {
-  return typeof window !== "undefined" && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  return (
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    "SpeechSynthesisUtterance" in window
+  );
+}
+
+function SectionCard({
+  icon,
+  title,
+  text,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text?: string;
+}) {
+  if (!text) return null;
+
+  return (
+    <Card elevation={1}>
+      <CardContent>
+        <Stack spacing={1}>
+          <Stack direction="row" spacing={1.2} alignItems="center">
+            {icon}
+            <Typography variant="h6" fontWeight={900}>
+              {title}
+            </Typography>
+          </Stack>
+
+          <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+            {text}
+          </Typography>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function ResultPage() {
@@ -54,29 +104,23 @@ export default function ResultPage() {
 
   useEffect(() => {
     setTtsSupported(isSpeechSupported());
-
-    // Se o usuário sair da página, para de falar
     return () => {
       try {
-        if (typeof window !== "undefined" && "speechSynthesis" in window) {
-          window.speechSynthesis.cancel();
-        }
-      } catch {
-        // ignore
-      }
+        window.speechSynthesis.cancel();
+      } catch {}
     };
   }, []);
 
-  function newDoc() {
-    // garante que para a fala ao trocar de tela
+  function stopSpeaking() {
+    setTtsError(null);
     try {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    } catch {
-      // ignore
-    }
+      window.speechSynthesis.cancel();
+    } catch {}
+    setIsSpeaking(false);
+  }
 
+  function newDoc() {
+    stopSpeaking();
     clearResult();
     clearCaptureId();
     router.push("/camera");
@@ -89,15 +133,23 @@ export default function ResultPage() {
 
   const confidence = result?.confidence ?? 0;
   const confidenceInfo = useMemo(() => confidenceToInfo(confidence), [confidence]);
-
   const showLowConfidenceHelp = confidence < 0.45;
+
+  const confidenceSubtitle =
+    confidenceInfo.label === "Baixa"
+      ? "A foto parece difícil de ler."
+      : confidenceInfo.label === "Média"
+      ? "Algumas partes podem estar pouco nítidas."
+      : "A maioria do texto está legível.";
 
   const speakText = useMemo(() => {
     if (!result) return "";
     const parts = [
       "Explicação do documento.",
       cardMap["whatIs"]?.title ? `${cardMap["whatIs"]?.title}. ${cardMap["whatIs"]?.text}` : "",
-      cardMap["whatSays"]?.title ? `${cardMap["whatSays"]?.title}. ${cardMap["whatSays"]?.text}` : "",
+      cardMap["whatSays"]?.title
+        ? `${cardMap["whatSays"]?.title}. ${cardMap["whatSays"]?.text}`
+        : "",
       cardMap["dates"]?.title ? `${cardMap["dates"]?.title}. ${cardMap["dates"]?.text}` : "",
       cardMap["terms"]?.title ? `${cardMap["terms"]?.title}. ${cardMap["terms"]?.text}` : "",
       cardMap["whatUsuallyHappens"]?.title
@@ -107,36 +159,22 @@ export default function ResultPage() {
     ]
       .filter(Boolean)
       .join("\n\n");
-
     return parts;
   }, [result, cardMap]);
 
-  function stopSpeaking() {
-    setTtsError(null);
-    try {
-      window.speechSynthesis.cancel();
-    } catch {
-      // ignore
-    } finally {
-      setIsSpeaking(false);
-    }
-  }
-
   function startSpeaking() {
     setTtsError(null);
-
     if (!ttsSupported) {
       setTtsError("Seu navegador não suporta leitura em voz alta.");
       return;
     }
 
     try {
-      // Se já estiver falando alguma coisa, cancela e recomeça
       window.speechSynthesis.cancel();
 
       const u = new SpeechSynthesisUtterance(speakText);
       u.lang = "pt-BR";
-      u.rate = 0.95; // um pouco mais lento (melhor para idosos)
+      u.rate = 0.95;
       u.pitch = 1.0;
 
       u.onstart = () => setIsSpeaking(true);
@@ -147,7 +185,7 @@ export default function ResultPage() {
       };
 
       window.speechSynthesis.speak(u);
-    } catch (e) {
+    } catch {
       setIsSpeaking(false);
       setTtsError("Não consegui iniciar a leitura em voz alta.");
     }
@@ -156,57 +194,60 @@ export default function ResultPage() {
   if (!result) return null;
 
   return (
-    <Container maxWidth="sm" sx={{ py: 3 }}>
-      <Stack spacing={2.5}>
-        <Card elevation={2}>
-          <CardContent>
-            <Stack spacing={1}>
-              <Typography variant="h5" fontWeight={800}>
-                Explicação do documento
-              </Typography>
-              <Typography color="text.secondary" variant="body1">
-                Em português simples.
-              </Typography>
+    <Container
+      maxWidth="sm"
+      sx={{
+        py: 3,
+        // espaço para o BottomActionBar fixo
+        pb: "calc(env(safe-area-inset-bottom) + 140px)",
+      }}
+    >
+      <Stack spacing={2.2}>
+        <PremiumHeader
+          title="Explicação do documento"
+          subtitle={confidenceSubtitle}
+          chips={[
+            { icon: <AutoAwesomeRoundedIcon />, label: "Português simples" },
+            { icon: <LockRoundedIcon />, label: "Privacidade" },
+          ]}
+        />
 
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-                <Chip
-                  size="small"
-                  label={`${confidenceInfo.emoji} Confiança: ${confidenceInfo.label}`}
-                  color={confidenceInfo.color}
-                />
-                <Typography variant="body2" color="text.secondary">
-                  {confidenceInfo.label === "Baixa"
-                    ? "A foto parece difícil de ler."
-                    : confidenceInfo.label === "Média"
-                    ? "Algumas partes podem estar pouco nítidas."
-                    : "A maioria do texto está legível."}
-                </Typography>
-              </Stack>
-            </Stack>
-          </CardContent>
-        </Card>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Chip
+            size="small"
+            label={`${confidenceInfo.emoji} Confiança: ${confidenceInfo.label}`}
+            color={confidenceInfo.color}
+          />
+          <Typography variant="body2" color="text.secondary">
+            {confidenceSubtitle}
+          </Typography>
+        </Stack>
 
-        {/* TTS (Web Speech API) */}
+        {/* TTS Card */}
         <Card elevation={1}>
           <CardContent>
             <Stack spacing={1.2}>
-              <Typography variant="h6" fontWeight={800}>
-                Ouvir a explicação
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                A leitura é feita pela voz do seu celular/navegador. Não usa OpenAI.
+              <Stack direction="row" spacing={1.2} alignItems="center">
+                <VolumeUpRoundedIcon />
+                <Typography variant="h6" fontWeight={900}>
+                  Ouvir a explicação
+                </Typography>
+              </Stack>
+
+              <Typography variant="body2" color="text.secondary">
+                A leitura é feita pela voz do seu celular/navegador (não usa OpenAI).
               </Typography>
 
               {ttsError && (
                 <Alert severity="warning" icon={false}>
-                  <Typography fontWeight={800}>Atenção</Typography>
+                  <Typography fontWeight={900}>Atenção</Typography>
                   <Typography sx={{ mt: 0.5 }}>{ttsError}</Typography>
                 </Alert>
               )}
 
               {!ttsSupported ? (
                 <Alert severity="info" icon={false}>
-                  <Typography fontWeight={800}>Leitura em voz alta indisponível</Typography>
+                  <Typography fontWeight={900}>Leitura em voz alta indisponível</Typography>
                   <Typography sx={{ mt: 0.5 }}>
                     Seu navegador pode não suportar esta função. Você ainda pode ler a explicação abaixo.
                   </Typography>
@@ -216,9 +257,10 @@ export default function ResultPage() {
                   variant={isSpeaking ? "outlined" : "contained"}
                   size="large"
                   sx={{ py: 1.4 }}
+                  startIcon={isSpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
                   onClick={() => (isSpeaking ? stopSpeaking() : startSpeaking())}
                 >
-                  {isSpeaking ? "⏹️ Parar leitura" : "🔊 Ouvir explicação"}
+                  {isSpeaking ? "Parar leitura" : "Ouvir explicação"}
                 </Button>
               )}
             </Stack>
@@ -229,10 +271,14 @@ export default function ResultPage() {
           <Card elevation={1}>
             <CardContent>
               <Stack spacing={1.2}>
-                <Typography variant="h6" fontWeight={800}>
-                  Vamos melhorar a foto?
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
+                <Stack direction="row" spacing={1.2} alignItems="center">
+                  <HelpOutlineRoundedIcon />
+                  <Typography variant="h6" fontWeight={900}>
+                    Vamos melhorar a foto?
+                  </Typography>
+                </Stack>
+
+                <Typography variant="body2" color="text.secondary">
                   Com uma foto mais clara, a explicação fica bem melhor.
                 </Typography>
 
@@ -242,76 +288,87 @@ export default function ResultPage() {
                   <Typography variant="body1">• Evite sombra e reflexo</Typography>
                 </Box>
 
-                <Button variant="contained" size="large" sx={{ py: 1.4 }} onClick={newDoc}>
-                  📸 Tirar outra foto
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{ py: 1.4 }}
+                  startIcon={<CameraAltRoundedIcon />}
+                  onClick={newDoc}
+                >
+                  Tirar outra foto
                 </Button>
               </Stack>
             </CardContent>
           </Card>
         )}
 
-        {renderCard(cardMap["whatIs"])}
-        {renderCard(cardMap["whatSays"])}
-        {renderCard(cardMap["dates"])}
-        {renderCard(cardMap["terms"])}
-        {renderCard(cardMap["whatUsuallyHappens"])}
+        {/* Seções */}
+        <SectionCard
+          icon={<DescriptionRoundedIcon />}
+          title={cardMap["whatIs"]?.title || "O que é"}
+          text={cardMap["whatIs"]?.text}
+        />
+        <SectionCard
+          icon={<InfoRoundedIcon />}
+          title={cardMap["whatSays"]?.title || "O que diz"}
+          text={cardMap["whatSays"]?.text}
+        />
+        <SectionCard
+          icon={<EventRoundedIcon />}
+          title={cardMap["dates"]?.title || "Datas e prazos"}
+          text={cardMap["dates"]?.text}
+        />
+        <SectionCard
+          icon={<ListAltRoundedIcon />}
+          title={cardMap["terms"]?.title || "Termos importantes"}
+          text={cardMap["terms"]?.text}
+        />
+        <SectionCard
+          icon={<HelpOutlineRoundedIcon />}
+          title={cardMap["whatUsuallyHappens"]?.title || "O que costuma acontecer"}
+          text={cardMap["whatUsuallyHappens"]?.text}
+        />
 
         <Alert severity="warning" icon={false}>
-          <Typography fontWeight={800}>⚠️ Aviso</Typography>
+          <Typography fontWeight={900}>⚠️ Aviso</Typography>
           <Typography sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}>{result.notice}</Typography>
         </Alert>
 
         <Box>
           <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
             Esta explicação é apenas informativa: ajuda a entender o documento.
-            {"\n"}
-            Ela não substitui orientação de advogado, médico ou servidor público.
+            {"\n"}Ela não substitui orientação profissional.
           </Typography>
         </Box>
 
         <Divider />
-
-        <Stack spacing={1.5}>
-          <Button
-            variant="contained"
-            size="large"
-            onClick={() => {
-              stopSpeaking();
-              newDoc();
-            }}
-            sx={{ py: 1.4 }}
-          >
-            📸 Analisar outro documento
-          </Button>
-
-          <Button
-            component={Link}
-            href="/"
-            variant="text"
-            size="large"
-            onClick={() => stopSpeaking()}
-          >
-            Voltar ao início
-          </Button>
-        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          Você pode analisar outro documento quando quiser.
+        </Typography>
       </Stack>
+
+      {/* BottomActionBar (estilo app) */}
+      <BottomActionBar>
+        <Button
+          variant="contained"
+          size="large"
+          startIcon={<CameraAltRoundedIcon />}
+          onClick={newDoc}
+        >
+          Analisar outro documento
+        </Button>
+
+        <Button
+          variant="outlined"
+          size="large"
+          startIcon={<HomeRoundedIcon />}
+          component={Link}
+          href="/"
+          onClick={() => stopSpeaking()}
+        >
+          Voltar ao início
+        </Button>
+      </BottomActionBar>
     </Container>
-  );
-}
-
-function renderCard(card?: { title: string; text: string }) {
-  if (!card || !card.text) return null;
-
-  return (
-    <Card elevation={1}>
-      <CardContent>
-        <Typography variant="h6" fontWeight={800}>
-          {card.title}
-        </Typography>
-        <Typography variant="body1" sx={{ mt: 1, whiteSpace: "pre-wrap" }}>
-          {card.text}
-        </Typography>
-      </CardContent>
-    </Card>
   );
 }
