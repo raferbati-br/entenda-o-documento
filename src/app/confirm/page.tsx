@@ -13,6 +13,9 @@ import {
   Container,
   Stack,
   Typography,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 
 export default function ConfirmPage() {
@@ -63,9 +66,10 @@ export default function ConfirmPage() {
         body: JSON.stringify({ imageBase64 }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || "Erro ao enviar imagem");
+        const msg = typeof data?.error === "string" ? data.error : "Erro ao enviar imagem";
+        throw new Error(msg);
       }
 
       saveCaptureId(data.captureId);
@@ -84,18 +88,21 @@ export default function ConfirmPage() {
         <CardContent>
           <Stack spacing={2.5}>
             <Stack spacing={1}>
-              <Typography variant="h5" fontWeight={800}>
+              <Typography variant="h5" fontWeight={900}>
                 A foto ficou boa?
               </Typography>
-              <Typography color="text.secondary">
-                Se o texto estiver borrado ou cortado, é melhor tirar outra foto.
+              <Typography color="text.secondary" variant="body1">
+                Se estiver escuro, borrado ou cortado, vale tirar outra foto.
               </Typography>
             </Stack>
 
             {err && (
-              <Alert severity="error">
-                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+              <Alert severity="error" icon={false}>
+                <Typography fontWeight={800}>Não deu certo</Typography>
+                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}>
                   {err}
+                  {"\n"}
+                  Se puder, tente novamente com mais luz e aproximando mais o texto.
                 </Typography>
               </Alert>
             )}
@@ -110,8 +117,39 @@ export default function ConfirmPage() {
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={previewUrl} alt="Foto do documento" style={{ width: "100%", display: "block" }} />
+              <img
+                src={previewUrl}
+                alt="Foto do documento"
+                style={{ width: "100%", display: "block" }}
+              />
             </Box>
+
+            <Button
+              variant="text"
+              size="large"
+              onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}
+            >
+              🔎 Tocar para ampliar
+            </Button>
+
+            <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+              <CardContent>
+                <Typography fontWeight={800} sx={{ mb: 1 }}>
+                  Antes de continuar, confira:
+                </Typography>
+                <List dense sx={{ p: 0 }}>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText primary="• Consigo ver as letras" />
+                  </ListItem>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText primary="• Não está escuro" />
+                  </ListItem>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText primary="• O documento aparece inteiro" />
+                  </ListItem>
+                </List>
+              </CardContent>
+            </Card>
 
             <Stack spacing={1.5}>
               <Button
@@ -119,6 +157,7 @@ export default function ConfirmPage() {
                 size="large"
                 onClick={useThis}
                 disabled={loading}
+                sx={{ py: 1.4 }}
               >
                 {loading ? "Enviando…" : "✅ Usar esta foto"}
               </Button>
@@ -128,6 +167,7 @@ export default function ConfirmPage() {
                 size="large"
                 onClick={retake}
                 disabled={loading}
+                sx={{ py: 1.4 }}
               >
                 🔄 Tirar outra foto
               </Button>
