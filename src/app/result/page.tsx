@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+
 import { clearCaptureId } from "@/lib/captureIdStore";
 import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
+
+import Screen from "@/components/Screen";
+
 import {
   Alert,
   Box,
@@ -12,14 +15,10 @@ import {
   Card,
   CardContent,
   Chip,
-  Container,
   Divider,
   Stack,
   Typography,
 } from "@mui/material";
-
-import PremiumHeader from "@/components/PremiumHeader";
-import BottomActionBar from "@/components/BottomActionBar";
 
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
@@ -86,13 +85,15 @@ function SectionCard({
 
 export default function ResultPage() {
   const router = useRouter();
+
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
-  // Web Speech state
+  // TTS
   const [ttsSupported, setTtsSupported] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [ttsError, setTtsError] = useState<string | null>(null);
 
+  // ✅ Hooks sempre rodam
   useEffect(() => {
     const res = loadResult();
     if (!res) {
@@ -111,6 +112,46 @@ export default function ResultPage() {
     };
   }, []);
 
+  const cardsArr = useMemo<CardT[]>(() => {
+    return (result?.cards as CardT[]) || [];
+  }, [result]);
+
+  const cardMap = useMemo<Record<string, CardT>>(() => {
+    return Object.fromEntries(cardsArr.map((c) => [c.id, c]));
+  }, [cardsArr]);
+
+  const confidence = result?.confidence ?? 0;
+
+  const confidenceInfo = useMemo(() => confidenceToInfo(confidence), [confidence]);
+  const showLowConfidenceHelp = confidence < 0.45;
+
+  const confidenceSubtitle = useMemo(() => {
+    if (confidenceInfo.label === "Baixa") return "A foto parece difícil de ler.";
+    if (confidenceInfo.label === "Média") return "Algumas partes podem estar pouco nítidas.";
+    return "A maioria do texto está legível.";
+  }, [confidenceInfo.label]);
+
+  // ✅ speakText é hook, então precisa existir mesmo quando result é null
+  const speakText = useMemo(() => {
+    const notice = result?.notice || "";
+    const parts = [
+      "Explicação do documento.",
+      cardMap["whatIs"]?.title ? `${cardMap["whatIs"]?.title}. ${cardMap["whatIs"]?.text}` : "",
+      cardMap["whatSays"]?.title
+        ? `${cardMap["whatSays"]?.title}. ${cardMap["whatSays"]?.text}`
+        : "",
+      cardMap["dates"]?.title ? `${cardMap["dates"]?.title}. ${cardMap["dates"]?.text}` : "",
+      cardMap["terms"]?.title ? `${cardMap["terms"]?.title}. ${cardMap["terms"]?.text}` : "",
+      cardMap["whatUsuallyHappens"]?.title
+        ? `${cardMap["whatUsuallyHappens"]?.title}. ${cardMap["whatUsuallyHappens"]?.text}`
+        : "",
+      notice ? `Aviso. ${notice}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    return parts;
+  }, [cardMap, result?.notice]);
+
   function stopSpeaking() {
     setTtsError(null);
     try {
@@ -125,42 +166,6 @@ export default function ResultPage() {
     clearCaptureId();
     router.push("/camera");
   }
-
-  const cardMap = useMemo(() => {
-    if (!result?.cards) return {} as Record<string, CardT>;
-    return Object.fromEntries((result.cards as CardT[]).map((c) => [c.id, c]));
-  }, [result]);
-
-  const confidence = result?.confidence ?? 0;
-  const confidenceInfo = useMemo(() => confidenceToInfo(confidence), [confidence]);
-  const showLowConfidenceHelp = confidence < 0.45;
-
-  const confidenceSubtitle =
-    confidenceInfo.label === "Baixa"
-      ? "A foto parece difícil de ler."
-      : confidenceInfo.label === "Média"
-      ? "Algumas partes podem estar pouco nítidas."
-      : "A maioria do texto está legível.";
-
-  const speakText = useMemo(() => {
-    if (!result) return "";
-    const parts = [
-      "Explicação do documento.",
-      cardMap["whatIs"]?.title ? `${cardMap["whatIs"]?.title}. ${cardMap["whatIs"]?.text}` : "",
-      cardMap["whatSays"]?.title
-        ? `${cardMap["whatSays"]?.title}. ${cardMap["whatSays"]?.text}`
-        : "",
-      cardMap["dates"]?.title ? `${cardMap["dates"]?.title}. ${cardMap["dates"]?.text}` : "",
-      cardMap["terms"]?.title ? `${cardMap["terms"]?.title}. ${cardMap["terms"]?.text}` : "",
-      cardMap["whatUsuallyHappens"]?.title
-        ? `${cardMap["whatUsuallyHappens"]?.title}. ${cardMap["whatUsuallyHappens"]?.text}`
-        : "",
-      result.notice ? `Aviso. ${result.notice}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-    return parts;
-  }, [result, cardMap]);
 
   function startSpeaking() {
     setTtsError(null);
@@ -191,27 +196,48 @@ export default function ResultPage() {
     }
   }
 
+  // ✅ Agora sim podemos fazer return condicional sem quebrar ordem de hooks
   if (!result) return null;
 
   return (
-    <Container
-      maxWidth="sm"
-      sx={{
-        py: 3,
-        // espaço para o BottomActionBar fixo
-        pb: "calc(env(safe-area-inset-bottom) + 140px)",
+    <Screen
+      header={{
+        title: "Explicação do documento",
+        subtitle: confidenceSubtitle,
+        chips: [
+          { icon: <AutoAwesomeRoundedIcon />, label: "Português simples" },
+          { icon: <LockRoundedIcon />, label: "Privacidade" },
+        ],
       }}
+      bottomBar={
+        <>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<CameraAltRoundedIcon />}
+            onClick={newDoc}
+            sx={{ py: 1.4 }}
+          >
+            Analisar outro documento
+          </Button>
+
+          <Button
+            variant="outlined"
+            size="large"
+            startIcon={<HomeRoundedIcon />}
+            onClick={() => {
+              stopSpeaking();
+              router.push("/");
+            }}
+            sx={{ py: 1.4 }}
+          >
+            Voltar ao início
+          </Button>
+        </>
+      }
     >
       <Stack spacing={2.2}>
-        <PremiumHeader
-          title="Explicação do documento"
-          subtitle={confidenceSubtitle}
-          chips={[
-            { icon: <AutoAwesomeRoundedIcon />, label: "Português simples" },
-            { icon: <LockRoundedIcon />, label: "Privacidade" },
-          ]}
-        />
-
+        {/* Confiança */}
         <Stack direction="row" spacing={1} alignItems="center">
           <Chip
             size="small"
@@ -223,7 +249,7 @@ export default function ResultPage() {
           </Typography>
         </Stack>
 
-        {/* TTS Card */}
+        {/* TTS */}
         <Card elevation={1}>
           <CardContent>
             <Stack spacing={1.2}>
@@ -283,9 +309,9 @@ export default function ResultPage() {
                 </Typography>
 
                 <Box sx={{ pl: 1 }}>
-                  <Typography variant="body1">• Coloque o papel numa mesa</Typography>
-                  <Typography variant="body1">• Aproxime até as letras ficarem nítidas</Typography>
-                  <Typography variant="body1">• Evite sombra e reflexo</Typography>
+                  <Typography>• Coloque o papel numa mesa</Typography>
+                  <Typography>• Aproxime até as letras ficarem nítidas</Typography>
+                  <Typography>• Evite sombra e reflexo</Typography>
                 </Box>
 
                 <Button
@@ -334,41 +360,16 @@ export default function ResultPage() {
           <Typography sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}>{result.notice}</Typography>
         </Alert>
 
-        <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
-            Esta explicação é apenas informativa: ajuda a entender o documento.
-            {"\n"}Ela não substitui orientação profissional.
-          </Typography>
-        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+          Esta explicação é apenas informativa: ajuda a entender o documento.
+          {"\n"}Ela não substitui orientação profissional.
+        </Typography>
 
         <Divider />
         <Typography variant="body2" color="text.secondary">
           Você pode analisar outro documento quando quiser.
         </Typography>
       </Stack>
-
-      {/* BottomActionBar (estilo app) */}
-      <BottomActionBar>
-        <Button
-          variant="contained"
-          size="large"
-          startIcon={<CameraAltRoundedIcon />}
-          onClick={newDoc}
-        >
-          Analisar outro documento
-        </Button>
-
-        <Button
-          variant="outlined"
-          size="large"
-          startIcon={<HomeRoundedIcon />}
-          component={Link}
-          href="/"
-          onClick={() => stopSpeaking()}
-        >
-          Voltar ao início
-        </Button>
-      </BottomActionBar>
-    </Container>
+    </Screen>
   );
 }

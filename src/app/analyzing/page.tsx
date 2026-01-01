@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadCaptureId, clearCaptureId } from "@/lib/captureIdStore";
 import { saveResult } from "@/lib/resultStore";
+
 import {
   Alert,
   Box,
@@ -11,12 +12,11 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Container,
   Stack,
   Typography,
 } from "@mui/material";
 
-import PremiumHeader from "@/components/PremiumHeader";
+import Screen from "@/components/Screen";
 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
@@ -103,7 +103,6 @@ export default function AnalyzingPage() {
     const t = setInterval(() => {
       setStep((s) => (s < steps.length - 1 ? s + 1 : s));
     }, 1300);
-
     return () => clearInterval(t);
   }, [steps.length]);
 
@@ -130,19 +129,14 @@ export default function AnalyzingPage() {
         });
 
         const data = await res.json().catch(() => ({}));
-
-        if (!res.ok || !data?.ok) {
-          throw { res, data };
-        }
+        if (!res.ok || !data?.ok) throw { res, data };
 
         saveResult(data.result);
         router.replace("/result");
       } catch (e: any) {
         if (e?.name === "AbortError") return;
-
         const res: Response | null = e?.res ?? null;
         const data = e?.data ?? null;
-
         clearCaptureId();
         setFriendlyError(buildFriendlyError(res, data));
       }
@@ -153,18 +147,19 @@ export default function AnalyzingPage() {
 
   const current = steps[Math.min(step, steps.length - 1)];
 
+  // ================= ERROR STATE =================
   if (friendlyError) {
     return (
-      <Container maxWidth="sm" sx={{ py: 3 }}>
-        <PremiumHeader
-          title="Ops… aconteceu um problema"
-          subtitle="Vamos resolver juntos."
-          chips={[
+      <Screen
+        header={{
+          title: "Ops… aconteceu um problema",
+          subtitle: "Vamos resolver juntos.",
+          chips: [
             { icon: <ErrorOutlineRoundedIcon />, label: "Erro ao analisar" },
             { icon: <AutoAwesomeRoundedIcon />, label: "Tente novamente" },
-          ]}
-        />
-
+          ],
+        }}
+      >
         <Card elevation={2}>
           <CardContent>
             <Stack spacing={2}>
@@ -173,13 +168,13 @@ export default function AnalyzingPage() {
               </Typography>
 
               <Alert severity="error" icon={false}>
-                <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                <Typography sx={{ whiteSpace: "pre-wrap" }}>
                   {friendlyError.message}
                 </Typography>
               </Alert>
 
               {friendlyError.hint && (
-                <Typography variant="body1" color="text.secondary">
+                <Typography color="text.secondary">
                   {friendlyError.hint}
                 </Typography>
               )}
@@ -202,60 +197,70 @@ export default function AnalyzingPage() {
             </Stack>
           </CardContent>
         </Card>
-      </Container>
+      </Screen>
     );
   }
 
+  // ================= LOADING STATE =================
   return (
-    <Container maxWidth="sm" sx={{ py: 3 }}>
-      <PremiumHeader
-        title="Só um instante…"
-        subtitle="Isso pode levar alguns segundos. Se puder, não feche esta tela."
-        chips={[{ icon: <AutoAwesomeRoundedIcon />, label: "Analisando a foto" }]}
-      />
+    <Screen
+      header={{
+        title: "Só um instante…",
+        subtitle: "Isso pode levar alguns segundos. Se puder, não feche esta tela.",
+        chips: [{ icon: <AutoAwesomeRoundedIcon />, label: "Analisando a foto" }],
+      }}
+    >
+      <Box sx={{ flex: 1, display: "flex" }}>
+        <Card
+          elevation={2}
+          sx={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <CardContent sx={{ width: "100%" }}>
+            <Stack spacing={2}>
+              <Typography variant="h5" fontWeight={800}>
+                {current.title}
+              </Typography>
 
-      <Card elevation={2}>
-        <CardContent>
-          <Stack spacing={2}>
-            <Typography variant="h5" fontWeight={800}>
-              {current.title}
-            </Typography>
+              <Typography color="text.secondary">
+                {current.subtitle}
+              </Typography>
 
-            <Typography color="text.secondary" variant="body1">
-              {current.subtitle}
-            </Typography>
+              <Box
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 3,
+                  p: 2,
+                }}
+              >
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <CircularProgress size={22} />
+                  <Typography color="text.secondary">
+                    Isso pode levar alguns segundos. Se puder, não feche esta tela.
+                  </Typography>
+                </Stack>
+              </Box>
 
-            <Box
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 3,
-                p: 2,
-              }}
-            >
-              <Stack direction="row" spacing={2} alignItems="center">
-                <CircularProgress size={22} />
-                <Typography color="text.secondary" variant="body1">
-                  Isso pode levar alguns segundos. Se puder, não feche esta tela.
-                </Typography>
-              </Stack>
-            </Box>
-
-            <Button
-              variant="outlined"
-              size="large"
-              sx={{ py: 1.2 }}
-              onClick={() => {
-                abortRef.current?.abort();
-                clearCaptureId();
-                router.push("/camera");
-              }}
-            >
-              Cancelar e tirar outra foto
-            </Button>
-          </Stack>
-        </CardContent>
-      </Card>
-    </Container>
+              <Button
+                variant="outlined"
+                size="large"
+                sx={{ py: 1.2 }}
+                onClick={() => {
+                  abortRef.current?.abort();
+                  clearCaptureId();
+                  router.push("/camera");
+                }}
+              >
+                Cancelar e tirar outra foto
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Box>
+    </Screen>
   );
 }

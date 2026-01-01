@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Chip, Stack, Typography } from "@mui/material";
+import React from "react";
+import { Chip, Paper, Stack, Typography } from "@mui/material";
 
 export type PremiumHeaderChip = {
   icon: React.ReactNode;
@@ -13,66 +14,44 @@ type PremiumHeaderProps = {
   chips?: PremiumHeaderChip[];
 };
 
-export default function PremiumHeader({
-  title,
-  subtitle,
-  chips,
-}: PremiumHeaderProps) {
+export default function PremiumHeader({ title, subtitle, chips }: PremiumHeaderProps) {
   return (
-    <Box
-      sx={{
-        borderRadius: 4,
+    <Paper
+      elevation={0}
+      sx={(theme) => ({
+        // 🔑 chave da solução
+        borderRadius: "0 0 16px 16px", // sem arco em cima
         p: 2,
-        mb: 2,
-        bgcolor: "background.paper",
-        border: "1px solid",
-        borderColor: "divider",
-        overflow: "hidden",
-        position: "relative",
-      }}
+        borderBottom: `1px solid ${theme.palette.divider}`,
+        bgcolor: theme.palette.background.paper,
+      })}
     >
-      {/* Gradiente decorativo */}
-      <Box
-        aria-hidden
-        sx={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(900px 260px at 15% 0%, rgba(99,102,241,0.18), transparent 60%), radial-gradient(700px 240px at 95% 20%, rgba(16,185,129,0.16), transparent 55%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <Stack spacing={1} sx={{ position: "relative" }}>
-        {chips && chips.length > 0 && (
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ flexWrap: "wrap" }}
-          >
+      <Stack spacing={1}>
+        {chips?.length ? (
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
             {chips.map((c, idx) => (
               <Chip
                 key={idx}
                 icon={c.icon as any}
                 label={c.label}
                 size="small"
-                sx={{ fontWeight: 800 }}
+                variant="outlined"
+                sx={{ fontWeight: 700 }}
               />
             ))}
           </Stack>
-        )}
+        ) : null}
 
-        <Typography variant="h5" fontWeight={900}>
+        <Typography variant="h5" fontWeight={900} lineHeight={1.15}>
           {title}
         </Typography>
 
-        {subtitle && (
-          <Typography variant="body2" color="text.secondary">
+        {subtitle ? (
+          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.35 }}>
             {subtitle}
           </Typography>
-        )}
+        ) : null}
       </Stack>
-    </Box>
+    </Paper>
   );
 }

@@ -3,17 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
+
 import {
   Alert,
   Box,
   Button,
   Card,
   CardContent,
-  Container,
   Divider,
   Stack,
   Typography,
-  Chip,
 } from "@mui/material";
 
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
@@ -23,7 +22,8 @@ import CropFreeRoundedIcon from "@mui/icons-material/CropFreeRounded";
 import TextFieldsRoundedIcon from "@mui/icons-material/TextFieldsRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-import PremiumHeader from "@/components/PremiumHeader";
+
+import Screen from "@/components/Screen";
 
 export default function CameraPage() {
   const router = useRouter();
@@ -68,110 +68,117 @@ export default function CameraPage() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 3 }}>
-      <PremiumHeader
-        title={isGalleryFlow ? "Escolha uma foto do documento" : "Tire uma foto do documento"}
-        subtitle={
-          isGalleryFlow
-            ? "Escolha uma foto nítida, com boa luz, onde dê para ver as letras."
-            : "Uma foto bem clara melhora muito a explicação."
-        }
-        chips={[
+    <Screen
+      header={{
+        title: isGalleryFlow ? "Escolha uma foto do documento" : "Tire uma foto do documento",
+        subtitle: isGalleryFlow
+          ? "Escolha uma foto nítida, com boa luz, onde dê para ver as letras."
+          : "Uma foto bem clara melhora muito a explicação.",
+        chips: [
           { icon: <AutoAwesomeRoundedIcon />, label: "Foto do documento" },
           { icon: <LockRoundedIcon />, label: "Privacidade" },
-        ]}
-      />
+        ],
+      }}
+    >
+      {/* Card principal */}
+      <Box sx={{ flex: 1, display: "flex" }}>
+        <Card elevation={2} sx={{ flex: 1 }}>
+          <CardContent>
+            <Stack spacing={2.2}>
+              {!isGalleryFlow && (
+                <Stack spacing={1.2}>
+                  <TipRow
+                    icon={<TextFieldsRoundedIcon />}
+                    title="Deixe as letras nítidas"
+                    subtitle="Aproxime a câmera até o texto ficar legível."
+                  />
+                  <TipRow
+                    icon={<LightModeRoundedIcon />}
+                    title="Use boa luz"
+                    subtitle="Evite sombra e reflexo. Luz da janela ajuda."
+                  />
+                  <TipRow
+                    icon={<CropFreeRoundedIcon />}
+                    title="Enquadre o documento"
+                    subtitle="Tente mostrar o documento inteiro."
+                  />
 
-      <Card elevation={2}>
-        <CardContent>
-          <Stack spacing={2.2}>
-            {!isGalleryFlow && (
+                  <Alert severity="info" icon={false} sx={{ mt: 0.5 }}>
+                    <Typography fontWeight={900}>Dica rápida</Typography>
+                    <Typography sx={{ mt: 0.5 }}>
+                      Se o texto estiver pequeno, aproxime mais e mantenha a mão firme.
+                    </Typography>
+                  </Alert>
+                </Stack>
+              )}
+
+              {/* INPUTS */}
+              <input
+                ref={cameraRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={onFileChange}
+              />
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={onFileChange}
+              />
+
               <Stack spacing={1.2}>
-                <TipRow
-                  icon={<TextFieldsRoundedIcon />}
-                  title="Deixe as letras nítidas"
-                  subtitle="Aproxime a câmera até o texto ficar legível."
-                />
-                <TipRow
-                  icon={<LightModeRoundedIcon />}
-                  title="Use boa luz"
-                  subtitle="Evite sombra e reflexo. Luz da janela ajuda."
-                />
-                <TipRow
-                  icon={<CropFreeRoundedIcon />}
-                  title="Enquadre o documento"
-                  subtitle="Tente mostrar o documento inteiro."
-                />
+                {isGalleryFlow ? (
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<PhotoRoundedIcon />}
+                    onClick={openFiles}
+                  >
+                    Escolher uma foto
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<CameraAltRoundedIcon />}
+                    onClick={openCamera}
+                  >
+                    Tirar foto agora
+                  </Button>
+                )}
 
-                <Alert severity="info" icon={false} sx={{ mt: 0.5 }}>
-                  <Typography fontWeight={900}>Dica rápida</Typography>
-                  <Typography sx={{ mt: 0.5 }}>
-                    Se o texto estiver pequeno, aproxime mais e mantenha a mão firme.
-                  </Typography>
-                </Alert>
+                <Divider />
+
+                {isGalleryFlow ? (
+                  <Button variant="text" size="large" onClick={() => router.push("/camera")}>
+                    📸 Prefiro tirar foto com a câmera
+                  </Button>
+                ) : (
+                  <Button
+                    variant="text"
+                    size="large"
+                    onClick={() => router.push("/camera?source=gallery")}
+                  >
+                    🖼️ Prefiro escolher da galeria
+                  </Button>
+                )}
+
+                <Button variant="text" size="large" onClick={() => router.push("/")}>
+                  Voltar ao início
+                </Button>
               </Stack>
-            )}
 
-            {/* INPUTS */}
-            <input
-              ref={cameraRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              hidden
-              onChange={onFileChange}
-            />
-            <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFileChange} />
-
-            <Stack spacing={1.2}>
-              {isGalleryFlow ? (
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<PhotoRoundedIcon />}
-                  onClick={openFiles}
-                >
-                  Escolher uma foto
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<CameraAltRoundedIcon />}
-                  onClick={openCamera}
-                >
-                  Tirar foto agora
-                </Button>
-              )}
-
-              <Divider />
-
-              {isGalleryFlow ? (
-                <Button variant="text" size="large" onClick={() => router.push("/camera")}>
-                  📸 Prefiro tirar foto com a câmera
-                </Button>
-              ) : (
-                <Button
-                  variant="text"
-                  size="large"
-                  onClick={() => router.push("/camera?source=gallery")}
-                >
-                  🖼️ Prefiro escolher da galeria
-                </Button>
-              )}
-
-              <Button variant="text" size="large" onClick={() => router.push("/")}>
-                Voltar ao início
-              </Button>
+              <Typography variant="body2" color="text.secondary">
+                Privacidade: a foto é usada apenas para gerar a explicação e não é armazenada permanentemente.
+              </Typography>
             </Stack>
-
-            <Typography variant="body2" color="text.secondary">
-              Privacidade: a foto é usada apenas para gerar a explicação e não é armazenada permanentemente.
-            </Typography>
-          </Stack>
-        </CardContent>
-      </Card>
-    </Container>
+          </CardContent>
+        </Card>
+      </Box>
+    </Screen>
   );
 }
 
