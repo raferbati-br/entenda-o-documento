@@ -1,4 +1,4 @@
-/* 1. Definimos a lista de fontes nativas aqui */
+/* 1. Pilha de Fontes Nativas */
 :root {
   --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
@@ -6,33 +6,42 @@
 html,
 body {
   height: 100%;
-  overscroll-behavior-y: none; /* Ótimo: Evita o "pulo" elástico */
-  -webkit-tap-highlight-color: transparent; /* Ótimo: Remove flash azul */
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  /* AQUI ESTÁ O SEGREDO QUE FALTOU: */
-  font-family: var(--font-system); 
+  /* Aplica a fonte nativa no corpo geral */
+  font-family: var(--font-system);
   
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
-  /* Ótimo para idosos não selecionarem texto sem querer */
   user-select: none;
   -webkit-user-select: none;
   
+  /* O Material UI vai cobrir isso com branco, mas deixamos aqui por garantia */
   background-color: #ffffff;
   color: #000000;
   
-  /* Tamanho base confortável */
   font-size: 16px;
   line-height: 1.5;
 }
 
-/* Mantém inputs funcionais */
 input, textarea {
   user-select: text;
   -webkit-user-select: text;
-  font-family: var(--font-system); /* Garante que o input também use a fonte bonita */
+  font-family: var(--font-system);
+}
+
+/* === NOVO: A Regra de Ouro === */
+/* Isso obriga os componentes do Material UI (Botões, Títulos, Chips) 
+   a usarem a nossa fonte nativa, ignorando a Roboto padrão deles */
+.MuiTypography-root,
+.MuiButton-root,
+.MuiChip-root,
+.MuiInputBase-root,
+.MuiFormLabel-root {
+  font-family: var(--font-system) !important;
 }
