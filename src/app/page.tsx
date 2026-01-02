@@ -5,9 +5,13 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
+  Container,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
   Stack,
   Typography,
 } from "@mui/material";
@@ -16,120 +20,138 @@ import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
-import PhotoRoundedIcon from "@mui/icons-material/PhotoRounded";
 
 export default function HomePage() {
   return (
-    <Box sx={{ minHeight: "100dvh", px: 2, pt: 2, pb: 2 }}>
-      <Stack spacing={2.2}>
-        {/* HERO (sem card) */}
-        <Stack spacing={1.2}>
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-            <Chip
-              icon={<AutoAwesomeRoundedIcon />}
-              label="Português simples"
-              size="small"
-              variant="outlined"
-              sx={{ fontWeight: 800 }}
-            />
-            <Chip
-              icon={<LockRoundedIcon />}
-              label="Privacidade"
-              size="small"
-              variant="outlined"
-              sx={{ fontWeight: 800 }}
-            />
+    // Container principal
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: "100dvh" }}>
+      
+      {/* Área de Conteúdo com Scroll 
+         MUDANÇA AQUI: Aumentei pb de 12 para 24 para garantir que o último 
+         item passe por cima do rodapé fixo alto.
+      */}
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', pb: 24 }}> 
+        <Container maxWidth="sm" sx={{ pt: 4, px: 3 }}>
+          
+          {/* HERO */}
+          <Stack spacing={2} sx={{ mb: 4 }}>
+            <Stack direction="row" spacing={1}>
+              <Chip
+                label="Português simples"
+                size="small"
+                color="primary"
+                sx={{ bgcolor: 'rgba(0,102,204,0.1)', color: 'primary.main', border: 'none', fontWeight: 600 }}
+              />
+               <Chip
+                label="Privado"
+                size="small"
+                sx={{ bgcolor: 'rgba(0,0,0,0.05)', border: 'none', fontWeight: 600 }}
+              />
+            </Stack>
+
+            <Typography variant="h4" gutterBottom>
+              Entenda qualquer documento num piscar de olhos
+            </Typography>
+
+            <Typography color="text.secondary" variant="body1">
+              Tire uma foto daquela carta difícil ou conta complicada e receba uma explicação direto ao ponto.
+            </Typography>
           </Stack>
 
-          <Typography variant="h4" fontWeight={950} lineHeight={1.05}>
-            Entenda um documento em poucos segundos
-          </Typography>
+          <Divider sx={{ my: 3 }} />
 
-          <Typography color="text.secondary" sx={{ fontSize: 16, lineHeight: 1.4 }}>
-            Tire uma foto de um papel (carta, cobrança, aviso) e receba uma explicação clara.
-          </Typography>
-        </Stack>
+          {/* Lista de Benefícios */}
+          <Typography variant="h6" sx={{ mb: 2 }}>O que funciona bem?</Typography>
+          
+          <List disablePadding>
+            <FeatureItem 
+              icon={<DescriptionRoundedIcon color="action" />}
+              title="Documentos Burocráticos"
+              desc="Cartas judiciais, contas, comunicados e avisos."
+            />
+            <FeatureItem 
+              icon={<AutoAwesomeRoundedIcon color="action" />}
+              title="Explicação Simples"
+              desc="Traduzimos o 'juridiquês' para o português do dia a dia."
+            />
+            <FeatureItem 
+              icon={<LockRoundedIcon color="action" />}
+              title="Privacidade Total"
+              desc="Sua foto é processada e deletada. Nada fica salvo."
+            />
+          </List>
 
-        {/* Conteúdo */}
-        <Card elevation={2}>
-          <CardContent>
-            <Stack spacing={2}>
-              <Box
-                sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 3,
-                  p: 2,
-                }}
-              >
-                <Stack spacing={1.2}>
-                  <Stack direction="row" spacing={1.2} alignItems="flex-start">
-                    <DescriptionRoundedIcon sx={{ mt: "2px" }} />
-                    <Box>
-                      <Typography fontWeight={900}>O que funciona bem</Typography>
-                      <Typography color="text.secondary" variant="body2">
-                        Cartas, contas, comunicados, avisos e notificações.
-                      </Typography>
-                    </Box>
-                  </Stack>
+          <Box sx={{ mt: 4 }}>
+             <Alert severity="warning" variant="filled" sx={{ borderRadius: 2, color: '#fff', bgcolor: 'warning.main' }}>
+              <Typography variant="body2" fontWeight={600}>
+                Aviso: A IA ajuda a entender, mas não substitui orientação profissional.
+              </Typography>
+            </Alert>
+          </Box>
 
-                  <Stack direction="row" spacing={1.2} alignItems="flex-start">
-                    <AutoAwesomeRoundedIcon sx={{ mt: "2px" }} />
-                    <Box>
-                      <Typography fontWeight={900}>Explicação simples</Typography>
-                      <Typography color="text.secondary" variant="body2">
-                        Sem palavras difíceis e sem dizer o que você “deve fazer”.
-                      </Typography>
-                    </Box>
-                  </Stack>
+        </Container>
+      </Box>
 
-                  <Stack direction="row" spacing={1.2} alignItems="flex-start">
-                    <LockRoundedIcon sx={{ mt: "2px" }} />
-                    <Box>
-                      <Typography fontWeight={900}>Privacidade</Typography>
-                      <Typography color="text.secondary" variant="body2">
-                        A foto é usada só para gerar a explicação e não é armazenada permanentemente.
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Stack>
-              </Box>
+      {/* RODAPÉ FIXO (Sticky Footer) */}
+      <Box 
+        sx={{ 
+          position: 'fixed', 
+          bottom: 0, 
+          left: 0, 
+          right: 0, 
+          p: 2, 
+          bgcolor: 'background.default',
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          zIndex: 10,
+          // Garante legibilidade mesmo se o fundo for transparente no iOS
+          backdropFilter: 'blur(20px)', 
+          backgroundColor: 'rgba(255,255,255,0.9)' 
+        }}
+      >
+        <Container maxWidth="sm" disableGutters>
+          <Stack spacing={1.5}>
+            <Button
+              component={Link}
+              href="/camera"
+              variant="contained"
+              size="large"
+              fullWidth
+              startIcon={<CameraAltRoundedIcon />}
+              sx={{ height: 56, fontSize: '1.1rem' }}
+            >
+              Tirar foto agora
+            </Button>
+            
+            <Button
+              component={Link}
+              href="/camera?source=gallery"
+              variant="text"
+              size="medium"
+              fullWidth
+              sx={{ color: 'text.secondary', fontWeight: 600 }}
+            >
+              Ou escolha da galeria
+            </Button>
+          </Stack>
+        </Container>
+      </Box>
 
-              {/* CTAs */}
-              <Stack spacing={1.2}>
-                <Button
-                  component={Link}
-                  href="/camera"
-                  variant="contained"
-                  size="large"
-                  startIcon={<CameraAltRoundedIcon />}
-                  sx={{ py: 1.4, fontWeight: 900 }}
-                >
-                  Tirar foto do documento
-                </Button>
-
-                <Button
-                  component={Link}
-                  href="/camera?source=gallery"
-                  variant="outlined"
-                  size="large"
-                  startIcon={<PhotoRoundedIcon />}
-                  sx={{ py: 1.4, fontWeight: 900 }}
-                >
-                  Escolher foto da galeria
-                </Button>
-              </Stack>
-
-              <Alert severity="warning" icon={false}>
-                <Typography fontWeight={900}>⚠️ Aviso</Typography>
-                <Typography sx={{ mt: 0.5 }}>
-                  Esta explicação é apenas informativa e não substitui orientação profissional.
-                </Typography>
-              </Alert>
-            </Stack>
-          </CardContent>
-        </Card>
-      </Stack>
     </Box>
   );
+}
+
+// Sub-componente
+function FeatureItem({ icon, title, desc }: { icon: any, title: string, desc: string }) {
+  return (
+    <ListItem disableGutters sx={{ py: 1.5, alignItems: 'flex-start' }}>
+      <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
+        {icon}
+      </ListItemIcon>
+      <ListItemText 
+        primary={<Typography fontWeight={700} gutterBottom>{title}</Typography>}
+        secondary={<Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>{desc}</Typography>}
+      />
+    </ListItem>
+  )
 }

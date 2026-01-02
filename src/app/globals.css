@@ -1,8 +1,22 @@
 html,
 body {
   height: 100%;
+  overscroll-behavior-y: none; /* Evita o "pulo" elástico da página no topo/fundo */
+  -webkit-tap-highlight-color: transparent; /* Remove o flash azul ao tocar em botões no Android/iOS */
 }
 
 body {
   margin: 0;
+  /* Faz a fonte renderizar mais nítida */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Impede seleção de texto (comportamento de app), exceto em inputs */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Permite seleção apenas onde faz sentido */
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
 }

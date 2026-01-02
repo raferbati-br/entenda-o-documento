@@ -1,91 +1,107 @@
 import { createTheme } from "@mui/material/styles";
 
-const RADIUS = 16;
+// Pilha de fontes nativa para máxima performance em celulares antigos
+const SYSTEM_FONT_STACK = [
+  '-apple-system',
+  'BlinkMacSystemFont',
+  '"Segoe UI"',
+  'Roboto',
+  '"Helvetica Neue"',
+  'Arial',
+  'sans-serif',
+].join(',');
 
-/**
- * Cria o tema de acordo com o modo (light / dark)
- * Compatível com Providers.tsx
- */
 export function buildTheme(mode: "light" | "dark") {
   return createTheme({
     palette: {
       mode,
-
-      ...(mode === "light"
-        ? {
-            background: {
-              default: "#F7F8FA",
-              paper: "#FFFFFF",
-            },
-          }
-        : {
-            background: {
-              default: "#0F1115",
-              paper: "#161A22",
-            },
-          }),
+      primary: {
+        main: '#0066CC', // Azul clássico de interface nativa (ajuste se quiser sua cor)
+      },
+      background: {
+        // Unifica o fundo: No mobile moderno, evitamos o cinza claro de fundo de site.
+        // Usamos branco total ou preto total.
+        default: mode === "light" ? "#FFFFFF" : "#000000",
+        paper: mode === "light" ? "#FFFFFF" : "#1C1C1E",
+      },
+      text: {
+        primary: mode === "light" ? "#000000" : "#FFFFFF",
+        secondary: mode === "light" ? "#666666" : "#98989F",
+      },
     },
 
     typography: {
-      fontFamily:
-        '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-
-      h5: {
-        fontWeight: 900,
-      },
-
-      h6: {
-        fontWeight: 900,
-      },
-
-      button: {
+      fontFamily: SYSTEM_FONT_STACK,
+      h4: {
         fontWeight: 800,
-        textTransform: "none",
+        letterSpacing: '-0.02em', // Aperta um pouco o título estilo iOS
+      },
+      h5: { fontWeight: 700 },
+      h6: { fontWeight: 600 },
+      button: {
+        fontWeight: 600,
+        textTransform: "none", // Remove o CAPS LOCK
+        fontSize: "1.05rem", // Botões levemente maiores para o dedo
+      },
+      body1: {
+        lineHeight: 1.5,
+        fontSize: '1.05rem', // Leitura confortável
+      },
+      body2: {
+        lineHeight: 1.4,
       },
     },
 
     shape: {
-      borderRadius: RADIUS,
+      borderRadius: 16,
     },
 
     components: {
+      // Remove sombra de todos os cards e papers
       MuiPaper: {
         styleOverrides: {
           root: {
-            borderRadius: RADIUS,
+            backgroundImage: 'none',
+          },
+          elevation1: {
+            boxShadow: 'none',
+            border: `1px solid ${mode === 'light' ? '#E5E5EA' : '#38383A'}`, // Borda sutil estilo Apple
+          },
+          elevation2: {
+            boxShadow: 'none',
+            border: 'none',
           },
         },
       },
-
       MuiCard: {
-        styleOverrides: {
-          root: {
-            borderRadius: RADIUS,
-          },
+        defaultProps: {
+          elevation: 0, // Cards agora são flat por padrão
         },
       },
-
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: RADIUS,
+            borderRadius: 999, // Formato de pílula (Padrão moderno)
+            boxShadow: 'none',
+            padding: '12px 24px',
+            '&:active': {
+              boxShadow: 'none',
+              opacity: 0.7, // Feedback visual de toque instantâneo
+            },
+            '&:hover': {
+              boxShadow: 'none',
+            },
+          },
+          sizeLarge: {
+            padding: '16px 24px', // Área de toque maior
           },
         },
       },
-
       MuiChip: {
         styleOverrides: {
           root: {
-            borderRadius: RADIUS,
-            fontWeight: 700,
-          },
-        },
-      },
-
-      MuiAlert: {
-        styleOverrides: {
-          root: {
-            borderRadius: RADIUS,
+            fontWeight: 600,
+            borderRadius: 8,
           },
         },
       },

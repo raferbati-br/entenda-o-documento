@@ -8,11 +8,13 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
+  Container,
   Divider,
+  IconButton,
   Stack,
   Typography,
+  AppBar,
+  Toolbar,
 } from "@mui/material";
 
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
@@ -20,10 +22,7 @@ import PhotoRoundedIcon from "@mui/icons-material/PhotoRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import CropFreeRoundedIcon from "@mui/icons-material/CropFreeRounded";
 import TextFieldsRoundedIcon from "@mui/icons-material/TextFieldsRounded";
-import LockRoundedIcon from "@mui/icons-material/LockRounded";
-import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-
-import Screen from "@/components/Screen";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
 export default function CameraPage() {
   const router = useRouter();
@@ -68,148 +67,188 @@ export default function CameraPage() {
   }
 
   return (
-    <Screen
-      header={{
-        title: isGalleryFlow ? "Escolha uma foto do documento" : "Tire uma foto do documento",
-        subtitle: isGalleryFlow
-          ? "Escolha uma foto nítida, com boa luz, onde dê para ver as letras."
-          : "Uma foto bem clara melhora muito a explicação.",
-        chips: [
-          { icon: <AutoAwesomeRoundedIcon />, label: "Foto do documento" },
-          { icon: <LockRoundedIcon />, label: "Privacidade" },
-        ],
-      }}
-    >
-      {/* Card principal */}
-      <Box sx={{ flex: 1, display: "flex" }}>
-        <Card elevation={2} sx={{ flex: 1 }}>
-          <CardContent>
-            <Stack spacing={2.2}>
-              {!isGalleryFlow && (
-                <Stack spacing={1.2}>
-                  <TipRow
-                    icon={<TextFieldsRoundedIcon />}
-                    title="Deixe as letras nítidas"
-                    subtitle="Aproxime a câmera até o texto ficar legível."
-                  />
-                  <TipRow
-                    icon={<LightModeRoundedIcon />}
-                    title="Use boa luz"
-                    subtitle="Evite sombra e reflexo. Luz da janela ajuda."
-                  />
-                  <TipRow
-                    icon={<CropFreeRoundedIcon />}
-                    title="Enquadre o documento"
-                    subtitle="Tente mostrar o documento inteiro."
-                  />
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100dvh", bgcolor: "background.default" }}>
+      
+      {/* 1. Navbar Simples e Nativa */}
+      <AppBar 
+        position="sticky" 
+        color="transparent" 
+        elevation={0}
+        sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}
+      >
+        <Toolbar>
+          <IconButton edge="start" onClick={() => router.back()} sx={{ mr: 1 }}>
+            <ArrowBackRoundedIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
+            {isGalleryFlow ? "Galeria" : "Nova Foto"}
+          </Typography>
+        </Toolbar>
+      </AppBar>
 
-                  <Alert severity="info" icon={false} sx={{ mt: 0.5 }}>
-                    <Typography fontWeight={900}>Dica rápida</Typography>
-                    <Typography sx={{ mt: 0.5 }}>
-                      Se o texto estiver pequeno, aproxime mais e mantenha a mão firme.
-                    </Typography>
-                  </Alert>
-                </Stack>
-              )}
-
-              {/* INPUTS */}
-              <input
-                ref={cameraRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                hidden
-                onChange={onFileChange}
-              />
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={onFileChange}
-              />
-
-              <Stack spacing={1.2}>
-                {isGalleryFlow ? (
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<PhotoRoundedIcon />}
-                    onClick={openFiles}
-                  >
-                    Escolher uma foto
-                  </Button>
-                ) : (
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<CameraAltRoundedIcon />}
-                    onClick={openCamera}
-                  >
-                    Tirar foto agora
-                  </Button>
-                )}
-
-                <Divider />
-
-                {isGalleryFlow ? (
-                  <Button variant="text" size="large" onClick={() => router.push("/camera")}>
-                    📸 Prefiro tirar foto com a câmera
-                  </Button>
-                ) : (
-                  <Button
-                    variant="text"
-                    size="large"
-                    onClick={() => router.push("/camera?source=gallery")}
-                  >
-                    🖼️ Prefiro escolher da galeria
-                  </Button>
-                )}
-
-                <Button variant="text" size="large" onClick={() => router.push("/")}>
-                  Voltar ao início
-                </Button>
-              </Stack>
-
-              <Typography variant="body2" color="text.secondary">
-                Privacidade: a foto é usada apenas para gerar a explicação e não é armazenada permanentemente.
+      {/* 2. Área de Conteúdo (Instruções) */}
+      <Box sx={{ flexGrow: 1, overflowY: "auto", pb: 20 }}>
+        <Container maxWidth="sm" sx={{ pt: 3, px: 3 }}>
+          
+          <Stack spacing={3}>
+            {/* Cabeçalho de Texto */}
+            <Box>
+              <Typography variant="h5" gutterBottom fontWeight={800}>
+                {isGalleryFlow ? "Escolha uma foto" : "Vamos preparar a câmera"}
               </Typography>
-            </Stack>
-          </CardContent>
-        </Card>
+              <Typography variant="body1" color="text.secondary">
+                {isGalleryFlow
+                  ? "Escolha uma imagem nítida onde dê para ler todas as letras."
+                  : "Para a inteligência artificial funcionar bem, siga estas dicas rápidas:"}
+              </Typography>
+            </Box>
+
+            {!isGalleryFlow && (
+              <Stack spacing={2}>
+                <TipItem
+                  icon={<TextFieldsRoundedIcon color="primary" />}
+                  title="Letras Nítidas"
+                  subtitle="Aproxime até conseguir ler o texto na tela."
+                />
+                <TipItem
+                  icon={<LightModeRoundedIcon color="warning" />}
+                  title="Boa Iluminação"
+                  subtitle="Evite sombras. A luz natural ajuda muito."
+                />
+                <TipItem
+                  icon={<CropFreeRoundedIcon color="action" />}
+                  title="Enquadramento"
+                  subtitle="Tente pegar o documento inteiro."
+                />
+
+                <Alert 
+                  severity="info" 
+                  sx={{ 
+                    borderRadius: 3, 
+                    border: '1px solid', 
+                    borderColor: 'info.main', 
+                    bgcolor: 'rgba(2, 136, 209, 0.05)' 
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600}>
+                    Dica: Mantenha a mão firme ao clicar.
+                  </Typography>
+                </Alert>
+              </Stack>
+            )}
+          </Stack>
+
+        </Container>
       </Box>
-    </Screen>
+
+      {/* 3. Inputs Escondidos (Lógica mantida) */}
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={onFileChange}
+      />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={onFileChange}
+      />
+
+      {/* 4. Rodapé Fixo (Ação Principal) */}
+      <Box 
+        sx={{ 
+          position: 'fixed', 
+          bottom: 0, 
+          left: 0, 
+          right: 0, 
+          p: 2, 
+          bgcolor: 'background.paper',
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          zIndex: 10
+        }}
+      >
+        <Container maxWidth="sm" disableGutters>
+          <Stack spacing={1.5}>
+            {/* Botão Principal */}
+            {isGalleryFlow ? (
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                startIcon={<PhotoRoundedIcon />}
+                onClick={openFiles}
+                sx={{ height: 56, fontSize: '1.1rem' }}
+              >
+                Abrir Galeria
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                startIcon={<CameraAltRoundedIcon />}
+                onClick={openCamera}
+                sx={{ height: 56, fontSize: '1.1rem' }}
+              >
+                Abrir Câmera
+              </Button>
+            )}
+
+            {/* Link Secundário */}
+            <Button
+              variant="text"
+              size="medium"
+              color="inherit"
+              onClick={() => {
+                // Alterna o modo
+                const target = isGalleryFlow ? "/camera" : "/camera?source=gallery";
+                router.replace(target);
+              }}
+              sx={{ color: 'text.secondary' }}
+            >
+              {isGalleryFlow ? "Prefiro usar a câmera" : "Prefiro buscar na galeria"}
+            </Button>
+          </Stack>
+          
+          <Typography variant="caption" display="block" textAlign="center" color="text.disabled" sx={{ mt: 2 }}>
+            Sua foto é processada com segurança e deletada logo após.
+          </Typography>
+        </Container>
+      </Box>
+    </Box>
   );
 }
 
-function TipRow({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-}) {
+// Componente visual limpo para as dicas
+function TipItem({ icon, title, subtitle }: { icon: any, title: string, subtitle: string }) {
   return (
-    <Box
-      sx={{
-        border: "1px solid",
-        borderColor: "divider",
-        borderRadius: 3,
-        p: 1.6,
-        bgcolor: "background.paper",
-      }}
-    >
-      <Stack direction="row" spacing={1.4} alignItems="flex-start">
-        <Box sx={{ mt: "2px" }}>{icon}</Box>
-        <Box>
-          <Typography fontWeight={900}>{title}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {subtitle}
-          </Typography>
-        </Box>
-      </Stack>
-    </Box>
-  );
+    <Stack direction="row" spacing={2} alignItems="center">
+      <Box 
+        sx={{ 
+          width: 48, 
+          height: 48, 
+          borderRadius: '50%', 
+          bgcolor: 'action.hover', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center' 
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ flex: 1 }}>
+        <Typography variant="subtitle1" fontWeight={700}>
+          {title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+          {subtitle}
+        </Typography>
+      </Box>
+    </Stack>
+  )
 }

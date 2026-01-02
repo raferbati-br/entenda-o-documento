@@ -7,26 +7,22 @@ import { saveCaptureId } from "@/lib/captureIdStore";
 import { loadCapture, clearCapture } from "@/lib/captureStore";
 import { compressBlobToDataUrl } from "@/lib/imageCompression";
 
-import Screen from "@/components/Screen";
-
 import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
-  List,
-  ListItem,
-  ListItemText,
+  CircularProgress,
+  Container,
   Stack,
   Typography,
+  IconButton,
 } from "@mui/material";
 
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
-import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
-import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-import LockRoundedIcon from "@mui/icons-material/LockRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import BlurOffRoundedIcon from "@mui/icons-material/BlurOffRounded";
+import CropFreeRoundedIcon from "@mui/icons-material/CropFreeRounded";
 
 export default function ConfirmPage() {
   const router = useRouter();
@@ -34,6 +30,7 @@ export default function ConfirmPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // Carrega a imagem do IndexedDB/Store
   useEffect(() => {
     let objectUrl: string | null = null;
 
@@ -54,7 +51,7 @@ export default function ConfirmPage() {
 
   async function retake() {
     await clearCapture();
-    router.push("/camera");
+    router.replace("/camera");
   }
 
   async function useThis() {
@@ -68,7 +65,7 @@ export default function ConfirmPage() {
         return;
       }
 
-      // 1) compressão/resize no client (MVP)
+      // 1) compressão/resize no client (Mantido sua lógica original)
       let { dataUrl, bytes } = await compressBlobToDataUrl(payload.blob, {
         maxDimension: 1600,
         quality: 0.78,
@@ -103,118 +100,129 @@ export default function ConfirmPage() {
     } catch (e: any) {
       setLoading(false);
       setErr(e?.message || "Falha ao enviar imagem");
-      return;
     }
-
-    // só se deu certo a gente mantém loading até navegar
   }
 
   if (!previewUrl) return null;
 
   return (
-    <Screen
-      header={{
-        title: "A foto ficou boa?",
-        subtitle: "Se estiver escuro, borrado ou cortado, vale tirar outra foto.",
-        chips: [
-          { icon: <AutoAwesomeRoundedIcon />, label: "Melhor foto = melhor explicação" },
-          { icon: <LockRoundedIcon />, label: "Privacidade" },
-        ],
-      }}
-      bottomBar={
-        <>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<CheckCircleRoundedIcon />}
-            onClick={useThis}
-            disabled={loading}
-            sx={{ py: 1.4 }}
-          >
-            {loading ? "Enviando…" : "Usar esta foto"}
-          </Button>
+    // Fundo PRETO total para imersão (Estilo Galeria/Instagram)
+    <Box sx={{ 
+      bgcolor: "#000", 
+      minHeight: "100dvh", 
+      display: "flex", 
+      flexDirection: "column",
+      color: "white"
+    }}>
+      
+      {/* Header Flutuante (Botão Fechar) */}
+      <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', position: 'absolute', top: 0, right: 0, left: 0, zIndex: 10 }}>
+        <IconButton onClick={retake} sx={{ color: "white", bgcolor: 'rgba(0,0,0,0.5)' }}>
+          <CloseRoundedIcon />
+        </IconButton>
+      </Box>
 
-          <Button
-            variant="outlined"
-            size="large"
-            startIcon={<ReplayRoundedIcon />}
-            onClick={retake}
-            disabled={loading}
-            sx={{ py: 1.4 }}
-          >
-            Tirar outra foto
-          </Button>
-        </>
-      }
-    >
-      <Stack spacing={2.2}>
-        {err && (
-          <Alert severity="error" icon={false}>
-            <Typography fontWeight={900}>Não deu certo</Typography>
-            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}>
-              {err}
-              {"\n"}Tente novamente com mais luz e aproximando mais o texto.
-            </Typography>
-          </Alert>
+      {/* Área da Imagem (Centralizada e sem cortes) */}
+      <Box sx={{ 
+        flex: 1, 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        overflow: "hidden",
+        position: "relative",
+        py: 4 // Espaço para não colar no topo/fundo
+      }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={previewUrl}
+          alt="Preview"
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "contain",
+            boxShadow: "0 0 40px rgba(0,0,0,0.5)" // Sombra suave para destacar do fundo preto
+          }}
+        />
+
+        {/* Loading Overlay (Se estiver enviando) */}
+        {loading && (
+          <Box sx={{
+            position: "absolute", inset: 0, bgcolor: "rgba(0,0,0,0.7)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexDirection: 'column', gap: 2, zIndex: 20
+          }}>
+            <CircularProgress sx={{ color: "white" }} />
+            <Typography variant="h6" fontWeight={600}>Processando imagem...</Typography>
+          </Box>
         )}
+      </Box>
 
-        {/* Preview */}
-        <Card elevation={2}>
-          <CardContent>
-            <Stack spacing={1.2}>
-              <Box
-                sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 3,
-                  overflow: "hidden",
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previewUrl}
-                  alt="Foto do documento"
-                  style={{ width: "100%", display: "block" }}
-                />
-              </Box>
+      {/* Rodapé com Ações */}
+      <Box sx={{ 
+        bgcolor: "#000", 
+        p: 3, 
+        pb: 4,
+        borderTop: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        <Container maxWidth="sm" disableGutters>
+          
+          {/* Alerta de Erro (se houver) */}
+          {err && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setErr(null)}>
+              {err}
+            </Alert>
+          )}
 
-              <Button
-                variant="text"
-                size="large"
-                startIcon={<ZoomInRoundedIcon />}
-                onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}
-              >
-                Tocar para ampliar
-              </Button>
-            </Stack>
-          </CardContent>
-        </Card>
+          {/* Checklist Visual Rápido */}
+          <Stack direction="row" spacing={3} justifyContent="center" sx={{ mb: 3, opacity: 0.8 }}>
+             <CheckItem icon={<CheckCircleRoundedIcon fontSize="small"/>} label="Legível" />
+             <CheckItem icon={<BlurOffRoundedIcon fontSize="small"/>} label="Focado" />
+             <CheckItem icon={<CropFreeRoundedIcon fontSize="small"/>} label="Inteiro" />
+          </Stack>
 
-        {/* Checklist */}
-        <Card elevation={1}>
-          <CardContent>
-            <Typography fontWeight={900} sx={{ mb: 1 }}>
-              Antes de continuar, confira:
-            </Typography>
+          <Stack spacing={2}>
+            {/* Botão Principal: BRANCO para contraste máximo no fundo preto */}
+            <Button
+              variant="contained"
+              size="large"
+              onClick={useThis}
+              disabled={loading}
+              sx={{ 
+                bgcolor: "white", 
+                color: "black",
+                fontWeight: 800,
+                fontSize: "1.1rem",
+                '&:hover': { bgcolor: "#e0e0e0" },
+                height: 56
+              }}
+            >
+              A foto ficou boa
+            </Button>
 
-            <List dense sx={{ p: 0 }}>
-              <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="• Consigo ver as letras" />
-              </ListItem>
-              <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="• Não está escuro" />
-              </ListItem>
-              <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="• O documento aparece inteiro" />
-              </ListItem>
-            </List>
+            {/* Botão Secundário */}
+            <Button
+              variant="text"
+              size="large"
+              startIcon={<ReplayRoundedIcon />}
+              onClick={retake}
+              disabled={loading}
+              sx={{ color: "white", opacity: 0.8 }}
+            >
+              Tirar outra foto
+            </Button>
+          </Stack>
+        </Container>
+      </Box>
 
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1.2 }}>
-              Privacidade: a foto é usada apenas para gerar a explicação e não é armazenada permanentemente.
-            </Typography>
-          </CardContent>
-        </Card>
-      </Stack>
-    </Screen>
+    </Box>
   );
+}
+
+// Subcomponente de Checklist Visual
+function CheckItem({ icon, label }: { icon: any, label: string }) {
+  return (
+    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: 'white' }}>
+      {icon}
+      <Typography variant="caption" fontWeight={600}>{label}</Typography>
+    </Stack>
+  )
 }
