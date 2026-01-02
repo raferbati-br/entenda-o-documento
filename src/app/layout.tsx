@@ -5,7 +5,15 @@ import Providers from "./providers";
 export const metadata: Metadata = {
   title: "Entenda o Documento",
   description: "Explicações simples para documentos burocráticos",
-  manifest: "/manifest.json", // Prepare para o futuro
+  manifest: "/manifest.json",
+  icons: {
+    apple: "/icon-192.png", // Ícone para iPhone/iPad
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default", // Ou "black-translucent" se quiser que o conteúdo passe por baixo da barra de status
+    title: "Entenda",
+  },
 };
 
 // Configuração CRUCIAL para parecer app nativo

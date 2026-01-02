@@ -18,6 +18,7 @@ import {
   AppBar,
   Toolbar,
   Paper,
+  Snackbar,
 } from "@mui/material";
 
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
@@ -31,6 +32,7 @@ import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
+import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded"; // Ícone de Share estilo iOS
 
 // === Tipos e Helpers ===
 type CardT = { id: string; title: string; text: string };
@@ -45,7 +47,7 @@ function isSpeechSupported() {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
-// Componente de Seção Limpo (Sem Card)
+// Componente de Seção Limpo
 function SectionBlock({ icon, title, text }: { icon: React.ReactNode; title: string; text?: string }) {
   if (!text) return null;
   return (
@@ -72,6 +74,9 @@ export default function ResultPage() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [ttsError, setTtsError] = useState<string | null>(null);
 
+  // Share State
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
   useEffect(() => {
     const res = loadResult();
     if (!res) {
@@ -95,20 +100,48 @@ export default function ResultPage() {
   const confInfo = useMemo(() => confidenceToInfo(confidence), [confidence]);
   const showLowConfidenceHelp = confidence < 0.45;
 
-  // Lógica de texto para fala
-  const speakText = useMemo(() => {
+  // Texto completo para Leitura e Compartilhamento
+  const fullText = useMemo(() => {
     const notice = result?.notice || "";
     const parts = [
-      "Explicação do documento.",
-      cardMap["whatIs"]?.title ? `${cardMap["whatIs"]?.title}. ${cardMap["whatIs"]?.text}` : "",
-      cardMap["whatSays"]?.title ? `${cardMap["whatSays"]?.title}. ${cardMap["whatSays"]?.text}` : "",
-      cardMap["dates"]?.title ? `${cardMap["dates"]?.title}. ${cardMap["dates"]?.text}` : "",
-      cardMap["terms"]?.title ? `${cardMap["terms"]?.title}. ${cardMap["terms"]?.text}` : "",
-      cardMap["whatUsuallyHappens"]?.title ? `${cardMap["whatUsuallyHappens"]?.title}. ${cardMap["whatUsuallyHappens"]?.text}` : "",
-      notice ? `Aviso. ${notice}` : "",
+      "📋 *Explicação do Documento*",
+      "",
+      cardMap["whatIs"]?.title ? `*${cardMap["whatIs"]?.title}*\n${cardMap["whatIs"]?.text}` : "",
+      cardMap["whatSays"]?.title ? `*${cardMap["whatSays"]?.title}*\n${cardMap["whatSays"]?.text}` : "",
+      cardMap["dates"]?.title ? `*${cardMap["dates"]?.title}*\n${cardMap["dates"]?.text}` : "",
+      cardMap["terms"]?.title ? `*${cardMap["terms"]?.title}*\n${cardMap["terms"]?.text}` : "",
+      cardMap["whatUsuallyHappens"]?.title ? `*${cardMap["whatUsuallyHappens"]?.title}*\n${cardMap["whatUsuallyHappens"]?.text}` : "",
+      notice ? `⚠️ *Aviso*\n${notice}` : "",
+      "",
+      "Gerado por Entenda o Documento"
     ].filter(Boolean).join("\n\n");
     return parts;
   }, [cardMap, result?.notice]);
+
+  // Função de Compartilhar
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Explicação do Documento',
+          text: fullText,
+        });
+      } catch (error) {
+        console.log('Compartilhamento cancelado');
+      }
+    } else {
+      // Fallback para PC: Copiar para área de transferência
+      try {
+        await navigator.clipboard.writeText(fullText);
+        setToastMsg("Texto copiado para a área de transferência!");
+      } catch (err) {
+        setToastMsg("Não foi possível copiar o texto.");
+      }
+    }
+  };
+
+  // Funções de Áudio
+  const speakText = useMemo(() => fullText.replace(/\*/g, ""), [fullText]); // Remove asteriscos para leitura
 
   function stopSpeaking() {
     setTtsError(null);
@@ -152,7 +185,7 @@ export default function ResultPage() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100dvh", bgcolor: "background.paper" }}>
       
-      {/* 1. Navbar Sticky */}
+      {/* 1. Navbar Sticky com Botão Share */}
       <AppBar 
         position="sticky" 
         color="inherit" 
@@ -163,20 +196,28 @@ export default function ResultPage() {
           <IconButton edge="start" onClick={() => router.push('/')} sx={{ mr: 1 }}>
             <ArrowBackRoundedIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
-            Explicação
-          </Typography>
           
-          {/* Badge de Confiança no Header */}
-          <Chip 
-            label={confInfo.text} 
-            size="small"
-            sx={{ 
-              fontWeight: 700, 
-              bgcolor: confInfo.bg || 'action.hover', 
-              color: confInfo.color || 'text.primary' 
-            }} 
-          />
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+              Explicação
+            </Typography>
+            <Chip 
+              label={confInfo.text} 
+              size="small"
+              sx={{ 
+                height: 20,
+                fontSize: '0.7rem',
+                fontWeight: 700, 
+                bgcolor: confInfo.bg || 'action.hover', 
+                color: confInfo.color || 'text.primary' 
+              }} 
+            />
+          </Box>
+
+          {/* BOTÃO DE COMPARTILHAR */}
+          <IconButton onClick={handleShare} color="primary">
+            <IosShareRoundedIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -184,7 +225,7 @@ export default function ResultPage() {
       <Box sx={{ flexGrow: 1, overflowY: "auto", pb: 20 }}>
         <Container maxWidth="sm" sx={{ pt: 3, px: 3 }}>
 
-          {/* Player de Áudio Destacado */}
+          {/* Player de Áudio */}
           {ttsSupported && (
             <Paper 
               variant="outlined" 
@@ -226,7 +267,6 @@ export default function ResultPage() {
              <Alert severity="warning" sx={{ mb: 3 }}>{ttsError}</Alert>
           )}
 
-          {/* Aviso de Confiança Baixa (Se houver) */}
           {showLowConfidenceHelp && (
             <Alert 
               severity="warning" 
@@ -243,7 +283,7 @@ export default function ResultPage() {
             </Alert>
           )}
 
-          {/* Conteúdo Principal (Texto Corrido) */}
+          {/* Conteúdo Principal */}
           <Stack spacing={0} divider={<Divider sx={{ my: 1 }} />}>
             <SectionBlock
               icon={<DescriptionRoundedIcon />}
@@ -272,7 +312,7 @@ export default function ResultPage() {
             />
           </Stack>
 
-          {/* Aviso Legal / Disclaimer */}
+          {/* Aviso Legal */}
           <Box sx={{ mt: 6, mb: 4, p: 2, bgcolor: 'action.hover', borderRadius: 3 }}>
             {result.notice && (
                <Stack direction="row" spacing={1} sx={{ mb: 1, color: "warning.main" }}>
@@ -331,6 +371,16 @@ export default function ResultPage() {
           </Stack>
         </Container>
       </Box>
+
+      {/* Toast de Cópia (Fallback para PC) */}
+      <Snackbar
+        open={!!toastMsg}
+        autoHideDuration={3000}
+        onClose={() => setToastMsg(null)}
+        message={toastMsg}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{ bottom: { xs: 90, sm: 24 } }} // Sobe um pouco no mobile para não ficar atrás do rodapé
+      />
 
     </Box>
   );
