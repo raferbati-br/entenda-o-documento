@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
 
@@ -9,12 +9,12 @@ import {
   Box,
   Button,
   Container,
-  Divider,
   IconButton,
   Stack,
   Typography,
   AppBar,
   Toolbar,
+  CircularProgress,
 } from "@mui/material";
 
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
@@ -24,9 +24,10 @@ import CropFreeRoundedIcon from "@mui/icons-material/CropFreeRounded";
 import TextFieldsRoundedIcon from "@mui/icons-material/TextFieldsRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
-export default function CameraPage() {
+// 1. Criamos um componente interno com a lógica que usa searchParams
+function CameraContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // O culpado do erro estava aqui
 
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -69,7 +70,7 @@ export default function CameraPage() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100dvh", bgcolor: "background.default" }}>
       
-      {/* 1. Navbar Simples e Nativa */}
+      {/* Navbar Simples */}
       <AppBar 
         position="sticky" 
         color="transparent" 
@@ -86,12 +87,11 @@ export default function CameraPage() {
         </Toolbar>
       </AppBar>
 
-      {/* 2. Área de Conteúdo (Instruções) */}
+      {/* Conteúdo */}
       <Box sx={{ flexGrow: 1, overflowY: "auto", pb: 20 }}>
         <Container maxWidth="sm" sx={{ pt: 3, px: 3 }}>
           
           <Stack spacing={3}>
-            {/* Cabeçalho de Texto */}
             <Box>
               <Typography variant="h5" gutterBottom fontWeight={800}>
                 {isGalleryFlow ? "Escolha uma foto" : "Vamos preparar a câmera"}
@@ -141,7 +141,7 @@ export default function CameraPage() {
         </Container>
       </Box>
 
-      {/* 3. Inputs Escondidos (Lógica mantida) */}
+      {/* Inputs Escondidos */}
       <input
         ref={cameraRef}
         type="file"
@@ -158,7 +158,7 @@ export default function CameraPage() {
         onChange={onFileChange}
       />
 
-      {/* 4. Rodapé Fixo (Ação Principal) */}
+      {/* Rodapé Fixo */}
       <Box 
         sx={{ 
           position: 'fixed', 
@@ -174,7 +174,6 @@ export default function CameraPage() {
       >
         <Container maxWidth="sm" disableGutters>
           <Stack spacing={1.5}>
-            {/* Botão Principal */}
             {isGalleryFlow ? (
               <Button
                 variant="contained"
@@ -199,13 +198,11 @@ export default function CameraPage() {
               </Button>
             )}
 
-            {/* Link Secundário */}
             <Button
               variant="text"
               size="medium"
               color="inherit"
               onClick={() => {
-                // Alterna o modo
                 const target = isGalleryFlow ? "/camera" : "/camera?source=gallery";
                 router.replace(target);
               }}
@@ -224,7 +221,6 @@ export default function CameraPage() {
   );
 }
 
-// Componente visual limpo para as dicas
 function TipItem({ icon, title, subtitle }: { icon: any, title: string, subtitle: string }) {
   return (
     <Stack direction="row" spacing={2} alignItems="center">
@@ -251,4 +247,17 @@ function TipItem({ icon, title, subtitle }: { icon: any, title: string, subtitle
       </Box>
     </Stack>
   )
+}
+
+// 2. O export default agora é apenas um wrapper com Suspense
+export default function CameraPage() {
+  return (
+    <Suspense fallback={
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Box>
+    }>
+      <CameraContent />
+    </Suspense>
+  );
 }
