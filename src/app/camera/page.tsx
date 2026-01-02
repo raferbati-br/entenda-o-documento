@@ -18,16 +18,15 @@ import {
 } from "@mui/material";
 
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
-import PhotoRoundedIcon from "@mui/icons-material/PhotoRounded";
+import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import CropFreeRoundedIcon from "@mui/icons-material/CropFreeRounded";
 import TextFieldsRoundedIcon from "@mui/icons-material/TextFieldsRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
-// 1. Criamos um componente interno com a lógica que usa searchParams
 function CameraContent() {
   const router = useRouter();
-  const searchParams = useSearchParams(); // O culpado do erro estava aqui
+  const searchParams = useSearchParams();
 
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -45,6 +44,7 @@ function CameraContent() {
     fileRef.current?.click();
   }
 
+  // Auto-abre a galeria se veio da Home com ?source=gallery
   useEffect(() => {
     if (isGalleryFlow && !autoOpened) {
       setAutoOpened(true);
@@ -70,7 +70,7 @@ function CameraContent() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100dvh", bgcolor: "background.default" }}>
       
-      {/* Navbar Simples */}
+      {/* Navbar */}
       <AppBar 
         position="sticky" 
         color="transparent" 
@@ -87,8 +87,8 @@ function CameraContent() {
         </Toolbar>
       </AppBar>
 
-      {/* Conteúdo */}
-      <Box sx={{ flexGrow: 1, overflowY: "auto", pb: 20 }}>
+      {/* Conteúdo com Scroll */}
+      <Box sx={{ flexGrow: 1, overflowY: "auto", pb: 16 }}>
         <Container maxWidth="sm" sx={{ pt: 3, px: 3 }}>
           
           <Stack spacing={3}>
@@ -142,23 +142,10 @@ function CameraContent() {
       </Box>
 
       {/* Inputs Escondidos */}
-      <input
-        ref={cameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        hidden
-        onChange={onFileChange}
-      />
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={onFileChange}
-      />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={onFileChange} />
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFileChange} />
 
-      {/* Rodapé Fixo */}
+      {/* RODAPÉ DUPLO (Igual Home) */}
       <Box 
         sx={{ 
           position: 'fixed', 
@@ -173,47 +160,36 @@ function CameraContent() {
         }}
       >
         <Container maxWidth="sm" disableGutters>
-          <Stack spacing={1.5}>
-            {isGalleryFlow ? (
-              <Button
-                variant="contained"
-                size="large"
-                fullWidth
-                startIcon={<PhotoRoundedIcon />}
-                onClick={openFiles}
-                sx={{ height: 56, fontSize: '1.1rem' }}
-              >
-                Abrir Galeria
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                size="large"
-                fullWidth
-                startIcon={<CameraAltRoundedIcon />}
-                onClick={openCamera}
-                sx={{ height: 56, fontSize: '1.1rem' }}
-              >
-                Abrir Câmera
-              </Button>
-            )}
-
+          <Stack direction="row" spacing={2}>
+            
+            {/* Botão Galeria */}
             <Button
-              variant="text"
-              size="medium"
-              color="inherit"
-              onClick={() => {
-                const target = isGalleryFlow ? "/camera" : "/camera?source=gallery";
-                router.replace(target);
-              }}
-              sx={{ color: 'text.secondary' }}
+              variant={isGalleryFlow ? "contained" : "outlined"} // Destaque inteligente
+              size="large"
+              fullWidth
+              startIcon={<PhotoLibraryRoundedIcon />}
+              onClick={openFiles}
+              sx={{ flex: 1, height: 56, fontWeight: 700 }}
             >
-              {isGalleryFlow ? "Prefiro usar a câmera" : "Prefiro buscar na galeria"}
+              Galeria
             </Button>
+
+            {/* Botão Câmera */}
+            <Button
+              variant={!isGalleryFlow ? "contained" : "outlined"} // Destaque inteligente
+              size="large"
+              fullWidth
+              startIcon={<CameraAltRoundedIcon />}
+              onClick={openCamera}
+              sx={{ flex: 1, height: 56, fontWeight: 700 }}
+            >
+              Câmera
+            </Button>
+
           </Stack>
           
           <Typography variant="caption" display="block" textAlign="center" color="text.disabled" sx={{ mt: 2 }}>
-            Sua foto é processada com segurança e deletada logo após.
+            Sua foto é segura e deletada após o uso.
           </Typography>
         </Container>
       </Box>
@@ -249,7 +225,7 @@ function TipItem({ icon, title, subtitle }: { icon: any, title: string, subtitle
   )
 }
 
-// 2. O export default agora é apenas um wrapper com Suspense
+// Wrapper para evitar erro de build na Vercel
 export default function CameraPage() {
   return (
     <Suspense fallback={

@@ -20,6 +20,7 @@ import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
+import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded"; // Novo ícone para Galeria
 
 export default function HomePage() {
   return (
@@ -27,10 +28,9 @@ export default function HomePage() {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: "100dvh" }}>
       
       {/* Área de Conteúdo com Scroll 
-         MUDANÇA AQUI: Aumentei pb de 12 para 24 para garantir que o último 
-         item passe por cima do rodapé fixo alto.
+         Ajustei o padding-bottom (pb) de 24 para 16, já que o rodapé ficou mais baixo.
       */}
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', pb: 24 }}> 
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', pb: 16 }}> 
         <Container maxWidth="sm" sx={{ pt: 4, px: 3 }}>
           
           {/* HERO */}
@@ -49,11 +49,11 @@ export default function HomePage() {
               />
             </Stack>
 
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h4" gutterBottom fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
               Entenda qualquer documento num piscar de olhos
             </Typography>
 
-            <Typography color="text.secondary" variant="body1">
+            <Typography color="text.secondary" variant="body1" sx={{ lineHeight: 1.6 }}>
               Tire uma foto daquela carta difícil ou conta complicada e receba uma explicação direto ao ponto.
             </Typography>
           </Stack>
@@ -61,7 +61,7 @@ export default function HomePage() {
           <Divider sx={{ my: 3 }} />
 
           {/* Lista de Benefícios */}
-          <Typography variant="h6" sx={{ mb: 2 }}>O que funciona bem?</Typography>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>O que funciona bem?</Typography>
           
           <List disablePadding>
             <FeatureItem 
@@ -100,39 +100,54 @@ export default function HomePage() {
           left: 0, 
           right: 0, 
           p: 2, 
-          bgcolor: 'background.default',
+          bgcolor: 'background.default', // Garante legibilidade
           borderTop: '1px solid',
           borderColor: 'divider',
           zIndex: 10,
-          // Garante legibilidade mesmo se o fundo for transparente no iOS
           backdropFilter: 'blur(20px)', 
           backgroundColor: 'rgba(255,255,255,0.9)' 
         }}
       >
         <Container maxWidth="sm" disableGutters>
-          <Stack spacing={1.5}>
+          {/* MUDANÇA AQUI: Botões Lado a Lado (Row) */}
+          <Stack direction="row" spacing={2}>
+            
+            {/* Botão Secundário: Galeria */}
+            <Button
+              component={Link}
+              href="/camera?source=gallery"
+              variant="outlined"
+              size="large"
+              startIcon={<PhotoLibraryRoundedIcon />}
+              sx={{ 
+                flex: 1, // Ocupa 1 parte do espaço
+                height: 56, 
+                fontWeight: 700,
+                borderWidth: 2,
+                '&:hover': { borderWidth: 2 } 
+              }}
+            >
+              Galeria
+            </Button>
+            
+            {/* Botão Principal: Câmera */}
             <Button
               component={Link}
               href="/camera"
               variant="contained"
               size="large"
-              fullWidth
               startIcon={<CameraAltRoundedIcon />}
-              sx={{ height: 56, fontSize: '1.1rem' }}
+              sx={{ 
+                flex: 1, // Mesmo tamanho do outro botão
+                height: 56, 
+                fontWeight: 700, 
+                fontSize: '1rem',
+                boxShadow: '0 8px 16px rgba(0,102,204,0.2)' // Sombra suave para destacar
+              }}
             >
-              Tirar foto agora
+              Tirar foto
             </Button>
-            
-            <Button
-              component={Link}
-              href="/camera?source=gallery"
-              variant="text"
-              size="medium"
-              fullWidth
-              sx={{ color: 'text.secondary', fontWeight: 600 }}
-            >
-              Ou escolha da galeria
-            </Button>
+
           </Stack>
         </Container>
       </Box>

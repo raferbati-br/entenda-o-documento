@@ -89,13 +89,13 @@ export default function ResultPage() {
   useEffect(() => {
     setTtsSupported(isSpeechSupported());
     return () => {
-      try { window.speechSynthesis.cancel(); } catch {}
+      try { window.speechSynthesis.cancel(); } catch { }
     };
   }, []);
 
   const cardsArr = useMemo<CardT[]>(() => (result?.cards as CardT[]) || [], [result]);
   const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
-  
+
   const confidence = result?.confidence ?? 0;
   const confInfo = useMemo(() => confidenceToInfo(confidence), [confidence]);
   const showLowConfidenceHelp = confidence < 0.45;
@@ -145,7 +145,7 @@ export default function ResultPage() {
 
   function stopSpeaking() {
     setTtsError(null);
-    try { window.speechSynthesis.cancel(); } catch {}
+    try { window.speechSynthesis.cancel(); } catch { }
     setIsSpeaking(false);
   }
 
@@ -159,7 +159,7 @@ export default function ResultPage() {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(speakText);
       u.lang = "pt-BR";
-      u.rate = 0.95; 
+      u.rate = 0.95;
       u.onstart = () => setIsSpeaking(true);
       u.onend = () => setIsSpeaking(false);
       u.onerror = () => {
@@ -184,11 +184,11 @@ export default function ResultPage() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100dvh", bgcolor: "background.paper" }}>
-      
+
       {/* 1. Navbar Sticky com Botão Share */}
-      <AppBar 
-        position="sticky" 
-        color="inherit" 
+      <AppBar
+        position="sticky"
+        color="inherit"
         elevation={0}
         sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)' }}
       >
@@ -196,21 +196,21 @@ export default function ResultPage() {
           <IconButton edge="start" onClick={() => router.push('/')} sx={{ mr: 1 }}>
             <ArrowBackRoundedIcon />
           </IconButton>
-          
+
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
               Explicação
             </Typography>
-            <Chip 
-              label={confInfo.text} 
+            <Chip
+              label={confInfo.text}
               size="small"
-              sx={{ 
+              sx={{
                 height: 20,
                 fontSize: '0.7rem',
-                fontWeight: 700, 
-                bgcolor: confInfo.bg || 'action.hover', 
-                color: confInfo.color || 'text.primary' 
-              }} 
+                fontWeight: 700,
+                bgcolor: confInfo.bg || 'action.hover',
+                color: confInfo.color || 'text.primary'
+              }}
             />
           </Box>
 
@@ -227,11 +227,11 @@ export default function ResultPage() {
 
           {/* Player de Áudio */}
           {ttsSupported && (
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: 2, 
-                mb: 4, 
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                mb: 4,
                 bgcolor: isSpeaking ? 'primary.main' : 'background.default',
                 color: isSpeaking ? 'white' : 'text.primary',
                 borderColor: isSpeaking ? 'primary.main' : 'divider',
@@ -242,10 +242,10 @@ export default function ResultPage() {
                 transition: 'all 0.3s ease'
               }}
             >
-              <IconButton 
+              <IconButton
                 onClick={isSpeaking ? stopSpeaking : startSpeaking}
-                sx={{ 
-                  bgcolor: isSpeaking ? 'white' : 'primary.main', 
+                sx={{
+                  bgcolor: isSpeaking ? 'white' : 'primary.main',
                   color: isSpeaking ? 'primary.main' : 'white',
                   '&:hover': { bgcolor: isSpeaking ? '#f0f0f0' : 'primary.dark' }
                 }}
@@ -264,12 +264,12 @@ export default function ResultPage() {
           )}
 
           {ttsError && (
-             <Alert severity="warning" sx={{ mb: 3 }}>{ttsError}</Alert>
+            <Alert severity="warning" sx={{ mb: 3 }}>{ttsError}</Alert>
           )}
 
           {showLowConfidenceHelp && (
-            <Alert 
-              severity="warning" 
+            <Alert
+              severity="warning"
               icon={<WarningRoundedIcon />}
               sx={{ mb: 4, borderRadius: 3 }}
               action={
@@ -302,10 +302,10 @@ export default function ResultPage() {
             />
             <SectionBlock
               icon={<ListAltRoundedIcon />}
-              title={cardMap["terms"]?.title || "Termos importantes"}
+              // O .replace(...) abaixo remove o livro azul e outros emojis que a IA possa inventar
+              title={cardMap["terms"]?.title?.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '') || "Termos importantes"}
               text={cardMap["terms"]?.text}
-            />
-            <SectionBlock
+            />            <SectionBlock
               icon={<HelpOutlineRoundedIcon />}
               title={cardMap["whatUsuallyHappens"]?.title || "O que costuma acontecer"}
               text={cardMap["whatUsuallyHappens"]?.text}
@@ -315,10 +315,10 @@ export default function ResultPage() {
           {/* Aviso Legal */}
           <Box sx={{ mt: 6, mb: 4, p: 2, bgcolor: 'action.hover', borderRadius: 3 }}>
             {result.notice && (
-               <Stack direction="row" spacing={1} sx={{ mb: 1, color: "warning.main" }}>
-                 <WarningRoundedIcon fontSize="small" />
-                 <Typography variant="subtitle2" fontWeight={700}>Atenção</Typography>
-               </Stack>
+              <Stack direction="row" spacing={1} sx={{ mb: 1, color: "warning.main" }}>
+                <WarningRoundedIcon fontSize="small" />
+                <Typography variant="subtitle2" fontWeight={700}>Atenção</Typography>
+              </Stack>
             )}
             <Typography variant="body2" color="text.secondary" paragraph>
               {result.notice}
@@ -333,13 +333,13 @@ export default function ResultPage() {
       </Box>
 
       {/* 3. Rodapé Fixo */}
-      <Box 
-        sx={{ 
-          position: 'fixed', 
-          bottom: 0, 
-          left: 0, 
-          right: 0, 
-          p: 2, 
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          p: 2,
           bgcolor: 'background.paper',
           borderTop: '1px solid',
           borderColor: 'divider',
@@ -364,7 +364,7 @@ export default function ResultPage() {
               fullWidth
               startIcon={<CameraAltRoundedIcon />}
               onClick={newDoc}
-              sx={{ flex: 2 }}
+              sx={{ flex: 1 }}
             >
               Analisar Outro
             </Button>
