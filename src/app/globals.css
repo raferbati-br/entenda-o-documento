@@ -1,22 +1,38 @@
+/* 1. Definimos a lista de fontes nativas aqui */
+:root {
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
 html,
 body {
   height: 100%;
-  overscroll-behavior-y: none; /* Evita o "pulo" elástico da página no topo/fundo */
-  -webkit-tap-highlight-color: transparent; /* Remove o flash azul ao tocar em botões no Android/iOS */
+  overscroll-behavior-y: none; /* Ótimo: Evita o "pulo" elástico */
+  -webkit-tap-highlight-color: transparent; /* Ótimo: Remove flash azul */
 }
 
 body {
+  /* AQUI ESTÁ O SEGREDO QUE FALTOU: */
+  font-family: var(--font-system); 
+  
   margin: 0;
-  /* Faz a fonte renderizar mais nítida */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Impede seleção de texto (comportamento de app), exceto em inputs */
+  
+  /* Ótimo para idosos não selecionarem texto sem querer */
   user-select: none;
   -webkit-user-select: none;
+  
+  background-color: #ffffff;
+  color: #000000;
+  
+  /* Tamanho base confortável */
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-/* Permite seleção apenas onde faz sentido */
+/* Mantém inputs funcionais */
 input, textarea {
   user-select: text;
   -webkit-user-select: text;
+  font-family: var(--font-system); /* Garante que o input também use a fonte bonita */
 }
