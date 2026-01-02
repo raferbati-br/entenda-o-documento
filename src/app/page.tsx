@@ -1,6 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { saveCapture } from "@/lib/captureStore";
+
 import {
   Box,
   Button,
@@ -20,16 +24,46 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
-import WarningRoundedIcon from "@mui/icons-material/WarningRounded"; // Importei o ícone de aviso
+import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 
 export default function HomePage() {
+  const router = useRouter();
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Função que abre a galeria nativa direto na Home
+  const handleOpenGallery = () => {
+    galleryInputRef.current?.click();
+  };
+
+  // Quando o usuário escolhe a foto, salvamos e vamos direto para o Confirm
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Limpa o valor para permitir selecionar o mesmo arquivo se quiser
+    e.currentTarget.value = "";
+
+    await saveCapture({
+      blob: file,
+      createdAt: new Date().toISOString(),
+    });
+
+    router.push("/confirm");
+  };
+
   return (
-    // Container principal
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: "100dvh" }}>
       
-      {/* Área de Conteúdo com Scroll 
-         pb: 16 garante que o conteúdo não fique escondido atrás do rodapé fixo
-      */}
+      {/* Input Oculto para Galeria */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={onFileChange}
+      />
+
+      {/* Conteúdo com Scroll */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', pb: 16 }}> 
         <Container maxWidth="sm" sx={{ pt: 4, px: 3 }}>
           
@@ -81,7 +115,7 @@ export default function HomePage() {
             />
           </List>
 
-          {/* AVISO DISCRETO (Novo Design) */}
+          {/* AVISO DISCRETO */}
           <Box sx={{ mt: 4, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
             <Stack direction="row" spacing={1.5} alignItems="flex-start">
               <WarningRoundedIcon sx={{ fontSize: 20, color: 'text.secondary', mt: 0.2 }} />
@@ -92,13 +126,12 @@ export default function HomePage() {
             </Stack>
           </Box>
           
-          {/* Espaço extra para scroll final */}
           <Box sx={{ height: 20 }} /> 
 
         </Container>
       </Box>
 
-      {/* RODAPÉ FIXO (Sticky Footer) */}
+      {/* RODAPÉ FIXO */}
       <Box 
         sx={{ 
           position: 'fixed', 
@@ -117,10 +150,9 @@ export default function HomePage() {
         <Container maxWidth="sm" disableGutters>
           <Stack direction="row" spacing={2}>
             
-            {/* Botão Secundário: Galeria */}
+            {/* Botão Galeria - AGORA COM AÇÃO DIRETA */}
             <Button
-              component={Link}
-              href="/camera?source=gallery"
+              onClick={handleOpenGallery} // Mudamos de href para onClick
               variant="outlined"
               size="large"
               startIcon={<PhotoLibraryRoundedIcon />}
@@ -135,7 +167,7 @@ export default function HomePage() {
               Galeria
             </Button>
             
-            {/* Botão Principal: Câmera */}
+            {/* Botão Câmera - Continua indo para a página de preparação */}
             <Button
               component={Link}
               href="/camera"
@@ -161,7 +193,6 @@ export default function HomePage() {
   );
 }
 
-// Sub-componente
 function FeatureItem({ icon, title, desc }: { icon: any, title: string, desc: string }) {
   return (
     <ListItem disableGutters sx={{ py: 1.5, alignItems: 'flex-start' }}>

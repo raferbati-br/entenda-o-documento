@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRef, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
 
 import {
@@ -26,15 +26,8 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
 function CameraContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
-
-  const source = useMemo(() => searchParams.get("source"), [searchParams]);
-  const isGalleryFlow = source === "gallery";
-
-  const [autoOpened, setAutoOpened] = useState(false);
 
   function openCamera() {
     cameraRef.current?.click();
@@ -43,15 +36,6 @@ function CameraContent() {
   function openFiles() {
     fileRef.current?.click();
   }
-
-  // Auto-abre a galeria se veio da Home com ?source=gallery
-  useEffect(() => {
-    if (isGalleryFlow && !autoOpened) {
-      setAutoOpened(true);
-      const t = setTimeout(() => openFiles(), 200);
-      return () => clearTimeout(t);
-    }
-  }, [isGalleryFlow, autoOpened]);
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -82,7 +66,7 @@ function CameraContent() {
             <ArrowBackRoundedIcon />
           </IconButton>
           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
-            {isGalleryFlow ? "Galeria" : "Nova Foto"}
+            Nova Foto
           </Typography>
         </Toolbar>
       </AppBar>
@@ -94,48 +78,44 @@ function CameraContent() {
           <Stack spacing={3}>
             <Box>
               <Typography variant="h5" gutterBottom fontWeight={800}>
-                {isGalleryFlow ? "Escolha uma foto" : "Vamos preparar a câmera"}
+                Vamos preparar a câmera
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                {isGalleryFlow
-                  ? "Escolha uma imagem nítida onde dê para ler todas as letras."
-                  : "Para a inteligência artificial funcionar bem, siga estas dicas rápidas:"}
+                Para a inteligência artificial funcionar bem, siga estas dicas rápidas:
               </Typography>
             </Box>
 
-            {!isGalleryFlow && (
-              <Stack spacing={2}>
-                <TipItem
-                  icon={<TextFieldsRoundedIcon color="primary" />}
-                  title="Letras Nítidas"
-                  subtitle="Aproxime até conseguir ler o texto na tela."
-                />
-                <TipItem
-                  icon={<LightModeRoundedIcon color="warning" />}
-                  title="Boa Iluminação"
-                  subtitle="Evite sombras. A luz natural ajuda muito."
-                />
-                <TipItem
-                  icon={<CropFreeRoundedIcon color="action" />}
-                  title="Enquadramento"
-                  subtitle="Tente pegar o documento inteiro."
-                />
+            <Stack spacing={2}>
+              <TipItem
+                icon={<TextFieldsRoundedIcon color="primary" />}
+                title="Letras Nítidas"
+                subtitle="Aproxime até conseguir ler o texto na tela."
+              />
+              <TipItem
+                icon={<LightModeRoundedIcon color="warning" />}
+                title="Boa Iluminação"
+                subtitle="Evite sombras. A luz natural ajuda muito."
+              />
+              <TipItem
+                icon={<CropFreeRoundedIcon color="action" />}
+                title="Enquadramento"
+                subtitle="Tente pegar o documento inteiro."
+              />
 
-                <Alert 
-                  severity="info" 
-                  sx={{ 
-                    borderRadius: 3, 
-                    border: '1px solid', 
-                    borderColor: 'info.main', 
-                    bgcolor: 'rgba(2, 136, 209, 0.05)' 
-                  }}
-                >
-                  <Typography variant="body2" fontWeight={600}>
-                    Dica: Mantenha a mão firme ao clicar.
-                  </Typography>
-                </Alert>
-              </Stack>
-            )}
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  borderRadius: 3, 
+                  border: '1px solid', 
+                  borderColor: 'info.main', 
+                  bgcolor: 'rgba(2, 136, 209, 0.05)' 
+                }}
+              >
+                <Typography variant="body2" fontWeight={600}>
+                  Dica: Mantenha a mão firme ao clicar.
+                </Typography>
+              </Alert>
+            </Stack>
           </Stack>
 
         </Container>
@@ -145,7 +125,7 @@ function CameraContent() {
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={onFileChange} />
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFileChange} />
 
-      {/* RODAPÉ DUPLO (Igual Home) */}
+      {/* RODAPÉ DUPLO */}
       <Box 
         sx={{ 
           position: 'fixed', 
@@ -162,21 +142,21 @@ function CameraContent() {
         <Container maxWidth="sm" disableGutters>
           <Stack direction="row" spacing={2}>
             
-            {/* Botão Galeria */}
+            {/* Botão Galeria (Caso a pessoa mude de ideia aqui dentro) */}
             <Button
-              variant={isGalleryFlow ? "contained" : "outlined"} // Destaque inteligente
+              variant="outlined" 
               size="large"
               fullWidth
               startIcon={<PhotoLibraryRoundedIcon />}
               onClick={openFiles}
-              sx={{ flex: 1, height: 56, fontWeight: 700 }}
+              sx={{ flex: 1, height: 56, fontWeight: 700, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
             >
               Galeria
             </Button>
 
-            {/* Botão Câmera */}
+            {/* Botão Câmera (Destaque principal) */}
             <Button
-              variant={!isGalleryFlow ? "contained" : "outlined"} // Destaque inteligente
+              variant="contained" 
               size="large"
               fullWidth
               startIcon={<CameraAltRoundedIcon />}
@@ -225,14 +205,9 @@ function TipItem({ icon, title, subtitle }: { icon: any, title: string, subtitle
   )
 }
 
-// Wrapper para evitar erro de build na Vercel
 export default function CameraPage() {
   return (
-    <Suspense fallback={
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Box>
-    }>
+    <Suspense fallback={<Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress /></Box>}>
       <CameraContent />
     </Suspense>
   );
