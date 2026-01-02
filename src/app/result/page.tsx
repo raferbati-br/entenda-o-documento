@@ -32,7 +32,7 @@ import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
-import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded"; // Ícone de Share estilo iOS
+import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 
 // === Tipos e Helpers ===
 type CardT = { id: string; title: string; text: string };
@@ -130,7 +130,7 @@ export default function ResultPage() {
         console.log('Compartilhamento cancelado');
       }
     } else {
-      // Fallback para PC: Copiar para área de transferência
+      // Fallback para PC
       try {
         await navigator.clipboard.writeText(fullText);
         setToastMsg("Texto copiado para a área de transferência!");
@@ -141,7 +141,7 @@ export default function ResultPage() {
   };
 
   // Funções de Áudio
-  const speakText = useMemo(() => fullText.replace(/\*/g, ""), [fullText]); // Remove asteriscos para leitura
+  const speakText = useMemo(() => fullText.replace(/\*/g, ""), [fullText]);
 
   function stopSpeaking() {
     setTtsError(null);
@@ -185,7 +185,7 @@ export default function ResultPage() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100dvh", bgcolor: "background.paper" }}>
 
-      {/* 1. Navbar Sticky com Botão Share */}
+      {/* 1. Navbar Sticky */}
       <AppBar
         position="sticky"
         color="inherit"
@@ -214,7 +214,6 @@ export default function ResultPage() {
             />
           </Box>
 
-          {/* BOTÃO DE COMPARTILHAR */}
           <IconButton onClick={handleShare} color="primary">
             <IosShareRoundedIcon />
           </IconButton>
@@ -302,37 +301,53 @@ export default function ResultPage() {
             />
             <SectionBlock
               icon={<ListAltRoundedIcon />}
-              // O .replace(...) abaixo remove o livro azul e outros emojis que a IA possa inventar
+              // Remove emojis duplicados do título se a IA mandar
               title={cardMap["terms"]?.title?.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '') || "Termos importantes"}
               text={cardMap["terms"]?.text}
-            />            <SectionBlock
+            />
+            <SectionBlock
               icon={<HelpOutlineRoundedIcon />}
               title={cardMap["whatUsuallyHappens"]?.title || "O que costuma acontecer"}
               text={cardMap["whatUsuallyHappens"]?.text}
             />
           </Stack>
 
-          {/* Aviso Legal */}
-          <Box sx={{ mt: 6, mb: 4, p: 2, bgcolor: 'action.hover', borderRadius: 3 }}>
-            {result.notice && (
-              <Stack direction="row" spacing={1} sx={{ mb: 1, color: "warning.main" }}>
-                <WarningRoundedIcon fontSize="small" />
-                <Typography variant="subtitle2" fontWeight={700}>Atenção</Typography>
+          {/* --- AVISOS E RODAPÉ DO CONTEÚDO --- */}
+
+          {/* 1. Aviso Dinâmico da IA (Só aparece se tiver observação importante) */}
+          {result.notice && (
+            <Box sx={{ mt: 4, mb: 2, p: 2, bgcolor: '#FFF4E5', borderRadius: 2, color: '#663C00' }}>
+              <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                <WarningRoundedIcon sx={{ fontSize: 20, mt: 0.2, color: '#EF6C00' }} />
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={800} gutterBottom>
+                    Observação Importante
+                  </Typography>
+                  <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                    {result.notice}
+                  </Typography>
+                </Box>
               </Stack>
-            )}
-            <Typography variant="body2" color="text.secondary" paragraph>
-              {result.notice}
-            </Typography>
-            <Divider sx={{ my: 1 }} />
-            <Typography variant="caption" color="text.disabled">
-              A IA pode cometer erros. Esta explicação é informativa e não substitui um advogado ou contador.
-            </Typography>
+            </Box>
+          )}
+
+          {/* 2. Aviso Legal Padrão (Igual Home - Discreto) */}
+          <Box sx={{ mt: result.notice ? 2 : 4, mb: 4, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+              <InfoRoundedIcon sx={{ fontSize: 20, color: 'text.secondary', mt: 0.2 }} />
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                A Inteligência Artificial ajuda a entender o conteúdo, mas pode cometer erros.
+                Esta ferramenta é informativa e não substitui a consulta com um profissional.
+              </Typography>
+            </Stack>
           </Box>
+          
+          <Box sx={{ height: 20 }} />
 
         </Container>
       </Box>
 
-      {/* 3. Rodapé Fixo */}
+      {/* 3. Rodapé Fixo (Estilo Home) */}
       <Box
         sx={{
           position: 'fixed',
@@ -340,10 +355,12 @@ export default function ResultPage() {
           left: 0,
           right: 0,
           p: 2,
-          bgcolor: 'background.paper',
+          bgcolor: 'background.default',
           borderTop: '1px solid',
           borderColor: 'divider',
-          zIndex: 10
+          zIndex: 10,
+          backdropFilter: 'blur(20px)',
+          backgroundColor: 'rgba(255,255,255,0.9)'
         }}
       >
         <Container maxWidth="sm" disableGutters>
@@ -354,7 +371,7 @@ export default function ResultPage() {
               fullWidth
               startIcon={<HomeRoundedIcon />}
               onClick={() => { stopSpeaking(); router.push("/"); }}
-              sx={{ flex: 1 }}
+              sx={{ flex: 1, height: 56, fontWeight: 700, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
             >
               Início
             </Button>
@@ -364,7 +381,7 @@ export default function ResultPage() {
               fullWidth
               startIcon={<CameraAltRoundedIcon />}
               onClick={newDoc}
-              sx={{ flex: 1 }}
+              sx={{ flex: 1, height: 56, fontWeight: 700 }}
             >
               Analisar Outro
             </Button>
@@ -372,14 +389,13 @@ export default function ResultPage() {
         </Container>
       </Box>
 
-      {/* Toast de Cópia (Fallback para PC) */}
       <Snackbar
         open={!!toastMsg}
         autoHideDuration={3000}
         onClose={() => setToastMsg(null)}
         message={toastMsg}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        sx={{ bottom: { xs: 90, sm: 24 } }} // Sobe um pouco no mobile para não ficar atrás do rodapé
+        sx={{ bottom: { xs: 90, sm: 24 } }}
       />
 
     </Box>

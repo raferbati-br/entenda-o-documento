@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -20,7 +19,8 @@ import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
-import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded"; // Novo ícone para Galeria
+import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
+import WarningRoundedIcon from "@mui/icons-material/WarningRounded"; // Importei o ícone de aviso
 
 export default function HomePage() {
   return (
@@ -28,7 +28,7 @@ export default function HomePage() {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: "100dvh" }}>
       
       {/* Área de Conteúdo com Scroll 
-         Ajustei o padding-bottom (pb) de 24 para 16, já que o rodapé ficou mais baixo.
+         pb: 16 garante que o conteúdo não fique escondido atrás do rodapé fixo
       */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', pb: 16 }}> 
         <Container maxWidth="sm" sx={{ pt: 4, px: 3 }}>
@@ -81,13 +81,19 @@ export default function HomePage() {
             />
           </List>
 
-          <Box sx={{ mt: 4 }}>
-             <Alert severity="warning" variant="filled" sx={{ borderRadius: 2, color: '#fff', bgcolor: 'warning.main' }}>
-              <Typography variant="body2" fontWeight={600}>
-                Aviso: A IA ajuda a entender, mas não substitui orientação profissional.
+          {/* AVISO DISCRETO (Novo Design) */}
+          <Box sx={{ mt: 4, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+              <WarningRoundedIcon sx={{ fontSize: 20, color: 'text.secondary', mt: 0.2 }} />
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                A Inteligência Artificial ajuda a entender o conteúdo, mas pode cometer erros. 
+                Esta ferramenta é informativa e não substitui a consulta com um profissional.
               </Typography>
-            </Alert>
+            </Stack>
           </Box>
+          
+          {/* Espaço extra para scroll final */}
+          <Box sx={{ height: 20 }} /> 
 
         </Container>
       </Box>
@@ -100,7 +106,7 @@ export default function HomePage() {
           left: 0, 
           right: 0, 
           p: 2, 
-          bgcolor: 'background.default', // Garante legibilidade
+          bgcolor: 'background.default',
           borderTop: '1px solid',
           borderColor: 'divider',
           zIndex: 10,
@@ -109,7 +115,6 @@ export default function HomePage() {
         }}
       >
         <Container maxWidth="sm" disableGutters>
-          {/* MUDANÇA AQUI: Botões Lado a Lado (Row) */}
           <Stack direction="row" spacing={2}>
             
             {/* Botão Secundário: Galeria */}
@@ -120,7 +125,7 @@ export default function HomePage() {
               size="large"
               startIcon={<PhotoLibraryRoundedIcon />}
               sx={{ 
-                flex: 1, // Ocupa 1 parte do espaço
+                flex: 1, 
                 height: 56, 
                 fontWeight: 700,
                 borderWidth: 2,
@@ -138,11 +143,11 @@ export default function HomePage() {
               size="large"
               startIcon={<CameraAltRoundedIcon />}
               sx={{ 
-                flex: 1, // Mesmo tamanho do outro botão
+                flex: 1, 
                 height: 56, 
                 fontWeight: 700, 
                 fontSize: '1rem',
-                boxShadow: '0 8px 16px rgba(0,102,204,0.2)' // Sombra suave para destacar
+                boxShadow: '0 8px 16px rgba(0,102,204,0.2)' 
               }}
             >
               Tirar foto
