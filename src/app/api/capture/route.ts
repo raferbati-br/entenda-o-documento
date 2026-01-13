@@ -1,36 +1,12 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { cleanupMemoryStore, isRedisConfigured, memoryStats, setCapture } from "@/lib/captureStoreServer";
 
 export const runtime = "nodejs";
 
-type CaptureEntry = {
-  imageBase64: string; // SEMPRE DataURL
-  mimeType: string;
-  createdAt: number;
-  bytes: number;
-};
-
-const TTL_MS = 10 * 60 * 1000;
 const MAX_IMAGE_BYTES = 2.5 * 1024 * 1024;
 const MAX_CAPTURE_COUNT = 80;
 const MAX_TOTAL_BYTES = 120 * 1024 * 1024;
-
-const g = globalThis as any;
-g.__CAPTURE_STORE__ = g.__CAPTURE_STORE__ || new Map<string, CaptureEntry>();
-const store: Map<string, CaptureEntry> = g.__CAPTURE_STORE__;
-
-function cleanupExpired() {
-  const t = Date.now();
-  for (const [id, entry] of store.entries()) {
-    if (t - entry.createdAt > TTL_MS) store.delete(id);
-  }
-}
-
-function totalBytesInStore() {
-  let sum = 0;
-  for (const e of store.values()) sum += e.bytes || 0;
-  return sum;
-}
 
 function detectMime(buf: Buffer): string | null {
   if (buf[0] === 0xff && buf[1] === 0xd8) return "image/jpeg";
@@ -46,11 +22,7 @@ function badRequest(msg: string, status = 400) {
 
 export async function POST(req: Request) {
   try {
-    cleanupExpired();
-
-    if (store.size >= MAX_CAPTURE_COUNT) {
-      return badRequest("O sistema está temporariamente ocupado. Tente novamente em alguns minutos.");
-    }
+    cleanupMemoryStore();
 
     const body: any = await req.json().catch(() => null);
     if (!body) return badRequest("Requisição inválida.");
@@ -100,16 +72,22 @@ export async function POST(req: Request) {
       return badRequest("Tipo de imagem inválido.");
     }
 
-    const projectedTotal = totalBytesInStore() + buf.byteLength;
-    if (projectedTotal > MAX_TOTAL_BYTES) {
-      return badRequest("O sistema está temporariamente cheio. Tente novamente em instantes.");
+    if (!isRedisConfigured()) {
+      const { count, totalBytes } = memoryStats();
+      if (count >= MAX_CAPTURE_COUNT) {
+        return badRequest("O sistema está temporariamente ocupado. Tente novamente em alguns minutos.");
+      }
+      const projectedTotal = totalBytes + buf.byteLength;
+      if (projectedTotal > MAX_TOTAL_BYTES) {
+        return badRequest("O sistema está temporariamente cheio. Tente novamente em instantes.");
+      }
     }
 
     const mimeType = detected;
     const imageBase64 = `data:${mimeType};base64,${rawBase64}`;
 
     const captureId = crypto.randomBytes(16).toString("hex");
-    store.set(captureId, {
+    await setCapture(captureId, {
       imageBase64,
       mimeType,
       createdAt: Date.now(),

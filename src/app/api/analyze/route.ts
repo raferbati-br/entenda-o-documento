@@ -1,34 +1,13 @@
 import { NextResponse } from "next/server";
 import { analyzeDocument } from "@/ai/analyzeDocument";
+import { cleanupMemoryStore, deleteCapture, getCapture } from "@/lib/captureStoreServer";
 
 export const runtime = "nodejs";
-
-// ===== Store (mesma do /api/capture) =====
-type CaptureEntry = {
-  imageBase64: string; // DataURL
-  mimeType: string;
-  createdAt: number;
-  bytes: number;
-};
-
-const TTL_MS = 10 * 60 * 1000;
-
-const g = globalThis as any;
-g.__CAPTURE_STORE__ = g.__CAPTURE_STORE__ || new Map<string, CaptureEntry>();
-const store: Map<string, CaptureEntry> = g.__CAPTURE_STORE__;
-
-// ===== Helpers (store) =====
-function cleanupExpired() {
-  const t = Date.now();
-  for (const [id, entry] of store.entries()) {
-    if (t - entry.createdAt > TTL_MS) store.delete(id);
-  }
-}
 
 // ===== Route =====
 export async function POST(req: Request) {
   try {
-    cleanupExpired();
+    cleanupMemoryStore();
 
     const body: any = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ ok: false, error: "Requisição inválida." }, { status: 400 });
@@ -39,12 +18,12 @@ export async function POST(req: Request) {
     let imageDataUrl = "";
 
     if (captureId) {
-      const entry = store.get(captureId);
+      const entry = await getCapture(captureId);
       if (entry?.imageBase64) {
         imageDataUrl = entry.imageBase64;
 
-        // Recomendo liberar após uso (evita pico de memória)
-        store.delete(captureId);
+        // Free after use
+        await deleteCapture(captureId);
       }
     }
 

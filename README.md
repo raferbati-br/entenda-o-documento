@@ -99,12 +99,15 @@ OPENAI_API_KEY=sk-...
 LLM_MODEL=gpt-4o
 LLM_PROVIDER=openai
 PROMPT_ID=entendaDocumento.v1
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
 ```
 
 Notas:
 - `LLM_MODEL`: modelo usado pelo provider (padrão: `gpt-4o`)
 - `LLM_PROVIDER`: provider da IA (padrão: `openai`)
 - `PROMPT_ID`: prompt registrado em `src/ai/prompts` (padrão: `entendaDocumento.v1`)
+- `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`: usados para persistir capturas entre instâncias (recomendado em produção)
 
 **Rodar em desenvolvimento**
 npm run dev
