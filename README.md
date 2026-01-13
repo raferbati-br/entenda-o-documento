@@ -44,6 +44,9 @@ Este projeto é a **primeira etapa do Copilot do Cidadão**.
 - Força saída em JSON estruturado
 - Pós-processamento de segurança
 
+### Architecture docs (C4)
+See: docs/architecture/README.md
+
 ---
 
 ## 🤖 Integração com IA
