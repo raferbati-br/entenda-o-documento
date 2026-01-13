@@ -112,6 +112,17 @@ npm run dev
 Acesse:
 http://localhost:3000
 
+## ✅ Testes (E2E)
+Instale os navegadores do Playwright (uma vez):
+```
+npx playwright install
+```
+
+Rode os testes:
+```
+npm run test:e2e
+```
+
 ## Deploy (Vercel)
 1) Crie um projeto no Vercel e conecte o repositório.
 2) Configure as variáveis de ambiente (`OPENAI_API_KEY` e opcionais acima).
