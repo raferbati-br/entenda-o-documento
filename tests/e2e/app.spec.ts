@@ -4,6 +4,7 @@ const tinyPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
 test("happy path: analyze document and show result", async ({ page }) => {
+  // Mock capture to avoid backend dependency.
   await page.route("**/api/capture", async (route) => {
     await route.fulfill({
       status: 200,
@@ -12,6 +13,7 @@ test("happy path: analyze document and show result", async ({ page }) => {
     });
   });
 
+  // Mock analyze to avoid OpenAI calls and control the response.
   await page.route("**/api/analyze", async (route) => {
     await route.fulfill({
       status: 200,
@@ -33,6 +35,7 @@ test("happy path: analyze document and show result", async ({ page }) => {
     });
   });
 
+  // Upload a tiny PNG and follow the main flow.
   await page.goto("/");
 
   const fileInput = page.locator('input[type="file"]');
@@ -46,11 +49,12 @@ test("happy path: analyze document and show result", async ({ page }) => {
   await page.getByRole("button", { name: "Sim, usar" }).click();
   await page.waitForURL("**/result");
 
-  await expect(page.getByText("Explicação")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Explicação", exact: true })).toBeVisible();
   await expect(page.getByText("O que é este documento")).toBeVisible();
 });
 
 test("error path: analyze returns error", async ({ page }) => {
+  // Mock capture to move past the confirm screen.
   await page.route("**/api/capture", async (route) => {
     await route.fulfill({
       status: 200,
@@ -59,6 +63,7 @@ test("error path: analyze returns error", async ({ page }) => {
     });
   });
 
+  // Simulate a backend failure from analyze.
   await page.route("**/api/analyze", async (route) => {
     await route.fulfill({
       status: 502,
@@ -67,6 +72,7 @@ test("error path: analyze returns error", async ({ page }) => {
     });
   });
 
+  // Upload a tiny PNG and ensure the error UI appears.
   await page.goto("/");
 
   const fileInput = page.locator('input[type="file"]');
