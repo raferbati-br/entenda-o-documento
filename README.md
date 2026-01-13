@@ -86,7 +86,7 @@ See: docs/architecture/README.md
 - Conta e chave de API da OpenAI
 
 **Instalação**
-- git clone https://github.com/SEU_USUARIO/entenda-o-documento.git
+- git clone https://github.com/raferbati-br/entenda-o-documento.git
 - cd entenda-o-documento
 - npm install
 
