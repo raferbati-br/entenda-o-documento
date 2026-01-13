@@ -92,14 +92,30 @@ See: docs/architecture/README.md
 
 **Variáveis de ambiente**
 
-- Crie um .env.local:
+Crie um `.env.local` com:
+
+```
 OPENAI_API_KEY=sk-...
+LLM_MODEL=gpt-4o
+LLM_PROVIDER=openai
+PROMPT_ID=entendaDocumento.v1
+```
+
+Notas:
+- `LLM_MODEL`: modelo usado pelo provider (padrão: `gpt-4o`)
+- `LLM_PROVIDER`: provider da IA (padrão: `openai`)
+- `PROMPT_ID`: prompt registrado em `src/ai/prompts` (padrão: `entendaDocumento.v1`)
 
 **Rodar em desenvolvimento**
 npm run dev
 
 Acesse:
 http://localhost:3000
+
+## Deploy (Vercel)
+1) Crie um projeto no Vercel e conecte o repositório.
+2) Configure as variáveis de ambiente (`OPENAI_API_KEY` e opcionais acima).
+3) Deploy automático via push na branch `main`.
 
 ## ⚠️ Aviso legal
 - Esta aplicação fornece apenas explicações informativas sobre documentos.
