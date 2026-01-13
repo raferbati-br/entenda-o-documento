@@ -123,6 +123,12 @@ Rode os testes:
 npm run test:e2e
 ```
 
+## ✅ Testes (Cucumber - exemplo mínimo)
+Rode o exemplo com Cucumber:
+```
+npm run test:cucumber
+```
+
 ## Deploy (Vercel)
 1) Crie um projeto no Vercel e conecte o repositório.
 2) Configure as variáveis de ambiente (`OPENAI_API_KEY` e opcionais acima).
