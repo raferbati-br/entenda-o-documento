@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e": "playwright test",
-    "test:cucumber": "cucumber-js tests/cucumber/features/**/*.feature --require tests/cucumber/steps/**/*.ts --require-module ts-node/register"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -24,7 +23,6 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@cucumber/cucumber": "^12.5.0",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -33,7 +31,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
-    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }
