@@ -1,12 +1,42 @@
-import { Before, After, Given, When, Then } from "@cucumber/cucumber";
+import { BeforeAll, AfterAll, Before, After, Given, When, Then } from "@cucumber/cucumber";
 import { chromium, type Browser, type Page } from "playwright";
 import assert from "node:assert/strict";
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 
 let browser: Browser;
 let page: Page;
+let server: ChildProcessWithoutNullStreams | null = null;
+
+const BASE_URL = "http://localhost:3000";
 
 const tinyPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+async function waitForServer(timeoutMs = 60_000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await fetch(`${BASE_URL}/api/health`);
+      if (res.ok) return;
+    } catch {
+      // retry
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  throw new Error("Server did not become ready");
+}
+
+BeforeAll(async () => {
+  server = spawn("npm", ["run", "dev"], { shell: true, stdio: "pipe" });
+  await waitForServer();
+});
+
+AfterAll(async () => {
+  if (server) {
+    server.kill();
+    server = null;
+  }
+});
 
 Before(async () => {
   browser = await chromium.launch();
@@ -48,7 +78,7 @@ After(async () => {
 });
 
 Given("I open the home page", async () => {
-  await page.goto("http://localhost:3000");
+  await page.goto(BASE_URL);
 });
 
 When("I upload a tiny document image", async () => {
