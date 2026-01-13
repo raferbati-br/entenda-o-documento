@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:e2e": "playwright test",
-    "test:cucumber": "cucumber-js --require tests/cucumber/steps/**/*.ts --require-module ts-node/register"
+    "test:cucumber": "cucumber-js tests/cucumber/features/**/*.feature --require tests/cucumber/steps/**/*.ts --require-module ts-node/register"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
