@@ -132,6 +132,18 @@ Rode os testes:
 npm run test:e2e
 ```
 
+## ✅ Testes (AI - unit/perf)
+Suite da camada AI (sem chamadas à OpenAI):
+```
+npm run test:ai
+```
+
+## ✅ Testes (Carga - k6)
+Requer k6 instalado localmente.
+```
+BASE_URL=http://localhost:3000 npm run test:load
+```
+
 
 ## Deploy (Vercel)
 1) Crie um projeto no Vercel e conecte o repositório.
