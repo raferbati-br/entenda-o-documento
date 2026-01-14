@@ -1,4 +1,4 @@
-# Entenda o Documento
+﻿# Entenda o Documento
 
 **Entenda o Documento** é um MVP de impacto social que ajuda pessoas a **compreender documentos burocráticos** (cartas bancárias, cobranças, comunicados administrativos etc.) usando **foto + IA multimodal**, com explicações em **português simples e neutro**.
 
@@ -8,17 +8,17 @@ Este projeto é a **primeira etapa do Copilot do Cidadão**.
 
 ---
 
-## ✨ O que o MVP faz
+## ✅ O que o MVP faz
 
-- 📸 O usuário tira uma foto ou escolhe uma imagem de um documento
-- 🤖 A imagem é analisada por um modelo multimodal de IA
-- 🧾 O sistema devolve uma explicação simples:
+- O usuário tira uma foto ou escolhe uma imagem de um documento
+- A imagem é analisada por um modelo multimodal de IA
+- O sistema devolve uma explicação simples:
   - O que é o documento
   - O que ele diz
   - Datas relevantes (se houver)
   - O que normalmente acontece em casos semelhantes
   - Avisos importantes
-- 🛡️ Sempre com linguagem **não prescritiva** e aviso legal explícito
+- Sempre com linguagem **não prescritiva** e aviso legal explícito
 
 ---
 
@@ -27,22 +27,24 @@ Este projeto é a **primeira etapa do Copilot do Cidadão**.
 ### Frontend
 - **Next.js (App Router)**
 - Fluxo mobile-first:
-- / → /camera → /confirm → /analyzing → /result
+  - / → /camera → /confirm → /analyzing → /result
 - UX pensada para celular (testado em iPhone via ngrok)
 - Linguagem acessível e botões grandes
 
 ### Backend
 - API Routes do Next.js
+- `/api/session-token`
+  - Emite token temporário de sessão
 - `/api/capture`
-- Recebe imagem em base64
-- Armazena temporariamente no Redis (Upstash) com TTL
-- Retorna `captureId`
+  - Recebe imagem em base64
+  - Armazena temporariamente no Redis (Upstash) com TTL
+  - Retorna `captureId`
 - `/api/analyze`
-- Recebe `captureId`
-- Recupera imagem do Redis
-- Chama OpenAI Responses API (modelo multimodal)
-- Força saída em JSON estruturado
-- Pós-processamento de segurança
+  - Recebe `captureId`
+  - Recupera imagem do Redis
+  - Chama OpenAI Responses API (modelo multimodal)
+  - Força saída em JSON estruturado
+  - Pós-processamento de segurança
 
 ### Architecture docs (C4)
 See: docs/architecture/README.md
@@ -57,24 +59,25 @@ See: docs/architecture/README.md
 
 ```json
 {
-"whatIs": "string",
-"whatSays": "string",
-"dates": "string",
-"whatUsuallyHappens": "string",
-"notice": "string",
-"confidence": 0.0
+  "whatIs": "string",
+  "whatSays": "string",
+  "dates": "string",
+  "whatUsuallyHappens": "string",
+  "notice": "string",
+  "confidence": 0.0
 }
 ```
+
 ---
 
-## 🤝 Segurança de Linguagem
+## 🛡️ Segurança de linguagem
 
-- Evita verbos prescritivos (“deve”, “pague”, “faça”)
-- Usa linguagem neutra (“o documento informa”, “parece indicar”)
+- Evita verbos prescritivos ("deve", "pague", "faça")
+- Usa linguagem neutra ("o documento informa", "parece indicar")
 - Confiança sempre limitada entre 0 e 1
 - Aviso adicional quando a confiança é baixa
 
-## 🛡️ Privacidade
+## 🔒 Privacidade
 
 - As imagens não são armazenadas permanentemente
 - São mantidas apenas pelo tempo necessário para análise
@@ -102,7 +105,7 @@ PROMPT_ID=entendaDocumento.v1
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
 API_TOKEN_SECRET=...
-APP_ORIGIN=https://seu-app.vercel.app
+APP_ORIGIN=http://localhost:3000
 ```
 
 Notas:
@@ -113,13 +116,19 @@ Notas:
 - Se as variáveis do Redis não estiverem definidas, o app usa memória local (bom para desenvolvimento, não recomendado em produção)
 - Limite básico: 5 req/min por IP em `/api/capture` e `/api/analyze` (fallback local quando Redis não está configurado)
 - `API_TOKEN_SECRET`: segredo para assinar tokens temporários de sessão
-- `APP_ORIGIN`: origem permitida para chamadas das APIs (ex.: domínio do Vercel)
+- `APP_ORIGIN`: origem permitida para chamadas das APIs
+  - Local: `http://localhost:3000`
+  - Produção: `https://seu-app.vercel.app`
 
 **Rodar em desenvolvimento**
+```
 npm run dev
+```
 
 Acesse:
 http://localhost:3000
+
+---
 
 ## ✅ Testes (E2E)
 Instale os navegadores do Playwright (uma vez):
@@ -137,7 +146,7 @@ npm run test:e2e
 | --- | --- | --- |
 | E2E (Playwright) | Fluxo de UI end-to-end | `npm run test:e2e` |
 | AI (unit/perf) | Segurança e performance do postprocess | `npm run test:ai` |
-| Load (k6) | Carga/concorrrência nos endpoints | `BASE_URL=http://localhost:3000 npm run test:load` |
+| Load (k6) | Carga/concorrência nos endpoints | `npm run test:load` |
 
 ## ✅ Testes (AI - unit/perf)
 Suite da camada AI (sem chamadas à OpenAI):
@@ -147,10 +156,18 @@ npm run test:ai
 
 ## ✅ Testes (Carga - k6)
 Requer k6 instalado localmente.
+
+PowerShell:
+```
+$env:BASE_URL="http://localhost:3000"; npm run test:load
+```
+
+Bash:
 ```
 BASE_URL=http://localhost:3000 npm run test:load
 ```
 
+---
 
 ## Deploy (Vercel)
 1) Crie um projeto no Vercel e conecte o repositório.
@@ -176,7 +193,7 @@ Onde ver:
 - Integração multimodal estável
 - Próximo passo: robustez de MVP (rate limit, logs, UX de erro)
 
-## 🌱 Visão futura
+## 🔭 Visão futura
 - Este projeto faz parte de uma iniciativa maior: Copilot do Cidadão, cujo objetivo é reduzir assimetrias de informação e tornar a burocracia mais compreensível para todos.
 
 Contribuições e discussões são bem-vindas.

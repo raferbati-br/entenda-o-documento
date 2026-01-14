@@ -1,4 +1,4 @@
-# Suite de testes AI
+﻿# Suite de testes AI
 
 Foco: segurança e performance do `postprocess` (sem chamadas à OpenAI).
 
