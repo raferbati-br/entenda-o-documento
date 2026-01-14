@@ -16,12 +16,18 @@ function asString(x: unknown): string {
   return typeof x === "string" ? x : "";
 }
 
+type SanitizerStats = {
+  softened: boolean;
+};
+
+const SANITIZER_CONFIDENCE_PENALTY = 0.1;
+
 /**
  * Este é um "mini-sanitizer" leve que você já tinha no route.ts.
  * (O épico do sanitizer completo pode vir depois.)
  */
-function softenPrescriptiveLanguage(s: string): string {
-  if (!s) return s;
+function softenPrescriptiveLanguage(s: string): { text: string; softened: boolean } {
+  if (!s) return { text: s, softened: false };
   const replacements: Array<[RegExp, string]> = [
     [/\bvocê deve\b/gi, "o documento indica que"],
     [/\bvocê tem que\b/gi, "o documento menciona que"],
@@ -30,8 +36,13 @@ function softenPrescriptiveLanguage(s: string): string {
     [/\bprocure imediatamente\b/gi, "pode ser útil buscar orientação adequada"],
   ];
   let out = s;
-  for (const [rx, rep] of replacements) out = out.replace(rx, rep);
-  return out;
+  let softened = false;
+  for (const [rx, rep] of replacements) {
+    const next = out.replace(rx, rep);
+    if (next !== out) softened = true;
+    out = next;
+  }
+  return { text: out, softened };
 }
 
 function redactSensitiveData(s: string): string {
@@ -50,8 +61,10 @@ function redactSensitiveData(s: string): string {
   return out;
 }
 
-function normalizeCardText(value: unknown, fallback: string, max = 500) {
-  const cleaned = redactSensitiveData(softenPrescriptiveLanguage(asString(value)));
+function normalizeCardText(value: unknown, fallback: string, stats: SanitizerStats, max = 500) {
+  const softened = softenPrescriptiveLanguage(asString(value));
+  if (softened.softened) stats.softened = true;
+  const cleaned = redactSensitiveData(softened.text);
   const text = safeShorten(cleaned, max);
   return text || fallback;
 }
@@ -60,17 +73,19 @@ function buildCard(
   id: CardId,
   titleFallback: string,
   textFallback: string,
-  byId: Record<string, any>
+  byId: Record<string, any>,
+  stats: SanitizerStats
 ): Card {
   return {
     id,
     title: asString(byId[id]?.title) || titleFallback,
-    text: normalizeCardText(byId[id]?.text, textFallback),
+    text: normalizeCardText(byId[id]?.text, textFallback, stats),
   };
 }
 
 export function postprocess(raw: any, prompt: Prompt): AnalyzeResult {
-  const confidence = clamp01(Number(raw?.confidence));
+  let confidence = clamp01(Number(raw?.confidence));
+  const stats: SanitizerStats = { softened: false };
 
   const inputCards = Array.isArray(raw?.cards) ? raw.cards : [];
   const byId: Record<string, any> = {};
@@ -79,34 +94,44 @@ export function postprocess(raw: any, prompt: Prompt): AnalyzeResult {
   }
 
   const cards: Card[] = [
-    buildCard("whatIs", "O que é este documento", "Não foi possível confirmar pelo documento.", byId),
+    buildCard("whatIs", "O que é este documento", "Não foi possível confirmar pelo documento.", byId, stats),
     buildCard(
       "whatSays",
       "O que este documento está comunicando",
       "Não foi possível confirmar pelo documento.",
-      byId
+      byId,
+      stats
     ),
     buildCard(
       "dates",
       "Datas ou prazos importantes",
       "Não foi possível confirmar datas ou prazos no documento.",
-      byId
+      byId,
+      stats
     ),
     buildCard(
       "terms",
       "📘 Palavras difíceis explicadas",
       "Não há termos difíceis relevantes neste documento.",
-      byId
+      byId,
+      stats
     ),
     buildCard(
       "whatUsuallyHappens",
       "O que normalmente acontece",
       "Não foi possível confirmar pelo documento.",
-      byId
+      byId,
+      stats
     ),
   ];
 
-  let notice = safeShorten(redactSensitiveData(asString(raw?.notice) || prompt.noticeDefault), 420);
+  const rawNotice = asString(raw?.notice) || prompt.noticeDefault;
+  const softenedNotice = softenPrescriptiveLanguage(rawNotice);
+  if (softenedNotice.softened) stats.softened = true;
+  let notice = safeShorten(redactSensitiveData(softenedNotice.text), 420);
+  if (stats.softened) {
+    confidence = clamp01(confidence - SANITIZER_CONFIDENCE_PENALTY);
+  }
   if (confidence < 0.45) {
     notice = "A imagem parece estar pouco legível, então a explicação pode estar incompleta. " + notice;
   }
