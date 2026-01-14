@@ -13,8 +13,6 @@ export async function POST(req: Request) {
     if (!body) return NextResponse.json({ ok: false, error: "Requisição inválida." }, { status: 400 });
 
     const captureId = typeof body.captureId === "string" ? body.captureId : "";
-    const directImageBase64 = typeof body.imageBase64 === "string" ? body.imageBase64 : "";
-
     let imageDataUrl = "";
 
     if (captureId) {
@@ -25,10 +23,6 @@ export async function POST(req: Request) {
         // Free after use
         await deleteCapture(captureId);
       }
-    }
-
-    if (!imageDataUrl && directImageBase64) {
-      imageDataUrl = directImageBase64;
     }
 
     if (!imageDataUrl || !imageDataUrl.startsWith("data:image/")) {
