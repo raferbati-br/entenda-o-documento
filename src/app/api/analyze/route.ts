@@ -8,9 +8,12 @@ export const runtime = "nodejs";
 // ===== Route =====
 export async function POST(req: Request) {
   try {
+    const startedAt = Date.now();
+    const requestId = crypto.randomUUID();
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const rl = await rateLimit(`analyze:${ip}`);
     if (!rl.ok) {
+      console.log("[api.analyze]", { requestId, ip, status: 429, duration_ms: Date.now() - startedAt });
       return NextResponse.json(
         { ok: false, error: "Muitas tentativas. Aguarde um pouco e tente novamente." },
         { status: 429, headers: { "Retry-After": String(rl.resetSeconds) } }
@@ -45,8 +48,15 @@ export async function POST(req: Request) {
     // Chama a camada de IA (prompt + provider + parse + postprocess)
     const { result, meta, promptId } = await analyzeDocument(imageDataUrl);
 
-    // Log interno (sem expor ao usuário)
-    console.log("[/api/analyze]", { provider: meta.provider, model: meta.model, promptId });
+    console.log("[api.analyze]", {
+      requestId,
+      ip,
+      status: 200,
+      provider: meta.provider,
+      model: meta.model,
+      promptId,
+      duration_ms: Date.now() - startedAt,
+    });
 
     return NextResponse.json({ ok: true, result });
   } catch (err: any) {
@@ -60,7 +70,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Modelo não retornou JSON válido" }, { status: 502 });
     }
 
-    console.error("[/api/analyze]", err);
+    console.error("[api.analyze]", err);
     return NextResponse.json({ ok: false, error: "Erro interno ao analisar documento" }, { status: 500 });
   }
 }

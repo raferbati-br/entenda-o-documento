@@ -23,9 +23,12 @@ function badRequest(msg: string, status = 400) {
 
 export async function POST(req: Request) {
   try {
+    const startedAt = Date.now();
+    const requestId = crypto.randomUUID();
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const rl = await rateLimit(`capture:${ip}`);
     if (!rl.ok) {
+      console.log("[api.capture]", { requestId, ip, status: 429, duration_ms: Date.now() - startedAt });
       return NextResponse.json(
         { ok: false, error: "Muitas tentativas. Aguarde um pouco e tente novamente." },
         { status: 429, headers: { "Retry-After": String(rl.resetSeconds) } }
@@ -104,9 +107,17 @@ export async function POST(req: Request) {
       bytes: buf.byteLength,
     });
 
+    console.log("[api.capture]", {
+      requestId,
+      ip,
+      status: 200,
+      bytes: buf.byteLength,
+      duration_ms: Date.now() - startedAt,
+    });
+
     return NextResponse.json({ ok: true, captureId });
   } catch (err) {
-    console.error("[/api/capture]", err);
+    console.error("[api.capture]", err);
     return NextResponse.json({ ok: false, error: "Erro interno ao receber imagem." }, { status: 500 });
   }
 }
