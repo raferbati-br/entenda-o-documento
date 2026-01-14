@@ -132,6 +132,13 @@ Rode os testes:
 npm run test:e2e
 ```
 
+### Resumo das suites
+| Suite | Objetivo | Comando |
+| --- | --- | --- |
+| E2E (Playwright) | Fluxo de UI end-to-end | `npm run test:e2e` |
+| AI (unit/perf) | Segurança e performance do postprocess | `npm run test:ai` |
+| Load (k6) | Carga/concorrrência nos endpoints | `BASE_URL=http://localhost:3000 npm run test:load` |
+
 ## ✅ Testes (AI - unit/perf)
 Suite da camada AI (sem chamadas à OpenAI):
 ```
