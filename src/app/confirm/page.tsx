@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { saveCaptureId } from "@/lib/captureIdStore";
 import { loadCapture, clearCapture } from "@/lib/captureStore";
 import { compressBlobToDataUrl } from "@/lib/imageCompression";
+import { ensureSessionToken } from "@/lib/sessionToken";
 
 import {
   Alert,
@@ -84,9 +85,10 @@ export default function ConfirmPage() {
       }
 
       // 2) Envio para API
+      const token = await ensureSessionToken();
       const res = await fetch("/api/capture", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
         body: JSON.stringify({ imageBase64: dataUrl }),
       });
 

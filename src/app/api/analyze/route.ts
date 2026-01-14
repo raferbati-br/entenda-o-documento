@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { analyzeDocument } from "@/ai/analyzeDocument";
 import { cleanupMemoryStore, deleteCapture, getCapture } from "@/lib/captureStoreServer";
 import { rateLimit } from "@/lib/rateLimit";
+import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,15 @@ export async function POST(req: Request) {
   try {
     const startedAt = Date.now();
     const requestId = crypto.randomUUID();
+    if (!isOriginAllowed(req)) {
+      return NextResponse.json({ ok: false, error: "Origem não permitida" }, { status: 403 });
+    }
+
+    const token = req.headers.get("x-session-token") || "";
+    if (!verifySessionToken(token)) {
+      return NextResponse.json({ ok: false, error: "Token inválido ou expirado" }, { status: 401 });
+    }
+
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const rl = await rateLimit(`analyze:${ip}`);
     if (!rl.ok) {

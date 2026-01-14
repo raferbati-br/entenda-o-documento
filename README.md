@@ -101,6 +101,8 @@ LLM_PROVIDER=openai
 PROMPT_ID=entendaDocumento.v1
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
+API_TOKEN_SECRET=...
+APP_ORIGIN=https://seu-app.vercel.app
 ```
 
 Notas:
@@ -110,6 +112,8 @@ Notas:
 - `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`: usados para persistir capturas entre instâncias (recomendado em produção)
 - Se as variáveis do Redis não estiverem definidas, o app usa memória local (bom para desenvolvimento, não recomendado em produção)
 - Limite básico: 5 req/min por IP em `/api/capture` e `/api/analyze` (fallback local quando Redis não está configurado)
+- `API_TOKEN_SECRET`: segredo para assinar tokens temporários de sessão
+- `APP_ORIGIN`: origem permitida para chamadas das APIs (ex.: domínio do Vercel)
 
 **Rodar em desenvolvimento**
 npm run dev

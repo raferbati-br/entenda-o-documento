@@ -15,6 +15,10 @@ export default defineConfig({
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      API_TOKEN_SECRET: "test-secret",
+      APP_ORIGIN: "http://localhost:3000",
+    },
   },
   projects: [
     {

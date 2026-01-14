@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { loadCaptureId, clearCaptureId } from "@/lib/captureIdStore";
 import { saveResult } from "@/lib/resultStore";
 import { motion, AnimatePresence } from "framer-motion"; // Instale: npm install framer-motion
+import { ensureSessionToken } from "@/lib/sessionToken";
 
 import {
   Alert,
@@ -92,9 +93,10 @@ export default function AnalyzingPage() {
       abortRef.current = controller;
 
       try {
+        const token = await ensureSessionToken();
         const res = await fetch("/api/analyze", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
           body: JSON.stringify({ captureId }),
           signal: controller.signal,
         });
