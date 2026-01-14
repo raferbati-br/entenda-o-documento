@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { cleanupMemoryStore, isRedisConfigured, memoryStats, setCapture } from "@/lib/captureStoreServer";
+import { rateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,15 @@ function badRequest(msg: string, status = 400) {
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const rl = await rateLimit(`capture:${ip}`);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { ok: false, error: "Muitas tentativas. Aguarde um pouco e tente novamente." },
+        { status: 429, headers: { "Retry-After": String(rl.resetSeconds) } }
+      );
+    }
+
     cleanupMemoryStore();
 
     const body: any = await req.json().catch(() => null);

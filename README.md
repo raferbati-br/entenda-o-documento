@@ -109,6 +109,7 @@ Notas:
 - `PROMPT_ID`: prompt registrado em `src/ai/prompts` (padrão: `entendaDocumento.v1`)
 - `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`: usados para persistir capturas entre instâncias (recomendado em produção)
 - Se as variáveis do Redis não estiverem definidas, o app usa memória local (bom para desenvolvimento, não recomendado em produção)
+- Limite básico: 5 req/min por IP em `/api/capture` e `/api/analyze` (fallback local quando Redis não está configurado)
 
 **Rodar em desenvolvimento**
 npm run dev
