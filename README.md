@@ -134,6 +134,15 @@ npm run test:e2e
 2) Configure as variáveis de ambiente (`OPENAI_API_KEY` e opcionais acima).
 3) Deploy automático via push na branch `main`.
 
+## Observabilidade (logs)
+Os endpoints registram logs estruturados com:
+- `requestId`, `status`, `duration_ms`, `ip`
+- Em `/api/analyze`: `provider`, `model`, `promptId`
+
+Onde ver:
+- Local: terminal do `npm run dev`
+- Vercel: Dashboard → Logs/Functions
+
 ## ⚠️ Aviso legal
 - Esta aplicação fornece apenas explicações informativas sobre documentos.
 - Ela não substitui orientação profissional (jurídica, financeira, médica ou administrativa).
