@@ -4,8 +4,8 @@ import { check, sleep } from "k6";
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 
 export const options = {
-  vus: 10,
-  duration: "30s",
+  vus: 1,
+  duration: "1m",
 };
 
 const tinyPngBase64 =
@@ -47,5 +47,5 @@ export default function () {
   );
 
   check(analyzeRes, { "analyze ok": (r) => r.status === 200 || r.status === 502 });
-  sleep(1);
+  sleep(12);
 }

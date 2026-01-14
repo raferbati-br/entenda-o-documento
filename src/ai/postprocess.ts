@@ -40,7 +40,7 @@ function redactSensitiveData(s: string): string {
   const patterns: RegExp[] = [
     /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, // CPF
     /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g, // CNPJ
-    /\b\d{5}\.?\d{5}\.?\d{5}\.?\d{6}\.?\d{5}\.?\d{6}\.?\d{1,2}\b/g, // linha digitavel (boleto)
+    /\b\d{5}\.?\d{5}\s?\d{5}\.?\d{6}\s?\d{5}\.?\d{6}\s?\d{1,2}\b/g, // linha digitavel (boleto)
     /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, // email
     /\b(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}-?\d{4}\b/g, // telefone
   ];
