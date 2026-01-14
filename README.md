@@ -35,11 +35,11 @@ Este projeto é a **primeira etapa do Copilot do Cidadão**.
 - API Routes do Next.js
 - `/api/capture`
 - Recebe imagem em base64
-- Armazena temporariamente em memória
+- Armazena temporariamente no Redis (Upstash) com TTL
 - Retorna `captureId`
 - `/api/analyze`
 - Recebe `captureId`
-- Recupera imagem
+- Recupera imagem do Redis
 - Chama OpenAI Responses API (modelo multimodal)
 - Força saída em JSON estruturado
 - Pós-processamento de segurança
@@ -108,6 +108,7 @@ Notas:
 - `LLM_PROVIDER`: provider da IA (padrão: `openai`)
 - `PROMPT_ID`: prompt registrado em `src/ai/prompts` (padrão: `entendaDocumento.v1`)
 - `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`: usados para persistir capturas entre instâncias (recomendado em produção)
+- Se as variáveis do Redis não estiverem definidas, o app usa memória local (bom para desenvolvimento, não recomendado em produção)
 
 **Rodar em desenvolvimento**
 npm run dev
