@@ -55,7 +55,7 @@ export async function setCapture(id: string, entry: CaptureEntry) {
 
   const redis = getRedis();
   const ttlSeconds = Math.ceil(TTL_MS / 1000);
-  await redis.set(keyFor(id), JSON.stringify(entry), { ex: ttlSeconds });
+  await redis.set(keyFor(id), entry, { ex: ttlSeconds });
 }
 
 export async function getCapture(id: string): Promise<CaptureEntry | null> {
@@ -64,14 +64,17 @@ export async function getCapture(id: string): Promise<CaptureEntry | null> {
   }
 
   const redis = getRedis();
-  const raw = await redis.get<string>(keyFor(id));
+  const raw = await redis.get<CaptureEntry | string>(keyFor(id));
   if (!raw) return null;
 
-  try {
-    return JSON.parse(raw) as CaptureEntry;
-  } catch {
-    return null;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as CaptureEntry;
+    } catch {
+      return null;
+    }
   }
+  return raw as CaptureEntry;
 }
 
 export async function deleteCapture(id: string) {
