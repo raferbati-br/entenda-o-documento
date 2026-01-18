@@ -383,15 +383,24 @@ export default function ResultPage() {
             />
           </Stack>
 
-          <Box sx={{ mt: 4, p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
-            <Stack spacing={1.5}>
+          <Box
+            sx={{
+              mt: 4,
+              p: 2,
+              bgcolor: "action.hover",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Stack spacing={1.25}>
               <Stack direction="row" spacing={1.5} alignItems="center">
                 <HelpOutlineRoundedIcon sx={{ color: "primary.main" }} />
                 <Typography variant="subtitle1" fontWeight={800}>
                   Perguntas sobre o documento
                 </Typography>
               </Stack>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>
                 Pergunte algo especifico. A resposta e curta e informativa.
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
@@ -401,7 +410,11 @@ export default function ResultPage() {
                     label={q}
                     size="small"
                     variant="outlined"
-                    sx={{ bgcolor: "background.paper", borderColor: "divider" }}
+                    sx={{
+                      bgcolor: "background.paper",
+                      borderColor: "divider",
+                      fontSize: "0.75rem",
+                    }}
                     onClick={() => {
                       setQuestion(q);
                       if (qaAnswer) setQaAnswer(null);
@@ -429,15 +442,22 @@ export default function ResultPage() {
                 fullWidth
                 inputProps={{ maxLength: MAX_QUESTION_CHARS }}
               />
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Button variant="contained" onClick={handleAsk} disabled={!canAsk} size="medium" sx={{ fontWeight: 700 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Button
+                  variant="contained"
+                  onClick={handleAsk}
+                  disabled={!canAsk}
+                  size="small"
+                  sx={{ fontWeight: 700, px: 3, height: 40 }}
+                >
                   Perguntar
                 </Button>
                 {qaLoading && <CircularProgress size={20} />}
+                <Box sx={{ flexGrow: 1 }} />
                 <Typography variant="caption" color="text.secondary">
                   {question.trim().length}/{MAX_QUESTION_CHARS}
                 </Typography>
-              </Stack>
+              </Box>
               {qaError && <Alert severity="warning">{qaError}</Alert>}
               {qaAnswer && (
                 <Box sx={{ p: 2, bgcolor: "background.paper", borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
