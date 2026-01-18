@@ -383,11 +383,14 @@ export default function ResultPage() {
             />
           </Stack>
 
-          <Paper variant="outlined" sx={{ mt: 4, p: 2, borderRadius: 3 }}>
-            <Stack spacing={2}>
-              <Typography variant="subtitle1" fontWeight={800}>
-                Perguntas sobre o documento
-              </Typography>
+          <Box sx={{ mt: 4, p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
+            <Stack spacing={1.5}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <HelpOutlineRoundedIcon sx={{ color: "primary.main" }} />
+                <Typography variant="subtitle1" fontWeight={800}>
+                  Perguntas sobre o documento
+                </Typography>
+              </Stack>
               <Typography variant="caption" color="text.secondary">
                 Pergunte algo especifico. A resposta e curta e informativa.
               </Typography>
@@ -398,6 +401,7 @@ export default function ResultPage() {
                     label={q}
                     size="small"
                     variant="outlined"
+                    sx={{ bgcolor: "background.paper", borderColor: "divider" }}
                     onClick={() => {
                       setQuestion(q);
                       if (qaAnswer) setQaAnswer(null);
@@ -426,7 +430,7 @@ export default function ResultPage() {
                 inputProps={{ maxLength: MAX_QUESTION_CHARS }}
               />
               <Stack direction="row" spacing={2} alignItems="center">
-                <Button variant="contained" onClick={handleAsk} disabled={!canAsk} sx={{ fontWeight: 700 }}>
+                <Button variant="contained" onClick={handleAsk} disabled={!canAsk} size="medium" sx={{ fontWeight: 700 }}>
                   Perguntar
                 </Button>
                 {qaLoading && <CircularProgress size={20} />}
@@ -436,17 +440,17 @@ export default function ResultPage() {
               </Stack>
               {qaError && <Alert severity="warning">{qaError}</Alert>}
               {qaAnswer && (
-                <Paper variant="outlined" sx={{ p: 2, bgcolor: "background.default", borderRadius: 2 }}>
+                <Box sx={{ p: 2, bgcolor: "background.paper", borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
                   <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 0.5 }}>
                     Resposta
                   </Typography>
                   <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
                     {qaAnswer}
                   </Typography>
-                </Paper>
+                </Box>
               )}
             </Stack>
-          </Paper>
+          </Box>
 
           {/* --- AVISOS E RODAPÉ DO CONTEÚDO --- */}
 
