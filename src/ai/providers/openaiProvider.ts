@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { LlmProvider, ProviderResponse, Prompt } from "../types";
+import type { LlmProvider, ProviderResponse, Prompt, AnswerResponse } from "../types";
 
 function extractFirstJsonObject(text: string): string | null {
   const start = text.indexOf("{");
@@ -69,6 +69,34 @@ export class OpenAIProvider implements LlmProvider {
 
     return {
       raw: parsed,
+      meta: { provider: "openai", model: input.model },
+    };
+  }
+
+  async answer(input: { model: string; prompt: Prompt }): Promise<AnswerResponse> {
+    const resp = await this.client.responses.create({
+      model: input.model,
+      input: [
+        {
+          type: "message",
+          role: "system",
+          content: [{ type: "input_text", text: input.prompt.system }],
+        },
+        {
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: input.prompt.user }],
+        },
+      ],
+    });
+
+    const text = (resp.output_text ?? "").trim();
+    if (!text) {
+      throw new Error("MODEL_NO_TEXT");
+    }
+
+    return {
+      text,
       meta: { provider: "openai", model: input.model },
     };
   }

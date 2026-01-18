@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearCaptureId } from "@/lib/captureIdStore";
 import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
+import { ensureSessionToken } from "@/lib/sessionToken";
 
 import {
   Alert,
@@ -13,12 +14,14 @@ import {
   Container,
   Divider,
   IconButton,
+  TextField,
   Stack,
   Typography,
   AppBar,
   Toolbar,
   Paper,
   Snackbar,
+  CircularProgress,
 } from "@mui/material";
 
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
@@ -77,6 +80,23 @@ export default function ResultPage() {
   // Share State
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
+  // Q&A State
+  const [question, setQuestion] = useState("");
+  const [qaAnswer, setQaAnswer] = useState<string | null>(null);
+  const [qaError, setQaError] = useState<string | null>(null);
+  const [qaLoading, setQaLoading] = useState(false);
+
+  const commonQuestions = useMemo(
+    () => [
+      "Qual e o prazo?",
+      "Qual e o valor?",
+      "O que este documento pede?",
+      "Quem enviou o documento?",
+      "Ha multa ou juros?",
+    ],
+    []
+  );
+
   useEffect(() => {
     const res = loadResult();
     if (!res) {
@@ -100,6 +120,21 @@ export default function ResultPage() {
   const confInfo = useMemo(() => confidenceToInfo(confidence), [confidence]);
   const showLowConfidenceHelp = confidence < 0.45;
 
+  const MAX_QUESTION_CHARS = 240;
+  const MIN_QUESTION_CHARS = 4;
+
+  const qaContext = useMemo(() => {
+    const parts = cardsArr
+      .map((c) => {
+        const title = (c?.title || "").trim();
+        const text = (c?.text || "").trim();
+        if (!title && !text) return "";
+        return title ? `${title}: ${text}` : text;
+      })
+      .filter(Boolean);
+    return parts.join("\n");
+  }, [cardsArr]);
+
   // Texto completo para Leitura e Compartilhamento
   const fullText = useMemo(() => {
     const notice = result?.notice || "";
@@ -117,6 +152,42 @@ export default function ResultPage() {
     ].filter(Boolean).join("\n\n");
     return parts;
   }, [cardMap, result?.notice]);
+
+  const canAsk = question.trim().length >= MIN_QUESTION_CHARS && !qaLoading;
+
+  async function handleAsk() {
+    const q = question.trim();
+    if (!q || q.length < MIN_QUESTION_CHARS || q.length > MAX_QUESTION_CHARS) return;
+    if (!qaContext) {
+      setQaError("Nao foi possivel montar o contexto do documento.");
+      return;
+    }
+
+    setQaLoading(true);
+    setQaError(null);
+    setQaAnswer(null);
+
+    try {
+      const token = await ensureSessionToken();
+      const res = await fetch("/api/qa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
+        body: JSON.stringify({ question: q, context: qaContext }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Falha ao responder.");
+      }
+
+      setQaAnswer(typeof data?.answer === "string" ? data.answer : "");
+    } catch (err: any) {
+      const msg = typeof err?.message === "string" ? err.message : "Nao foi possivel responder agora.";
+      setQaError(msg);
+    } finally {
+      setQaLoading(false);
+    }
+  }
 
   // Função de Compartilhar
   const handleShare = async () => {
@@ -311,6 +382,71 @@ export default function ResultPage() {
               text={cardMap["whatUsuallyHappens"]?.text}
             />
           </Stack>
+
+          <Paper variant="outlined" sx={{ mt: 4, p: 2, borderRadius: 3 }}>
+            <Stack spacing={2}>
+              <Typography variant="subtitle1" fontWeight={800}>
+                Perguntas sobre o documento
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Pergunte algo especifico. A resposta e curta e informativa.
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {commonQuestions.map((q) => (
+                  <Chip
+                    key={q}
+                    label={q}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      setQuestion(q);
+                      if (qaAnswer) setQaAnswer(null);
+                      if (qaError) setQaError(null);
+                    }}
+                  />
+                ))}
+              </Box>
+              <TextField
+                label="Sua pergunta"
+                placeholder="Ex: Qual e o prazo?"
+                value={question}
+                onChange={(e) => {
+                  setQuestion(e.target.value.slice(0, MAX_QUESTION_CHARS));
+                  if (qaAnswer) setQaAnswer(null);
+                  if (qaError) setQaError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAsk();
+                  }
+                }}
+                size="small"
+                fullWidth
+                inputProps={{ maxLength: MAX_QUESTION_CHARS }}
+              />
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Button variant="contained" onClick={handleAsk} disabled={!canAsk} sx={{ fontWeight: 700 }}>
+                  Perguntar
+                </Button>
+                {qaLoading && <CircularProgress size={20} />}
+                <Typography variant="caption" color="text.secondary">
+                  {question.trim().length}/{MAX_QUESTION_CHARS}
+                </Typography>
+              </Stack>
+              {qaError && <Alert severity="warning">{qaError}</Alert>}
+              {qaAnswer && (
+                <Paper variant="outlined" sx={{ p: 2, bgcolor: "background.default", borderRadius: 2 }}>
+                  <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 0.5 }}>
+                    Resposta
+                  </Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                    {qaAnswer}
+                  </Typography>
+                </Paper>
+              )}
+            </Stack>
+          </Paper>
 
           {/* --- AVISOS E RODAPÉ DO CONTEÚDO --- */}
 
