@@ -18,6 +18,7 @@ Este projeto é a **primeira etapa do Copilot do Cidadão**.
   - Datas relevantes (se houver)
   - O que normalmente acontece em casos semelhantes
   - Avisos importantes
+- Permite perguntas curtas sobre o documento (Q&A)
 - Sempre com linguagem **não prescritiva** e aviso legal explícito
 
 ---
@@ -39,12 +40,19 @@ Este projeto é a **primeira etapa do Copilot do Cidadão**.
   - Recebe imagem em base64
   - Armazena temporariamente no Redis (Upstash) com TTL
   - Retorna `captureId`
+- `/api/ocr`
+  - Recebe `captureId`
+  - Recupera imagem do Redis
+  - Extrai texto do documento (OCR via LLM)
 - `/api/analyze`
   - Recebe `captureId`
   - Recupera imagem do Redis
   - Chama OpenAI Responses API (modelo multimodal)
   - Força saída em JSON estruturado
   - Pós-processamento de segurança
+- `/api/qa`
+  - Recebe pergunta + contexto extraido
+  - Retorna resposta curta e descritiva
 
 ### Architecture docs (C4)
 See: docs/architecture/README.md
@@ -59,12 +67,15 @@ See: docs/architecture/README.md
 
 ```json
 {
-  "whatIs": "string",
-  "whatSays": "string",
-  "dates": "string",
-  "whatUsuallyHappens": "string",
-  "notice": "string",
-  "confidence": 0.0
+  "confidence": 0.0,
+  "cards": [
+    { "id": "whatIs", "title": "O que e este documento", "text": "..." },
+    { "id": "whatSays", "title": "O que este documento esta comunicando", "text": "..." },
+    { "id": "dates", "title": "Datas ou prazos importantes", "text": "..." },
+    { "id": "terms", "title": "Palavras dificeis explicadas", "text": "..." },
+    { "id": "whatUsuallyHappens", "title": "O que normalmente acontece", "text": "..." }
+  ],
+  "notice": "string"
 }
 ```
 
@@ -102,6 +113,8 @@ OPENAI_API_KEY=sk-...
 LLM_MODEL=gpt-4o
 LLM_PROVIDER=openai
 PROMPT_ID=entendaDocumento.v1
+OCR_PROMPT_ID=entendaDocumento.ocr.v1
+QA_PROMPT_ID=entendaDocumento.qa.v1
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
 API_TOKEN_SECRET=...
@@ -112,9 +125,11 @@ Notas:
 - `LLM_MODEL`: modelo usado pelo provider (padrão: `gpt-4o`)
 - `LLM_PROVIDER`: provider da IA (padrão: `openai`)
 - `PROMPT_ID`: prompt registrado em `src/ai/prompts` (padrão: `entendaDocumento.v1`)
+- `OCR_PROMPT_ID`: prompt de OCR (padrao: `entendaDocumento.ocr.v1`)
+- `QA_PROMPT_ID`: prompt de perguntas/respostas (padrao: `entendaDocumento.qa.v1`)
 - `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`: usados para persistir capturas entre instâncias (recomendado em produção)
 - Se as variáveis do Redis não estiverem definidas, o app usa memória local (bom para desenvolvimento, não recomendado em produção)
-- Limite básico: 5 req/min por IP em `/api/capture` e `/api/analyze` (fallback local quando Redis não está configurado)
+- Limite basico: 5 req/min por IP em `/api/capture`, `/api/ocr`, `/api/analyze` e `/api/qa` (fallback local quando Redis nao esta configurado)
 - `API_TOKEN_SECRET`: segredo para assinar tokens temporários de sessão
 - `APP_ORIGIN`: origem permitida para chamadas das APIs
   - Local: `http://localhost:3000`
@@ -177,7 +192,7 @@ BASE_URL=http://localhost:3000 npm run test:load
 ## Observabilidade (logs)
 Os endpoints registram logs estruturados com:
 - `requestId`, `status`, `duration_ms`, `ip`
-- Em `/api/analyze`: `provider`, `model`, `promptId`
+- Em `/api/analyze`, `/api/ocr` e `/api/qa`: `provider`, `model`, `promptId`
 
 Onde ver:
 - Local: terminal do `npm run dev`

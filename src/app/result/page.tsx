@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearCaptureId } from "@/lib/captureIdStore";
 import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
+import { clearQaContext, loadQaContext } from "@/lib/qaContextStore";
 import { ensureSessionToken } from "@/lib/sessionToken";
 
 import {
@@ -122,8 +123,12 @@ export default function ResultPage() {
 
   const MAX_QUESTION_CHARS = 240;
   const MIN_QUESTION_CHARS = 4;
+  const MAX_CONTEXT_CHARS = 3500;
 
   const qaContext = useMemo(() => {
+    const cached = (loadQaContext() || "").trim();
+    if (cached) return cached.slice(0, MAX_CONTEXT_CHARS);
+
     const parts = cardsArr
       .map((c) => {
         const title = (c?.title || "").trim();
@@ -132,7 +137,7 @@ export default function ResultPage() {
         return title ? `${title}: ${text}` : text;
       })
       .filter(Boolean);
-    return parts.join("\n");
+    return parts.join("\n").slice(0, MAX_CONTEXT_CHARS);
   }, [cardsArr]);
 
   // Texto completo para Leitura e Compartilhamento
@@ -247,6 +252,7 @@ export default function ResultPage() {
   function newDoc() {
     stopSpeaking();
     clearResult();
+    clearQaContext();
     clearCaptureId();
     router.push("/camera");
   }
@@ -530,7 +536,7 @@ export default function ResultPage() {
               size="large"
               fullWidth
               startIcon={<HomeRoundedIcon />}
-              onClick={() => { stopSpeaking(); router.push("/"); }}
+              onClick={() => { stopSpeaking(); clearQaContext(); router.push("/"); }}
               sx={{ flex: 1, height: 56, fontWeight: 700, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
             >
               Início

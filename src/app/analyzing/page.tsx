@@ -6,6 +6,7 @@ import { loadCaptureId, clearCaptureId } from "@/lib/captureIdStore";
 import { saveResult } from "@/lib/resultStore";
 import { motion, AnimatePresence } from "framer-motion"; // Instale: npm install framer-motion
 import { ensureSessionToken } from "@/lib/sessionToken";
+import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
 
 import {
   Alert,
@@ -89,11 +90,24 @@ export default function AnalyzingPage() {
         return;
       }
 
+      clearQaContext();
       const controller = new AbortController();
       abortRef.current = controller;
 
       try {
         const token = await ensureSessionToken();
+        const ocrRes = await fetch("/api/ocr", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
+          body: JSON.stringify({ captureId }),
+          signal: controller.signal,
+        });
+
+        const ocrData = await ocrRes.json().catch(() => ({}));
+        if (ocrRes.ok && ocrData?.ok && typeof ocrData?.documentText === "string" && ocrData.documentText.trim()) {
+          saveQaContext(ocrData.documentText);
+        }
+
         const res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
