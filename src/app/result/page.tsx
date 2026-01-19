@@ -37,6 +37,8 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
+import ThumbUpAltRoundedIcon from "@mui/icons-material/ThumbUpAltRounded";
+import ThumbDownAltRoundedIcon from "@mui/icons-material/ThumbDownAltRounded";
 
 // === Tipos e Helpers ===
 type CardT = { id: string; title: string; text: string };
@@ -87,6 +89,13 @@ export default function ResultPage() {
   const [qaError, setQaError] = useState<string | null>(null);
   const [qaLoading, setQaLoading] = useState(false);
 
+  // Feedback State
+  const [feedbackChoice, setFeedbackChoice] = useState<"up" | "down" | null>(null);
+  const [feedbackReason, setFeedbackReason] = useState<string | null>(null);
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
   const commonQuestions = useMemo(
     () => [
       "Qual e o prazo?",
@@ -94,6 +103,17 @@ export default function ResultPage() {
       "O que este documento pede?",
       "Quem enviou o documento?",
       "Ha multa ou juros?",
+    ],
+    []
+  );
+
+  const feedbackReasons = useMemo(
+    () => [
+      "Informacao incompleta",
+      "Resposta confusa",
+      "Resposta errada",
+      "Lingua complicada",
+      "Outro motivo",
     ],
     []
   );
@@ -124,6 +144,8 @@ export default function ResultPage() {
   const MAX_QUESTION_CHARS = 240;
   const MIN_QUESTION_CHARS = 4;
   const MAX_CONTEXT_CHARS = 3500;
+  const confidenceBucket = confidence < 0.45 ? "low" : confidence < 0.75 ? "medium" : "high";
+  const hasOcrContext = useMemo(() => Boolean(loadQaContext()?.trim()), []);
 
   const qaContext = useMemo(() => {
     const cached = (loadQaContext() || "").trim();
@@ -192,6 +214,53 @@ export default function ResultPage() {
     } finally {
       setQaLoading(false);
     }
+  }
+
+  async function sendFeedback(helpful: boolean, reason?: string) {
+    if (feedbackSent || feedbackLoading) return;
+    setFeedbackLoading(true);
+    setFeedbackError(null);
+
+    try {
+      const token = await ensureSessionToken();
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
+        body: JSON.stringify({
+          helpful,
+          reason,
+          confidenceBucket,
+          contextSource: hasOcrContext ? "ocr" : "cards",
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Falha ao enviar feedback.");
+      }
+
+      setFeedbackSent(true);
+      setToastMsg("Obrigado pelo feedback!");
+    } catch (err: any) {
+      const msg = typeof err?.message === "string" ? err.message : "Nao foi possivel enviar feedback.";
+      setFeedbackError(msg);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  }
+
+  function handleFeedbackUp() {
+    if (feedbackSent) return;
+    setFeedbackChoice("up");
+    setFeedbackReason(null);
+    sendFeedback(true);
+  }
+
+  function handleFeedbackDown() {
+    if (feedbackSent) return;
+    setFeedbackChoice("down");
+    setFeedbackReason(null);
+    setFeedbackError(null);
   }
 
   // Função de Compartilhar
@@ -475,6 +544,72 @@ export default function ResultPage() {
                   </Typography>
                 </Box>
               )}
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              mt: 3,
+              p: 2,
+              bgcolor: "action.hover",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Stack spacing={1.5}>
+              <Typography variant="subtitle1" fontWeight={800}>
+                Esta explicacao foi util?
+              </Typography>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: "wrap" }}>
+                <Button
+                  variant={feedbackChoice === "up" ? "contained" : "outlined"}
+                  startIcon={<ThumbUpAltRoundedIcon />}
+                  onClick={handleFeedbackUp}
+                  disabled={feedbackLoading || feedbackSent}
+                  size="small"
+                  sx={{ fontWeight: 700 }}
+                >
+                  Sim
+                </Button>
+                <Button
+                  variant={feedbackChoice === "down" ? "contained" : "outlined"}
+                  startIcon={<ThumbDownAltRoundedIcon />}
+                  onClick={handleFeedbackDown}
+                  disabled={feedbackLoading || feedbackSent}
+                  size="small"
+                  sx={{ fontWeight: 700 }}
+                >
+                  Nao
+                </Button>
+                {feedbackLoading && <CircularProgress size={18} />}
+              </Stack>
+
+              {feedbackChoice === "down" && !feedbackSent && (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {feedbackReasons.map((r) => (
+                    <Chip
+                      key={r}
+                      label={r}
+                      size="small"
+                      variant={feedbackReason === r ? "filled" : "outlined"}
+                      onClick={() => {
+                        if (feedbackSent || feedbackLoading) return;
+                        setFeedbackReason(r);
+                        sendFeedback(false, r);
+                      }}
+                      disabled={feedbackLoading}
+                    />
+                  ))}
+                </Box>
+              )}
+
+              {feedbackSent && (
+                <Typography variant="caption" color="text.secondary">
+                  Obrigado pelo feedback.
+                </Typography>
+              )}
+              {feedbackError && <Alert severity="warning">{feedbackError}</Alert>}
             </Stack>
           </Box>
 

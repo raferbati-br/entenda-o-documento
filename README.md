@@ -53,6 +53,9 @@ Este projeto é a **primeira etapa do Copilot do Cidadão**.
 - `/api/qa`
   - Recebe pergunta + contexto extraido
   - Retorna resposta curta e descritiva
+- `/api/feedback`
+  - Recebe util/nao + motivo (opcional)
+  - Registra feedback agregado
 
 ### Architecture docs (C4)
 See: docs/architecture/README.md
@@ -129,7 +132,7 @@ Notas:
 - `QA_PROMPT_ID`: prompt de perguntas/respostas (padrao: `entendaDocumento.qa.v1`)
 - `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`: usados para persistir capturas entre instâncias (recomendado em produção)
 - Se as variáveis do Redis não estiverem definidas, o app usa memória local (bom para desenvolvimento, não recomendado em produção)
-- Limite basico: 5 req/min por IP em `/api/capture`, `/api/ocr`, `/api/analyze` e `/api/qa` (fallback local quando Redis nao esta configurado)
+- Limite basico: 5 req/min por IP em `/api/capture`, `/api/ocr`, `/api/analyze`, `/api/qa` e `/api/feedback` (fallback local quando Redis nao esta configurado)
 - `API_TOKEN_SECRET`: segredo para assinar tokens temporários de sessão
 - `APP_ORIGIN`: origem permitida para chamadas das APIs
   - Local: `http://localhost:3000`
@@ -193,6 +196,7 @@ BASE_URL=http://localhost:3000 npm run test:load
 Os endpoints registram logs estruturados com:
 - `requestId`, `status`, `duration_ms`, `ip`
 - Em `/api/analyze`, `/api/ocr` e `/api/qa`: `provider`, `model`, `promptId`
+- Em `/api/feedback`: `helpful`, `reason`, `confidenceBucket`, `contextSource`
 
 Onde ver:
 - Local: terminal do `npm run dev`
