@@ -7,6 +7,7 @@ import { saveCaptureId } from "@/lib/captureIdStore";
 import { loadCapture, clearCapture } from "@/lib/captureStore";
 import { compressBlobToDataUrl } from "@/lib/imageCompression";
 import { ensureSessionToken } from "@/lib/sessionToken";
+import { telemetryCapture } from "@/lib/telemetry";
 
 import {
   Alert,
@@ -46,6 +47,8 @@ export default function ConfirmPage() {
       setPreviewUrl(objectUrl);
     })();
 
+    telemetryCapture("confirm_open");
+
     return () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
@@ -53,12 +56,14 @@ export default function ConfirmPage() {
 
   async function retake() {
     await clearCapture();
+    telemetryCapture("confirm_retake");
     router.replace("/camera");
   }
 
   async function handleConfirm() {
     setLoading(true);
     setErr(null);
+    telemetryCapture("confirm_submit");
 
     try {
       const payload = await loadCapture();
@@ -103,6 +108,7 @@ export default function ConfirmPage() {
     } catch (e: any) {
       setLoading(false);
       setErr(e?.message || "Falha ao enviar imagem");
+      telemetryCapture("confirm_error");
     }
   }
 

@@ -96,6 +96,8 @@ See: docs/architecture/README.md
 - As imagens não são armazenadas permanentemente
 - São mantidas apenas pelo tempo necessário para análise
 - O sistema não cria histórico de documentos do usuário
+- Telemetria opcional coleta apenas eventos de uso (sem conteúdo do documento)
+- Detalhes em `docs/privacy.md`
 
 ## 🚀 Como rodar localmente
 **Pré-requisitos**
@@ -122,6 +124,8 @@ UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
 API_TOKEN_SECRET=...
 APP_ORIGIN=http://localhost:3000
+NEXT_PUBLIC_POSTHOG_KEY=
+NEXT_PUBLIC_POSTHOG_HOST=
 ```
 
 Notas:
@@ -135,6 +139,8 @@ Notas:
 - Limite basico: 5 req/min por IP em `/api/capture`, `/api/ocr`, `/api/analyze`, `/api/qa` e `/api/feedback` (fallback local quando Redis nao esta configurado)
 - `API_TOKEN_SECRET`: segredo para assinar tokens temporários de sessão
 - `APP_ORIGIN`: origem permitida para chamadas das APIs
+- `NEXT_PUBLIC_POSTHOG_KEY`: chave publica do PostHog (opcional, para telemetria)
+- `NEXT_PUBLIC_POSTHOG_HOST`: host do PostHog (opcional, padrao: https://app.posthog.com)
   - Local: `http://localhost:3000`
   - Produção: `https://seu-app.vercel.app`
 

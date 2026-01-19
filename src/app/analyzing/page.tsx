@@ -7,6 +7,7 @@ import { saveResult } from "@/lib/resultStore";
 import { motion, AnimatePresence } from "framer-motion"; // Instale: npm install framer-motion
 import { ensureSessionToken } from "@/lib/sessionToken";
 import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
+import { telemetryCapture } from "@/lib/telemetry";
 
 import {
   Alert,
@@ -95,6 +96,7 @@ export default function AnalyzingPage() {
       abortRef.current = controller;
 
       try {
+        telemetryCapture("analyze_start");
         const token = await ensureSessionToken();
         const ocrRes = await fetch("/api/ocr", {
           method: "POST",
@@ -119,11 +121,16 @@ export default function AnalyzingPage() {
         if (!res.ok || !data?.ok) throw { res, data };
 
         saveResult(data.result);
+        telemetryCapture("analyze_success");
         router.replace("/result");
       } catch (e: any) {
         if (e?.name === "AbortError") return;
         const res: Response | null = e?.res ?? null;
         const data = e?.data ?? null;
+        telemetryCapture("analyze_error", {
+          status: res?.status ?? 0,
+          error: typeof data?.error === "string" ? data.error : "unknown",
+        });
         clearCaptureId();
         setFriendlyError(buildFriendlyError(res, data));
       }

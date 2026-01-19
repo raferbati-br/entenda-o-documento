@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, Suspense } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
+import { telemetryCapture } from "@/lib/telemetry";
 
 import {
   Alert,
@@ -29,11 +30,17 @@ function CameraContent() {
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
+  useEffect(() => {
+    telemetryCapture("camera_open");
+  }, []);
+
   function openCamera() {
+    telemetryCapture("camera_open_capture");
     cameraRef.current?.click();
   }
 
   function openFiles() {
+    telemetryCapture("gallery_open", { source: "camera" });
     fileRef.current?.click();
   }
 
@@ -48,6 +55,7 @@ function CameraContent() {
       createdAt: new Date().toISOString(),
     });
 
+    telemetryCapture("gallery_selected", { source: "camera" });
     router.push("/confirm");
   }
 

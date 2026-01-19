@@ -6,6 +6,7 @@ import { clearCaptureId } from "@/lib/captureIdStore";
 import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
 import { clearQaContext, loadQaContext } from "@/lib/qaContextStore";
 import { ensureSessionToken } from "@/lib/sessionToken";
+import { telemetryCapture } from "@/lib/telemetry";
 
 import {
   Alert,
@@ -147,6 +148,14 @@ export default function ResultPage() {
   const confidenceBucket = confidence < 0.45 ? "low" : confidence < 0.75 ? "medium" : "high";
   const hasOcrContext = useMemo(() => Boolean(loadQaContext()?.trim()), []);
 
+  useEffect(() => {
+    if (!result) return;
+    telemetryCapture("result_view", {
+      confidenceBucket,
+      contextSource: hasOcrContext ? "ocr" : "cards",
+    });
+  }, [result, confidenceBucket, hasOcrContext]);
+
   const qaContext = useMemo(() => {
     const cached = (loadQaContext() || "").trim();
     if (cached) return cached.slice(0, MAX_CONTEXT_CHARS);
@@ -193,6 +202,10 @@ export default function ResultPage() {
     setQaLoading(true);
     setQaError(null);
     setQaAnswer(null);
+    telemetryCapture("qa_question_submit", {
+      contextSource: hasOcrContext ? "ocr" : "cards",
+      length: q.length,
+    });
 
     try {
       const token = await ensureSessionToken();
@@ -208,9 +221,11 @@ export default function ResultPage() {
       }
 
       setQaAnswer(typeof data?.answer === "string" ? data.answer : "");
+      telemetryCapture("qa_answer_success");
     } catch (err: any) {
       const msg = typeof err?.message === "string" ? err.message : "Nao foi possivel responder agora.";
       setQaError(msg);
+      telemetryCapture("qa_answer_error");
     } finally {
       setQaLoading(false);
     }
@@ -240,6 +255,11 @@ export default function ResultPage() {
       }
 
       setFeedbackSent(true);
+      telemetryCapture(helpful ? "feedback_yes" : "feedback_no", {
+        reason: reason || "",
+        confidenceBucket,
+        contextSource: hasOcrContext ? "ocr" : "cards",
+      });
       setToastMsg("Obrigado pelo feedback!");
     } catch (err: any) {
       const msg = typeof err?.message === "string" ? err.message : "Nao foi possivel enviar feedback.";
@@ -265,6 +285,7 @@ export default function ResultPage() {
 
   // Função de Compartilhar
   const handleShare = async () => {
+    telemetryCapture("share_click");
     if (navigator.share) {
       try {
         await navigator.share({

@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
+import { telemetryCapture } from "@/lib/telemetry";
 
 import {
   Box,
@@ -30,8 +31,13 @@ export default function HomePage() {
   const router = useRouter();
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
+  useEffect(() => {
+    telemetryCapture("home_open");
+  }, []);
+
   // Função que abre a galeria nativa direto na Home
   const handleOpenGallery = () => {
+    telemetryCapture("gallery_open", { source: "home" });
     galleryInputRef.current?.click();
   };
 
@@ -48,6 +54,7 @@ export default function HomePage() {
       createdAt: new Date().toISOString(),
     });
 
+    telemetryCapture("gallery_selected", { source: "home" });
     router.push("/confirm");
   };
 
@@ -174,6 +181,7 @@ export default function HomePage() {
               variant="contained"
               size="large"
               startIcon={<CameraAltRoundedIcon />}
+              onClick={() => telemetryCapture("camera_start", { source: "home" })}
               sx={{ 
                 flex: 1, 
                 height: 56, 
