@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { answerQuestion } from "@/ai/answerQuestion";
 import { rateLimit } from "@/lib/rateLimit";
 import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
+import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
     if (!body) return badRequest("Requisição inválida.");
 
     const question = typeof body.question === "string" ? body.question.trim() : "";
+    const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
     const context = typeof body.context === "string" ? body.context.trim() : "";
 
     if (!question || question.length < 4) return badRequest("Pergunta muito curta.");
@@ -51,6 +53,15 @@ export async function POST(req: Request) {
     if (context.length > MAX_CONTEXT_CHARS) return badRequest("Contexto muito longo.");
 
     const { answer, meta, promptId } = await answerQuestion({ question, context });
+    const durationMs = Date.now() - startedAt;
+    try {
+      await Promise.all([
+        recordQualityLatency("qa_latency_ms", durationMs),
+        attempt > 1 ? recordQualityCount("qa_retry") : Promise.resolve(),
+      ]);
+    } catch (err) {
+      console.warn("[metrics]", err);
+    }
 
     console.log("[api.qa]", {
       requestId,
@@ -59,7 +70,7 @@ export async function POST(req: Request) {
       provider: meta.provider,
       model: meta.model,
       promptId,
-      duration_ms: Date.now() - startedAt,
+      duration_ms: durationMs,
     });
 
     return NextResponse.json({ ok: true, answer });
@@ -71,6 +82,15 @@ export async function POST(req: Request) {
     }
 
     if (code === "MODEL_NO_TEXT") {
+      const durationMs = Date.now() - startedAt;
+      try {
+        await Promise.all([
+          recordQualityCount("qa_model_error"),
+          recordQualityLatency("qa_latency_ms", durationMs),
+        ]);
+      } catch (err) {
+        console.warn("[metrics]", err);
+      }
       return NextResponse.json({ ok: false, error: "Modelo não retornou texto válido" }, { status: 502 });
     }
 

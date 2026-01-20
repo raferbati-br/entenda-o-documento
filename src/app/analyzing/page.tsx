@@ -114,7 +114,7 @@ export default function AnalyzingPage() {
         const ocrRes = await fetch("/api/ocr", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-          body: JSON.stringify({ captureId }),
+          body: JSON.stringify({ captureId, attempt }),
           signal: controller.signal,
         });
 

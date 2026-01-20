@@ -5,9 +5,13 @@ type MetricName =
   | "analyze_invalid_json"
   | "analyze_low_confidence"
   | "analyze_sanitizer"
-  | "analyze_retry";
+  | "analyze_retry"
+  | "ocr_invalid_json"
+  | "ocr_retry"
+  | "qa_model_error"
+  | "qa_retry";
 
-type LatencyMetricName = "analyze_latency_ms";
+type LatencyMetricName = "analyze_latency_ms" | "ocr_latency_ms" | "qa_latency_ms";
 
 const COUNT_METRICS: MetricName[] = [
   "analyze_total",
@@ -15,9 +19,17 @@ const COUNT_METRICS: MetricName[] = [
   "analyze_low_confidence",
   "analyze_sanitizer",
   "analyze_retry",
+  "ocr_invalid_json",
+  "ocr_retry",
+  "qa_model_error",
+  "qa_retry",
 ];
 
-const LATENCY_METRICS: LatencyMetricName[] = ["analyze_latency_ms"];
+const LATENCY_METRICS: LatencyMetricName[] = [
+  "analyze_latency_ms",
+  "ocr_latency_ms",
+  "qa_latency_ms",
+];
 
 const memoryStore = new Map<string, number>();
 let redisClient: Redis | null = null;

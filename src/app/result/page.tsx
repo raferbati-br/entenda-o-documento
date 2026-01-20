@@ -199,6 +199,10 @@ export default function ResultPage() {
       return;
     }
 
+    const attemptKey = `qa_attempt:${q.toLowerCase()}`;
+    const attempt = Number(sessionStorage.getItem(attemptKey) || "0") + 1;
+    sessionStorage.setItem(attemptKey, String(attempt));
+
     setQaLoading(true);
     setQaError(null);
     setQaAnswer(null);
@@ -212,7 +216,7 @@ export default function ResultPage() {
       const res = await fetch("/api/qa", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-        body: JSON.stringify({ question: q, context: qaContext }),
+        body: JSON.stringify({ question: q, context: qaContext, attempt }),
       });
 
       const data = await res.json().catch(() => ({}));
