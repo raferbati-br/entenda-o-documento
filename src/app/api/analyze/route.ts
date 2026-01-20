@@ -3,13 +3,14 @@ import { analyzeDocument } from "@/ai/analyzeDocument";
 import { cleanupMemoryStore, deleteCapture, getCapture } from "@/lib/captureStoreServer";
 import { rateLimit } from "@/lib/rateLimit";
 import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
+import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
 
 export const runtime = "nodejs";
 
 // ===== Route =====
 export async function POST(req: Request) {
+  const startedAt = Date.now();
   try {
-    const startedAt = Date.now();
     const requestId = crypto.randomUUID();
     if (!isOriginAllowed(req)) {
       return NextResponse.json({ ok: false, error: "Origem não permitida" }, { status: 403 });
@@ -36,6 +37,7 @@ export async function POST(req: Request) {
     if (!body) return NextResponse.json({ ok: false, error: "Requisição inválida." }, { status: 400 });
 
     const captureId = typeof body.captureId === "string" ? body.captureId : "";
+    const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
     let imageDataUrl = "";
 
     if (captureId) {
@@ -56,7 +58,19 @@ export async function POST(req: Request) {
     }
 
     // Chama a camada de IA (prompt + provider + parse + postprocess)
-    const { result, meta, promptId } = await analyzeDocument(imageDataUrl);
+    const { result, meta, promptId, stats } = await analyzeDocument(imageDataUrl);
+    const durationMs = Date.now() - startedAt;
+    try {
+      await Promise.all([
+        recordQualityCount("analyze_total"),
+        recordQualityLatency("analyze_latency_ms", durationMs),
+        stats.confidenceLow ? recordQualityCount("analyze_low_confidence") : Promise.resolve(),
+        stats.sanitizerApplied ? recordQualityCount("analyze_sanitizer") : Promise.resolve(),
+        attempt > 1 ? recordQualityCount("analyze_retry") : Promise.resolve(),
+      ]);
+    } catch (err) {
+      console.warn("[metrics]", err);
+    }
 
     console.log("[api.analyze]", {
       requestId,
@@ -65,7 +79,7 @@ export async function POST(req: Request) {
       provider: meta.provider,
       model: meta.model,
       promptId,
-      duration_ms: Date.now() - startedAt,
+      duration_ms: durationMs,
     });
 
     return NextResponse.json({ ok: true, result });
@@ -77,7 +91,16 @@ export async function POST(req: Request) {
     }
 
     if (code === "MODEL_NO_JSON" || code === "MODEL_INVALID_JSON") {
-      return NextResponse.json({ ok: false, error: "Modelo não retornou JSON válido" }, { status: 502 });
+      const durationMs = Date.now() - startedAt;
+      try {
+        await Promise.all([
+          recordQualityCount("analyze_invalid_json"),
+          recordQualityLatency("analyze_latency_ms", durationMs),
+        ]);
+      } catch (err) {
+        console.warn("[metrics]", err);
+      }
+      return NextResponse.json({ ok: false, error: "Modelo nao retornou JSON valido" }, { status: 502 });
     }
 
     console.error("[api.analyze]", err);

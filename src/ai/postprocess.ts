@@ -83,7 +83,12 @@ function buildCard(
   };
 }
 
-export function postprocess(raw: any, prompt: Prompt): AnalyzeResult {
+export type PostprocessStats = {
+  sanitizerApplied: boolean;
+  confidenceLow: boolean;
+};
+
+export function postprocessWithStats(raw: any, prompt: Prompt): { result: AnalyzeResult; stats: PostprocessStats } {
   let confidence = clamp01(Number(raw?.confidence));
   const stats: SanitizerStats = { softened: false };
 
@@ -132,9 +137,17 @@ export function postprocess(raw: any, prompt: Prompt): AnalyzeResult {
   if (stats.softened) {
     confidence = clamp01(confidence - SANITIZER_CONFIDENCE_PENALTY);
   }
-  if (confidence < 0.45) {
+  const confidenceLow = confidence < 0.45;
+  if (confidenceLow) {
     notice = "A imagem parece estar pouco legível, então a explicação pode estar incompleta. " + notice;
   }
 
-  return { confidence, cards, notice };
+  return {
+    result: { confidence, cards, notice },
+    stats: { sanitizerApplied: stats.softened, confidenceLow },
+  };
+}
+
+export function postprocess(raw: any, prompt: Prompt): AnalyzeResult {
+  return postprocessWithStats(raw, prompt).result;
 }

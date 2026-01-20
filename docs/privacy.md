@@ -6,6 +6,7 @@ Este documento descreve como o Entenda o Documento lida com dados e telemetria.
 - Imagens do documento: usadas apenas para processamento e descartadas logo apos a analise.
 - Eventos de uso: eventos anonimizados para entender o funil (ex.: abertura de tela, envio de foto, analise concluida).
 - Feedback agregado: contagem de "sim/nao" e motivos de feedback (sem conteudo do documento).
+- Metricas de qualidade: contadores agregados por dia (JSON invalido, baixa confianca, sanitizer, latencia, retries).
 
 ## O que nao coletamos
 - Conteudo completo do documento.
@@ -20,12 +21,14 @@ Este documento descreve como o Entenda o Documento lida com dados e telemetria.
 ## Onde os dados ficam
 - Telemetria de eventos: PostHog (quando habilitado por ambiente).
 - Feedback agregado: Redis/Upstash (contadores diarios).
+- Metricas de qualidade: Redis/Upstash (contadores diarios).
 - Logs de API: Vercel Logs.
 
 ## Retencao
 - Imagens: descartadas logo apos a analise.
 - Eventos de telemetria: seguem a retencao configurada no PostHog.
 - Contadores de feedback: agregados por dia.
+- Metricas de qualidade: agregadas por dia (sem TTL configurado).
 
 ## Contato
 Se tiver duvidas sobre privacidade, entre em contato com o responsavel pelo projeto.

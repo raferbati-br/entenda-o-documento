@@ -91,6 +91,10 @@ export default function AnalyzingPage() {
         return;
       }
 
+      const attemptKey = `analyze_attempt:${captureId}`;
+      const attempt = Number(sessionStorage.getItem(attemptKey) || "0") + 1;
+      sessionStorage.setItem(attemptKey, String(attempt));
+
       clearQaContext();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -113,7 +117,7 @@ export default function AnalyzingPage() {
         const res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-          body: JSON.stringify({ captureId }),
+          body: JSON.stringify({ captureId, attempt }),
           signal: controller.signal,
         });
 

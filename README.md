@@ -56,6 +56,8 @@ Este projeto é a **primeira etapa do Copilot do Cidadão**.
 - `/api/feedback`
   - Recebe util/nao + motivo (opcional)
   - Registra feedback agregado
+- `/metrics`
+  - Dashboard interno com metricas agregadas de qualidade
 
 ### Architecture docs (C4)
 See: docs/architecture/README.md
@@ -126,6 +128,7 @@ API_TOKEN_SECRET=...
 APP_ORIGIN=http://localhost:3000
 NEXT_PUBLIC_POSTHOG_KEY=
 NEXT_PUBLIC_POSTHOG_HOST=
+METRICS_DASHBOARD_TOKEN=
 ```
 
 Notas:
@@ -141,6 +144,7 @@ Notas:
 - `APP_ORIGIN`: origem permitida para chamadas das APIs
 - `NEXT_PUBLIC_POSTHOG_KEY`: chave publica do PostHog (opcional, para telemetria)
 - `NEXT_PUBLIC_POSTHOG_HOST`: host do PostHog (opcional, padrao: https://app.posthog.com)
+- `METRICS_DASHBOARD_TOKEN`: token opcional para proteger /metrics (se definido, use /metrics?token=...)
   - Local: `http://localhost:3000`
   - Produção: `https://seu-app.vercel.app`
 
@@ -197,6 +201,9 @@ BASE_URL=http://localhost:3000 npm run test:load
 1) Crie um projeto no Vercel e conecte o repositório.
 2) Configure as variáveis de ambiente (`OPENAI_API_KEY` e opcionais acima).
 3) Deploy automático via push na branch `main`.
+
+## Dashboard de metricas
+Acesse `/metrics` para ver contadores agregados (ultimos 7 dias). Se `METRICS_DASHBOARD_TOKEN` estiver definido, use `/metrics?token=SEU_TOKEN`.
 
 ## Observabilidade (logs)
 Os endpoints registram logs estruturados com:
