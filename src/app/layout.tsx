@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next"; // Importe Viewport
+import { Suspense } from "react";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
@@ -29,7 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR">
       <body>
-        <Providers>{children}</Providers>
+        <Suspense fallback={null}>
+          <Providers>{children}</Providers>
+        </Suspense>
       </body>
     </html>
   );
