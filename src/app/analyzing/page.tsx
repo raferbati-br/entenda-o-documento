@@ -42,6 +42,15 @@ function buildFriendlyError(res: Response | null, data: any): FriendlyError {
   const apiMsg = typeof data?.error === "string" ? data.error : "";
   const status = res?.status ?? 0;
 
+  if (status === 401)
+    return {
+      title: "Sessao expirada",
+      message: "O tempo da sua sessao acabou.",
+      hint: "Tire outra foto para continuar.",
+      actionLabel: "Tirar nova foto",
+      actionHref: "/camera",
+    };
+
   if (status === 410) return { title: "A foto expirou", message: "Por segurança, a foto foi apagada.", hint: "Tire outra foto.", actionLabel: "Tirar nova foto", actionHref: "/camera" };
   if (status === 413) return { title: "Foto muito pesada", message: "A imagem ficou grande demais.", hint: "Tente aproximar o documento.", actionLabel: "Tirar outra foto", actionHref: "/camera" };
   if (status === 429) {

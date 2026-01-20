@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
     const token = req.headers.get("x-session-token") || "";
     if (!verifySessionToken(token)) {
-      return NextResponse.json({ ok: false, error: "Token inválido ou expirado" }, { status: 401 });
+      return NextResponse.json({ ok: false, error: "Sessao expirada. Tire outra foto para continuar." }, { status: 401 });
     }
 
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
