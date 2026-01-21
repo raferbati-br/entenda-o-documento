@@ -1,0 +1,41 @@
+# Configuracao de ambiente
+
+Este documento descreve as variaveis de ambiente usadas pelo app e como preenche-las.
+
+## Arquivos base
+- `.env.example`: lista completa das variaveis.
+- `.env.local`: copia local com valores reais (nao commitado).
+
+## Minimo para rodar localmente
+- `OPENAI_API_KEY`
+- `API_TOKEN_SECRET`
+- `APP_ORIGIN=http://localhost:3000`
+
+## Variaveis
+
+### OpenAI / IA
+- `OPENAI_API_KEY`: chave da API da OpenAI.
+- `LLM_PROVIDER`: provedor de IA. Padrao: `openai`.
+- `LLM_MODEL`: modelo usado pelo provedor. Padrao: `gpt-4o`.
+- `PROMPT_ID`: prompt principal em `src/ai/prompts`. Padrao: `entendaDocumento.v1`.
+- `OCR_PROMPT_ID`: prompt de OCR. Padrao: `entendaDocumento.ocr.v1`.
+- `QA_PROMPT_ID`: prompt de perguntas e respostas. Padrao: `entendaDocumento.qa.v1`.
+
+### Redis / Upstash (opcional)
+Usado para armazenar capturas temporarias, rate limit e contadores agregados.
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
+
+Sem Redis, o app usa memoria local (bom para desenvolvimento, nao recomendado em producao).
+
+### Seguranca e origem
+- `API_TOKEN_SECRET`: segredo para assinar tokens temporarios de sessao.
+- `APP_ORIGIN`: origem permitida para chamadas das APIs (ex.: `http://localhost:3000`).
+
+### Telemetria (opcional)
+- `NEXT_PUBLIC_POSTHOG_KEY`: chave publica do PostHog.
+- `NEXT_PUBLIC_POSTHOG_HOST`: host do PostHog. Padrao: `https://app.posthog.com`.
+
+### Metricas (opcional)
+- `METRICS_DASHBOARD_TOKEN`: token para proteger `/metrics`.
+  - Exemplo: `/metrics?token=SEU_TOKEN`

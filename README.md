@@ -19,48 +19,15 @@ Este projeto é a **primeira etapa do Copilot do Cidadão**.
   - O que normalmente acontece em casos semelhantes
   - Avisos importantes
 - Permite perguntas curtas sobre o documento (Q&A)
+- Permite ouvir a explicação (leitura em voz alta) e compartilhar o resumo
+- Coleta feedback simples (sim/não) para melhorar a qualidade
 - Sempre com linguagem **não prescritiva** e aviso legal explícito
 
 ---
 
-## 🧱 Arquitetura (resumo)
+## 🧱 Arquitetura
 
-### Frontend
-- **Next.js (App Router)**
-- Fluxo mobile-first:
-  - / → /camera → /confirm → /analyzing → /result
-- UX pensada para celular (testado em iPhone via ngrok)
-- Linguagem acessível e botões grandes
-
-### Backend
-- API Routes do Next.js
-- `/api/session-token`
-  - Emite token temporário de sessão
-- `/api/capture`
-  - Recebe imagem em base64
-  - Armazena temporariamente no Redis (Upstash) com TTL
-  - Retorna `captureId`
-- `/api/ocr`
-  - Recebe `captureId`
-  - Recupera imagem do Redis
-  - Extrai texto do documento (OCR via LLM)
-- `/api/analyze`
-  - Recebe `captureId`
-  - Recupera imagem do Redis
-  - Chama OpenAI Responses API (modelo multimodal)
-  - Força saída em JSON estruturado
-  - Pós-processamento de segurança
-- `/api/qa`
-  - Recebe pergunta + contexto extraido
-  - Retorna resposta curta e descritiva
-- `/api/feedback`
-  - Recebe util/nao + motivo (opcional)
-  - Registra feedback agregado
-- `/metrics`
-  - Dashboard interno com metricas agregadas de qualidade
-
-### Architecture docs (C4)
-See: docs/architecture/README.md
+Visão geral e endpoints em `docs/architecture/README.md`.
 
 ---
 
@@ -95,11 +62,9 @@ See: docs/architecture/README.md
 
 ## 🔒 Privacidade
 
-- As imagens não são armazenadas permanentemente
-- São mantidas apenas pelo tempo necessário para análise
-- O sistema não cria histórico de documentos do usuário
-- Telemetria opcional coleta apenas eventos de uso (sem conteúdo do documento)
-- Detalhes em `docs/privacy.md`
+- Capturas são temporárias e não há histórico persistente por usuário.
+- Telemetria é opcional e não inclui conteúdo do documento.
+- Detalhes em `docs/privacy.md`.
 
 ## 🚀 Como rodar localmente
 **Pré-requisitos**
@@ -113,40 +78,12 @@ See: docs/architecture/README.md
 
 **Variáveis de ambiente**
 
-Crie um `.env.local` com:
+Copie `.env.example` para `.env.local` e preencha ao menos:
+- `OPENAI_API_KEY`
+- `API_TOKEN_SECRET`
+- `APP_ORIGIN=http://localhost:3000`
 
-```
-OPENAI_API_KEY=sk-...
-LLM_MODEL=gpt-4o
-LLM_PROVIDER=openai
-PROMPT_ID=entendaDocumento.v1
-OCR_PROMPT_ID=entendaDocumento.ocr.v1
-QA_PROMPT_ID=entendaDocumento.qa.v1
-UPSTASH_REDIS_REST_URL=...
-UPSTASH_REDIS_REST_TOKEN=...
-API_TOKEN_SECRET=...
-APP_ORIGIN=http://localhost:3000
-NEXT_PUBLIC_POSTHOG_KEY=
-NEXT_PUBLIC_POSTHOG_HOST=
-METRICS_DASHBOARD_TOKEN=
-```
-
-Notas:
-- `LLM_MODEL`: modelo usado pelo provider (padrão: `gpt-4o`)
-- `LLM_PROVIDER`: provider da IA (padrão: `openai`)
-- `PROMPT_ID`: prompt registrado em `src/ai/prompts` (padrão: `entendaDocumento.v1`)
-- `OCR_PROMPT_ID`: prompt de OCR (padrao: `entendaDocumento.ocr.v1`)
-- `QA_PROMPT_ID`: prompt de perguntas/respostas (padrao: `entendaDocumento.qa.v1`)
-- `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`: usados para persistir capturas entre instâncias (recomendado em produção)
-- Se as variáveis do Redis não estiverem definidas, o app usa memória local (bom para desenvolvimento, não recomendado em produção)
-- Limite basico: 5 req/min por IP em `/api/capture`, `/api/ocr`, `/api/analyze`, `/api/qa` e `/api/feedback` (fallback local quando Redis nao esta configurado)
-- `API_TOKEN_SECRET`: segredo para assinar tokens temporários de sessão
-- `APP_ORIGIN`: origem permitida para chamadas das APIs
-- `NEXT_PUBLIC_POSTHOG_KEY`: chave publica do PostHog (opcional, para telemetria)
-- `NEXT_PUBLIC_POSTHOG_HOST`: host do PostHog (opcional, padrao: https://app.posthog.com)
-- `METRICS_DASHBOARD_TOKEN`: token opcional para proteger /metrics (se definido, use /metrics?token=...)
-  - Local: `http://localhost:3000`
-  - Produção: `https://seu-app.vercel.app`
+Detalhes das variáveis (Redis, PostHog, métricas e prompts/modelo) estão em `docs/config.md`.
 
 **Rodar em desenvolvimento**
 ```
@@ -158,49 +95,18 @@ http://localhost:3000
 
 ---
 
-## ✅ Testes (E2E)
-Instale os navegadores do Playwright (uma vez):
-```
-npx playwright install
-```
+## ✅ Testes
 
-Rode os testes:
-```
-npm run test:e2e
-```
-
-### Resumo das suites
-| Suite | Objetivo | Comando |
-| --- | --- | --- |
-| E2E (Playwright) | Fluxo de UI end-to-end | `npm run test:e2e` |
-| Unit (unit/perf) | Cobertura geral do `src` (abre HTML) | `npm run test:unit` |
-| Load (k6) | Carga/concorrência nos endpoints | `npm run test:load` |
-
-## ✅ Testes (Unit - unit/perf)
-Suite da camada AI (sem chamadas à OpenAI). Gera cobertura e abre o HTML:
-```
-npm run test:unit
-```
-
-
-## ✅ Testes (Carga - k6)
-Requer k6 instalado localmente.
-
-PowerShell:
-```
-$env:BASE_URL="http://localhost:3000"; npm run test:load
-```
-
-Bash:
-```
-BASE_URL=http://localhost:3000 npm run test:load
-```
+Instruções completas:
+- `tests/e2e/README.md`
+- `tests/unit/README.md`
+- `tests/load/README.md`
 
 ---
 
 ## Deploy (Vercel)
 1) Crie um projeto no Vercel e conecte o repositório.
-2) Configure as variáveis de ambiente (`OPENAI_API_KEY` e opcionais acima).
+2) Configure as variáveis de ambiente (veja `.env.example`).
 3) Deploy automático via push na branch `main`.
 
 ## Dashboard de metricas
