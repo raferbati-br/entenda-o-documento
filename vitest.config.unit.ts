@@ -8,7 +8,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["tests/ai/**/*.test.ts"],
+    include: ["tests/unit/**/*.test.ts"],
     environment: "node",
     reporters: ["default", "junit"],
     outputFile: {
@@ -16,8 +16,10 @@ export default defineConfig({
     },
     coverage: {
       provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.d.ts"],
       reporter: ["text", "lcov", "json", "html"],
-      reportsDirectory: "test-results/vitest/coverage",
+      reportsDirectory: "test-results/vitest/coverage-all",
     },
   },
 });

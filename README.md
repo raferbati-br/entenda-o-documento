@@ -173,21 +173,15 @@ npm run test:e2e
 | Suite | Objetivo | Comando |
 | --- | --- | --- |
 | E2E (Playwright) | Fluxo de UI end-to-end | `npm run test:e2e` |
-| AI (unit/perf) | Segurança e performance do postprocess + cobertura (abre HTML) | `npm run test:ai` |
-| All (coverage) | Cobertura geral do `src` (abre HTML) | `npm run test:all` |
+| Unit (unit/perf) | Cobertura geral do `src` (abre HTML) | `npm run test:unit` |
 | Load (k6) | Carga/concorrência nos endpoints | `npm run test:load` |
 
-## ✅ Testes (AI - unit/perf)
+## ✅ Testes (Unit - unit/perf)
 Suite da camada AI (sem chamadas à OpenAI). Gera cobertura e abre o HTML:
 ```
-npm run test:ai
+npm run test:unit
 ```
 
-## ✅ Testes (Cobertura geral)
-Gera cobertura para todo o `src` e abre o HTML:
-```
-npm run test:all
-```
 
 ## ✅ Testes (Carga - k6)
 Requer k6 instalado localmente.

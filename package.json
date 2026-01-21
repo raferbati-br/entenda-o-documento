@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run --config vitest.config.unit.ts",
     "test:e2e": "playwright test",
-    "test:ai": "vitest run --config vitest.config.ai.ts --coverage && powershell -NoProfile -Command \"Start-Process 'test-results/vitest/coverage/index.html'\"",
-    "test:ai:watch": "vitest --config vitest.config.ai.ts",
-    "test:all": "vitest run --config vitest.config.coverage.ts --coverage && powershell -NoProfile -Command \"Start-Process 'test-results/vitest/coverage-all/index.html'\"",
+    "test:unit": "vitest run --config vitest.config.unit.ts --coverage && powershell -NoProfile -Command \"Start-Process 'test-results/vitest/coverage-all/index.html'\"",
+    "test:unit:watch": "vitest --config vitest.config.unit.ts",
     "test:load": "k6 run tests/load/k6/capture-analyze.js"
   },
   "dependencies": {
