@@ -1,12 +1,57 @@
-import { describe, expect, it } from "vitest";
-import {
-  getQualityMetrics,
-  recordQualityCount,
-  recordQualityLatency,
-} from "@/lib/qualityMetrics";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+
+type RedisInstance = {
+  incr: ReturnType<typeof vi.fn>;
+  incrby: ReturnType<typeof vi.fn>;
+  get: ReturnType<typeof vi.fn>;
+};
+
+const redisInstances: RedisInstance[] = [];
+let redisGetMap = new Map<string, number>();
+
+vi.mock("@upstash/redis", () => {
+  const Redis = vi.fn(function Redis(this: RedisInstance) {
+    this.incr = vi.fn();
+    this.incrby = vi.fn();
+    this.get = vi.fn((key: string) => redisGetMap.get(String(key)));
+    redisInstances.push(this);
+  });
+
+  return {
+    Redis,
+  };
+});
+
+function setRedisEnv() {
+  process.env.UPSTASH_REDIS_REST_URL = "https://example.com";
+  process.env.UPSTASH_REDIS_REST_TOKEN = "token";
+}
+
+function clearRedisEnv() {
+  delete process.env.UPSTASH_REDIS_REST_URL;
+  delete process.env.UPSTASH_REDIS_REST_TOKEN;
+}
+
+async function loadMetricsModule() {
+  vi.resetModules();
+  return await import("@/lib/qualityMetrics");
+}
+
+beforeEach(() => {
+  redisInstances.length = 0;
+  redisGetMap = new Map<string, number>();
+  vi.clearAllMocks();
+  clearRedisEnv();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("quality metrics", () => {
-  it("records OCR and QA counters and latency", async () => {
+  it("records OCR and QA counters and latency in memory", async () => {
+    const { getQualityMetrics, recordQualityCount, recordQualityLatency } =
+      await loadMetricsModule();
     const now = new Date();
     const before = await getQualityMetrics(1);
     const base = before[0];
@@ -37,5 +82,76 @@ describe("quality metrics", () => {
     expect(row.latency.ocr_latency_ms?.avg).toBe(
       Math.round((baseLatencySum + 200) / (baseLatencyCount + 2))
     );
+  });
+
+  it("creates a single Redis client and uses incr/incrby for counts", async () => {
+    setRedisEnv();
+    const { recordQualityCount } = await loadMetricsModule();
+    const date = new Date("2026-01-20T10:00:00Z");
+    const day = "2026-01-20";
+
+    await recordQualityCount("analyze_total", 1, date);
+    await recordQualityCount("qa_retry", 3, date);
+
+    expect(redisInstances.length).toBe(1);
+    const redis = redisInstances[0];
+    expect(redis.incr).toHaveBeenCalledWith(`metrics:quality:${day}:analyze_total`);
+    expect(redis.incrby).toHaveBeenCalledWith(`metrics:quality:${day}:qa_retry`, 3);
+  });
+
+  it("records latency via redis and computes averages from redis values", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-21T12:00:00Z"));
+    setRedisEnv();
+    const { recordQualityLatency, getQualityMetrics } = await loadMetricsModule();
+    const date = new Date("2026-01-21T12:00:00Z");
+    const day = "2026-01-21";
+
+    await recordQualityLatency("ocr_latency_ms", 1, date);
+    await recordQualityLatency("ocr_latency_ms", 50, date);
+
+    const redis = redisInstances[0];
+    const sumKey = `metrics:quality:${day}:ocr_latency_ms:sum`;
+    const countKey = `metrics:quality:${day}:ocr_latency_ms:count`;
+    expect(redis.incr).toHaveBeenCalledWith(sumKey);
+    expect(redis.incrby).toHaveBeenCalledWith(sumKey, 50);
+    expect(redis.incr).toHaveBeenCalledWith(countKey);
+
+    redisGetMap.set(`metrics:quality:${day}:analyze_total`, 2);
+    redisGetMap.set(`metrics:quality:${day}:analyze_invalid_json`, 0);
+    redisGetMap.set(`metrics:quality:${day}:analyze_low_confidence`, 1);
+    redisGetMap.set(`metrics:quality:${day}:analyze_sanitizer`, 0);
+    redisGetMap.set(`metrics:quality:${day}:analyze_retry`, 3);
+    redisGetMap.set(`metrics:quality:${day}:ocr_invalid_json`, 4);
+    redisGetMap.set(`metrics:quality:${day}:ocr_retry`, 1);
+    redisGetMap.set(`metrics:quality:${day}:qa_model_error`, 2);
+    redisGetMap.set(`metrics:quality:${day}:qa_retry`, 5);
+    redisGetMap.set(`metrics:quality:${day}:analyze_latency_ms:sum`, 0);
+    redisGetMap.set(`metrics:quality:${day}:analyze_latency_ms:count`, 0);
+    redisGetMap.set(`metrics:quality:${day}:ocr_latency_ms:sum`, 101);
+    redisGetMap.set(`metrics:quality:${day}:ocr_latency_ms:count`, 2);
+    redisGetMap.set(`metrics:quality:${day}:qa_latency_ms:sum`, 30);
+    redisGetMap.set(`metrics:quality:${day}:qa_latency_ms:count`, 3);
+
+    const rows = await getQualityMetrics(1);
+    const row = rows[0];
+
+    expect(row.counts.analyze_total).toBe(2);
+    expect(row.counts.qa_retry).toBe(5);
+    expect(row.latency.ocr_latency_ms?.sum).toBe(101);
+    expect(row.latency.ocr_latency_ms?.count).toBe(2);
+    expect(row.latency.ocr_latency_ms?.avg).toBe(51);
+    expect(row.latency.analyze_latency_ms?.avg).toBe(0);
+  });
+
+  it("returns zeros when no metrics exist in memory", async () => {
+    const { getQualityMetrics } = await loadMetricsModule();
+    const rows = await getQualityMetrics(1);
+    const row = rows[0];
+
+    expect(row.counts.analyze_total).toBe(0);
+    expect(row.latency.qa_latency_ms?.sum).toBe(0);
+    expect(row.latency.qa_latency_ms?.count).toBe(0);
+    expect(row.latency.qa_latency_ms?.avg).toBe(0);
   });
 });

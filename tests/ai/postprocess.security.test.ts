@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { postprocess } from "@/ai/postprocess";
+import { postprocess, postprocessWithStats } from "@/ai/postprocess";
 import { entendaDocumento_v1 } from "@/ai/prompts/entendaDocumento.v1";
 
 describe("postprocess security", () => {
@@ -34,5 +34,68 @@ describe("postprocess security", () => {
     const text = result.cards.find((c) => c.id === "whatSays")?.text || "";
     expect(text).toMatch(/documento indica|documento menciona/);
     expect(text).not.toMatch(/você deve|tem que/i);
+  });
+  it("uses defaults and clamps confidence for invalid input", () => {
+    const raw = {
+      confidence: 2,
+      cards: [{ id: 123, title: "bad", text: "bad" }],
+      notice: 123,
+    };
+
+    const { result, stats } = postprocessWithStats(raw, entendaDocumento_v1);
+
+    expect(result.confidence).toBe(1);
+    expect(result.cards.map((c) => c.id)).toEqual([
+      "whatIs",
+      "whatSays",
+      "dates",
+      "terms",
+      "whatUsuallyHappens",
+    ]);
+    for (const card of result.cards) {
+      expect(card.title.length).toBeGreaterThan(0);
+      expect(card.text.length).toBeGreaterThan(0);
+    }
+    expect(result.notice.startsWith("Esta explica")).toBe(true);
+    expect(stats.sanitizerApplied).toBe(false);
+    expect(stats.confidenceLow).toBe(false);
+  });
+
+  it("handles non-finite confidence and non-array cards", () => {
+    const raw = {
+      confidence: "nope",
+      cards: "invalid",
+      notice: "notice",
+    };
+
+    const { result, stats } = postprocessWithStats(raw, entendaDocumento_v1);
+
+    expect(result.confidence).toBe(0);
+    expect(stats.confidenceLow).toBe(true);
+    expect(result.notice.startsWith("A imagem parece estar pouco")).toBe(true);
+    expect(result.cards.length).toBe(5);
+  });
+
+  it("flags low confidence and prefixes the notice", () => {
+    const raw = {
+      confidence: 0.2,
+      cards: [],
+      notice: "plain notice",
+    };
+
+    const { result, stats } = postprocessWithStats(raw, entendaDocumento_v1);
+
+    expect(stats.confidenceLow).toBe(true);
+    expect(stats.sanitizerApplied).toBe(false);
+    expect(result.notice.startsWith("A imagem parece estar pouco")).toBe(true);
+    expect(result.notice).toContain("plain notice");
+  });
+
+  it("exposes a wrapper that returns the analyze result", () => {
+    const raw = { confidence: 0.7, cards: [], notice: "" };
+    const result = postprocess(raw, entendaDocumento_v1);
+
+    expect(result.cards.length).toBe(5);
+    expect(result.confidence).toBe(0.7);
   });
 });

@@ -27,4 +27,25 @@ describe("postprocess performance", () => {
     expect(result.cards.length).toBeGreaterThan(0);
     expect(elapsed).toBeLessThan(200); // heuristic for local runs
   });
+
+  it("shortens very long card text", () => {
+    const raw = {
+      confidence: 0.5,
+      cards: [
+        {
+          id: "whatIs",
+          title: "Title",
+          text: "a".repeat(600),
+        },
+      ],
+      notice: "",
+    };
+
+    const result = postprocess(raw, entendaDocumento_v1);
+    const text = result.cards.find((c) => c.id === "whatIs")?.text || "";
+
+    expect(text.startsWith("a".repeat(10))).toBe(true);
+    expect(text.length).toBeGreaterThanOrEqual(500);
+    expect(text.length).toBeLessThan(600);
+  });
 });

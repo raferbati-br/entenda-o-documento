@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { postprocess } from "@/ai/postprocess";
+import { postprocess, postprocessWithStats } from "@/ai/postprocess";
 import { entendaDocumento_v1 } from "@/ai/prompts/entendaDocumento.v1";
 
 describe("postprocess sanitizer behavior", () => {
@@ -40,5 +40,30 @@ describe("postprocess sanitizer behavior", () => {
     const result = postprocess(raw, entendaDocumento_v1);
 
     expect(result.confidence).toBeCloseTo(raw.confidence, 5);
+  });
+
+  it("applies sanitizer penalty and redacts sensitive data", () => {
+    const raw = {
+      confidence: 0.9,
+      cards: [
+        {
+          id: "whatSays",
+          title: "Summary",
+          text: "tem que pagar usando user@example.com",
+        },
+      ],
+      notice: "procure imediatamente o suporte",
+    };
+
+    const { result, stats } = postprocessWithStats(raw, entendaDocumento_v1);
+    const cardText = result.cards.find((c) => c.id === "whatSays")?.text || "";
+
+    expect(stats.sanitizerApplied).toBe(true);
+    expect(stats.confidenceLow).toBe(false);
+    expect(result.confidence).toBe(0.8);
+    expect(cardText).not.toMatch(/tem que/i);
+    expect(cardText).not.toContain("user@example.com");
+    expect(cardText).toContain("***");
+    expect(result.notice).not.toMatch(/procure imediatamente/i);
   });
 });
