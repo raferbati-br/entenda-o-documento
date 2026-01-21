@@ -13,9 +13,9 @@ function badRequest(msg: string, status = 400) {
 }
 
 export async function POST(req: Request) {
+  const startedAt = Date.now();
+  const requestId = crypto.randomUUID();
   try {
-    const startedAt = Date.now();
-    const requestId = crypto.randomUUID();
     if (!isOriginAllowed(req)) {
       return NextResponse.json({ ok: false, error: "Origem não permitida" }, { status: 403 });
     }
