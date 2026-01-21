@@ -62,8 +62,14 @@ Adicionar ou ajustar testes conforme `.codex/TESTING.md`.
 
 ---
 
-### PASSO 7 – Execução de testes
-Rodar os testes relevantes e confirmar que estão passando.
+### PASSO 7 – Validação (testes e build)
+Executar:
+- testes conforme .codex/TESTING.md
+- build do projeto
+
+Confirmar explicitamente que:
+- testes passaram
+- build compilou com sucesso
 
 ---
 

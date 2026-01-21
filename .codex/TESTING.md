@@ -41,8 +41,28 @@ Formato esperado na conversa:
 
 ---
 
+---
+
+## Verificação de build
+
+Sempre que o projeto possuir comando de build, o Codex deve:
+
+1. Executar o build antes do commit.
+2. Informar explicitamente o resultado do build.
+
+Formato esperado na conversa:
+
+> 🏗️ Verificação de Build  
+> Comando: <comando de build>  
+> Resultado: <sucesso | falha>
+
+Em caso de falha no build:
+- não realizar commit
+- corrigir o problema antes de prosseguir
+
 ## Comando padrão para rodar testes
-- `<ex: npm test | pytest | mvn test>`
+- Testes: npm run test
+- Build: npm run build
 
 ---
 
