@@ -10,6 +10,8 @@
     "test:e2e": "playwright test",
     "test:ai": "vitest run --config vitest.config.ai.ts",
     "test:ai:watch": "vitest --config vitest.config.ai.ts",
+    "test:ai:coverage": "vitest run --config vitest.config.ai.ts --coverage",
+    "test:ai:coverage:open": "start \"\" \"test-results/vitest/coverage/index.html\"",
     "test:load": "k6 run tests/load/k6/capture-analyze.js"
   },
   "dependencies": {
@@ -33,6 +35,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.0.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",

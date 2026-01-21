@@ -10,5 +10,14 @@ export default defineConfig({
   test: {
     include: ["tests/ai/**/*.test.ts"],
     environment: "node",
+    reporters: ["default", "junit"],
+    outputFile: {
+      junit: "test-results/vitest/junit.xml",
+    },
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov", "json", "html"],
+      reportsDirectory: "test-results/vitest/coverage",
+    },
   },
 });
