@@ -9,7 +9,20 @@ import { ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
 import SectionBlock from "../_components/SectionBlock";
 
-import { Box, Button, Chip, Divider, IconButton, Stack, Typography, Snackbar, CircularProgress } from "@mui/material";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Button,
+  Chip,
+  Divider,
+  IconButton,
+  Stack,
+  Typography,
+  Snackbar,
+  CircularProgress,
+} from "@mui/material";
 
 import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
@@ -19,12 +32,12 @@ import ListAltRoundedIcon from "@mui/icons-material/ListAltRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import ThumbUpAltRoundedIcon from "@mui/icons-material/ThumbUpAltRounded";
 import ThumbDownAltRoundedIcon from "@mui/icons-material/ThumbDownAltRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import Disclaimer from "../_components/Disclaimer";
 import ActionBar from "../_components/ActionBar";
 import PageHeader from "../_components/PageHeader";
@@ -301,25 +314,11 @@ export default function ResultPage() {
                 <IosShareRoundedIcon />
               </IconButton>
             </Stack>
-          </PageHeader>
+</PageHeader>
         }
         footer={
           <ActionBar>
             <Stack direction="row" spacing={2}>
-              <Button
-                variant="outlined"
-                size="large"
-                fullWidth
-                startIcon={<HomeRoundedIcon />}
-                onClick={() => {
-                  stopSpeaking();
-                  clearQaContext();
-                  router.push("/");
-                }}
-                sx={{ flex: 1, height: 56, fontWeight: 700, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
-              >
-                Início
-              </Button>
               <Button
                 variant="outlined"
                 size="large"
@@ -344,7 +343,7 @@ export default function ResultPage() {
                 Analisar Outro
               </Button>
             </Stack>
-          </ActionBar>
+</ActionBar>
         }
       >
         {ttsError && (
@@ -413,6 +412,9 @@ export default function ResultPage() {
           </Box>
         )}
 
+                {/* 2. Aviso Legal Padrão (Igual Home) */}
+        <Disclaimer variant="beforeFooter" withNotice={Boolean(result.notice)} />
+
         <Box sx={{ mt: result.notice ? 2 : 3, mb: 1.5 }}>
           <Divider sx={{ my: 1 }} />
           <Stack spacing={1}>
@@ -442,7 +444,7 @@ export default function ResultPage() {
               </Button>
               {feedbackLoading && <CircularProgress size={16} />}
             </Stack>
-            {feedbackChoice === "down" && !feedbackSent && (
+  {feedbackChoice === "down" && !feedbackSent && (
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
                 {feedbackReasons.map((r) => (
                   <Chip
@@ -469,8 +471,6 @@ export default function ResultPage() {
           </Stack>
         </Box>
 
-          {/* 2. Aviso Legal Padrão (Igual Home) */}
-        <Disclaimer variant="beforeFooter" withNotice={Boolean(result.notice)} />
 
         <Box sx={{ height: 20 }} />
       </PageLayout>
