@@ -13,7 +13,6 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
-import Disclaimer from "./_components/Disclaimer";
 import IconTextRow from "./_components/IconTextRow";
 import ActionBar from "./_components/ActionBar";
 import PageLayout from "./_components/PageLayout";
@@ -95,16 +94,23 @@ export default function HomePage() {
               color="primary"
               sx={{ bgcolor: "rgba(0,102,204,0.1)", color: "primary.main", border: "none", fontWeight: 600 }}
             />
-            <Chip label="Privado" size="small" sx={{ bgcolor: "rgba(0,0,0,0.05)", border: "none", fontWeight: 600 }} />
           </Stack>
 
           <Typography variant="h4" gutterBottom fontWeight={800} sx={{ letterSpacing: "-0.02em" }}>
             Entenda qualquer documento num piscar de olhos
           </Typography>
-
           <Typography color="text.secondary" variant="body1" sx={{ lineHeight: 1.6 }}>
             Envie uma imagem de um documento e receba uma explicação direta ao ponto.
           </Typography>
+
+          <Stack direction="row" spacing={1}>
+            <Chip
+              label="Privado"
+              size="small"
+              variant="outlined"
+              sx={{ borderColor: "rgba(0,0,0,0.15)", fontWeight: 600 }}
+            />
+          </Stack>
         </Stack>
 
         <Divider sx={{ my: 2 }} />
@@ -134,8 +140,6 @@ export default function HomePage() {
             description="Sua foto é processada e deletada. Nada fica salvo."
           />
         </Stack>
-
-        <Disclaimer />
 
         <Box sx={{ height: 8 }} />
       </PageLayout>
