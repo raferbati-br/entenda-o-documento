@@ -14,11 +14,8 @@ import {
   Box,
   Button,
   CircularProgress,
-  Container,
   Stack,
   Typography,
-  AppBar,
-  Toolbar,
   IconButton,
   Backdrop,
 } from "@mui/material";
@@ -26,6 +23,9 @@ import {
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import ActionBar from "../_components/ActionBar";
+import PageHeader from "../_components/PageHeader";
+import PageLayout from "../_components/PageLayout";
 
 export default function ConfirmPage() {
   const router = useRouter();
@@ -115,69 +115,24 @@ export default function ConfirmPage() {
   if (!previewUrl) return null;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100dvh", bgcolor: "#000" }}>
-      
-      {/* 1. Header Escuro (Imersivo para foto) */}
-      <AppBar 
-        position="fixed" 
-        color="transparent" 
-        elevation={0} 
-        sx={{ bgcolor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-      >
-        <Toolbar>
+    <PageLayout
+      background="#000"
+      contentPaddingTop={0}
+      contentPaddingBottom={0}
+      contentPaddingX={0}
+      disableContainer
+      header={
+        <PageHeader sx={{ borderBottom: "none", bgcolor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
           <IconButton onClick={retake} sx={{ color: "white" }}>
             <ArrowBackRoundedIcon />
           </IconButton>
           <Typography variant="h6" sx={{ color: "white", ml: 1, fontWeight: 600 }}>
             Confira a foto
           </Typography>
-        </Toolbar>
-      </AppBar>
-
-      {/* 2. Área da Imagem (Centralizada) */}
-      <Box 
-        sx={{ 
-          flexGrow: 1, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          overflow: 'hidden',
-          pt: 7, // Espaço do Header
-          pb: 12, // Espaço do Footer
-          bgcolor: '#000',
-          position: 'relative'
-        }}
-      >
-        {/* Imagem ajustada na tela (contain) */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img 
-          src={previewUrl} 
-          alt="Captura" 
-          style={{ 
-            maxWidth: "100%", 
-            maxHeight: "100%", 
-            objectFit: "contain" 
-          }} 
-        />
-      </Box>
-
-      {/* 3. Rodapé Fixo Branco (Com botões lado a lado) */}
-      <Box 
-        sx={{ 
-          position: 'fixed', 
-          bottom: 0, 
-          left: 0, 
-          right: 0, 
-          p: 3, 
-          bgcolor: 'background.paper', // Fundo branco
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
-          zIndex: 10
-        }}
-      >
-        <Container maxWidth="sm" disableGutters>
-          
+        </PageHeader>
+      }
+      footer={
+        <ActionBar variant="sheet" sx={{ p: 3 }}>
           {err && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErr(null)}>
               {err}
@@ -198,7 +153,7 @@ export default function ConfirmPage() {
                 startIcon={<ReplayRoundedIcon />}
                 onClick={retake}
                 disabled={loading}
-                sx={{ height: 56, fontWeight: 700, borderRadius: 3, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
+                sx={{ height: 56, fontWeight: 700, borderRadius: 3, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
               >
                 Tirar outra
               </Button>
@@ -211,24 +166,48 @@ export default function ConfirmPage() {
                 startIcon={<CheckCircleRoundedIcon />}
                 onClick={handleConfirm}
                 disabled={loading}
-                sx={{ height: 56, fontWeight: 700, borderRadius: 3, boxShadow: 'none' }}
+                sx={{ height: 56, fontWeight: 700, borderRadius: 3, boxShadow: "none" }}
               >
                 Sim, usar
               </Button>
             </Stack>
           </Stack>
-        </Container>
+        </ActionBar>
+      }
+    >
+      <Box sx={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
+        {/* Área da Imagem (Centralizada) */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            pt: 7,
+            pb: 12,
+            bgcolor: "#000",
+            position: "relative",
+          }}
+        >
+          {/* Imagem ajustada na tela (contain) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewUrl}
+            alt="Captura"
+            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+          />
+        </Box>
       </Box>
 
       {/* Loading Overlay */}
       <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1, flexDirection: 'column', gap: 2 }}
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1, flexDirection: "column", gap: 2 }}
         open={loading}
       >
         <CircularProgress color="inherit" />
         <Typography variant="h6">Processando imagem...</Typography>
       </Backdrop>
-
-    </Box>
+    </PageLayout>
   );
 }

@@ -22,6 +22,7 @@ import {
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
+import PageLayout from "../_components/PageLayout";
 
 // === Tipos e Helpers de Erro (Mantidos) ===
 type FriendlyError = {
@@ -155,100 +156,120 @@ export default function AnalyzingPage() {
   // ================= ERROR STATE =================
   if (friendlyError) {
     return (
-      <Container maxWidth="sm" sx={{ minHeight: "100dvh", display: "flex", flexDirection: "column", justifyContent: "center", py: 4 }}>
-        <Stack spacing={3} alignItems="center" textAlign="center">
-          <ErrorOutlineRoundedIcon sx={{ fontSize: 64, color: "error.main", opacity: 0.8 }} />
-          <Box>
-            <Typography variant="h5" gutterBottom fontWeight={800}>{friendlyError.title}</Typography>
-            <Typography color="text.secondary" variant="body1">{friendlyError.message}</Typography>
-          </Box>
-          {friendlyError.hint && (
-            <Alert severity="info" sx={{ width: '100%', borderRadius: 3 }}>{friendlyError.hint}</Alert>
-          )}
-          <Box sx={{ width: '100%', pt: 2 }}>
-            <Button variant="contained" size="large" fullWidth startIcon={<CameraAltRoundedIcon />} onClick={() => router.push(friendlyError.actionHref || "/camera")} sx={{ mb: 2 }}>
-              {friendlyError.actionLabel}
-            </Button>
-            <Button variant="text" onClick={() => router.push("/")}>Cancelar e voltar</Button>
-          </Box>
-        </Stack>
-      </Container>
+      <PageLayout contentPaddingTop={0} contentPaddingBottom={0} contentPaddingX={0} disableContainer>
+        <Container
+          maxWidth="sm"
+          sx={{ minHeight: "100dvh", display: "flex", flexDirection: "column", justifyContent: "center", py: 4 }}
+        >
+          <Stack spacing={3} alignItems="center" textAlign="center">
+            <ErrorOutlineRoundedIcon sx={{ fontSize: 64, color: "error.main", opacity: 0.8 }} />
+            <Box>
+              <Typography variant="h5" gutterBottom fontWeight={800}>
+                {friendlyError.title}
+              </Typography>
+              <Typography color="text.secondary" variant="body1">
+                {friendlyError.message}
+              </Typography>
+            </Box>
+            {friendlyError.hint && (
+              <Alert severity="info" sx={{ width: "100%", borderRadius: 3 }}>
+                {friendlyError.hint}
+              </Alert>
+            )}
+            <Box sx={{ width: "100%", pt: 2 }}>
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                startIcon={<CameraAltRoundedIcon />}
+                onClick={() => router.push(friendlyError.actionHref || "/camera")}
+                sx={{ mb: 2 }}
+              >
+                {friendlyError.actionLabel}
+              </Button>
+              <Button variant="text" onClick={() => router.push("/")}>
+                Cancelar e voltar
+              </Button>
+            </Box>
+          </Stack>
+        </Container>
+      </PageLayout>
     );
   }
 
   // ================= LOADING STATE (COM ANIMAÇÃO) =================
   return (
-    <Box 
-      sx={{ 
-        minHeight: "100dvh", 
-        display: "flex", 
-        flexDirection: "column", 
-        alignItems: "center", 
-        justifyContent: "center",
-        bgcolor: "background.default",
-        p: 3
-      }}
-    >
-      <Container maxWidth="xs" sx={{ textAlign: "center" }}>
-        
-        {/* Ícone Pulsando */}
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-        >
-          <Box 
-            sx={{ 
-              width: 80, 
-              height: 80, 
-              bgcolor: 'primary.main', 
-              borderRadius: '50%', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              mb: 4,
-              mx: 'auto',
-              boxShadow: '0 0 20px rgba(0,102,204,0.4)'
-            }}
+    <PageLayout contentPaddingTop={0} contentPaddingBottom={0} contentPaddingX={0} disableContainer>
+      <Box
+        sx={{
+          minHeight: "100dvh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: "background.default",
+          p: 3,
+        }}
+      >
+        <Container maxWidth="xs" sx={{ textAlign: "center" }}>
+          {/* Ícone Pulsando */}
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ repeat: Infinity, duration: 2 }}
           >
-            <AutoAwesomeRoundedIcon sx={{ fontSize: 40, color: "white" }} />
-          </Box>
-        </motion.div>
-
-        {/* Texto Animado (Fade In/Out) */}
-        <Box sx={{ height: 60, mb: 2 }}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.5 }}
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: "primary.main",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mb: 4,
+                mx: "auto",
+                boxShadow: "0 0 20px rgba(0,102,204,0.4)",
+              }}
             >
-              <Typography variant="h5" fontWeight={800} gutterBottom>
-                {steps[step]}
-              </Typography>
-            </motion.div>
-          </AnimatePresence>
-        </Box>
+              <AutoAwesomeRoundedIcon sx={{ fontSize: 40, color: "white" }} />
+            </Box>
+          </motion.div>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          A inteligência artificial está analisando cada detalhe.
-        </Typography>
+          {/* Texto Animado (Fade In/Out) */}
+          <Box sx={{ height: 60, mb: 2 }}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Typography variant="h5" fontWeight={800} gutterBottom>
+                  {steps[step]}
+                </Typography>
+              </motion.div>
+            </AnimatePresence>
+          </Box>
 
-        {/* Barra de Progresso */}
-        <LinearProgress 
-          sx={{ 
-            height: 6, 
-            borderRadius: 4, 
-            bgcolor: 'action.hover',
-            maxWidth: 200,
-            mx: 'auto',
-            '& .MuiLinearProgress-bar': { borderRadius: 4 }
-          }} 
-        />
-        
-        {/* Botão Cancelar Discreto */}
-        <Button
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+            A inteligência artificial está analisando cada detalhe.
+          </Typography>
+
+          {/* Barra de Progresso */}
+          <LinearProgress
+            sx={{
+              height: 6,
+              borderRadius: 4,
+              bgcolor: "action.hover",
+              maxWidth: 200,
+              mx: "auto",
+              "& .MuiLinearProgress-bar": { borderRadius: 4 },
+            }}
+          />
+
+          {/* Botão Cancelar Discreto */}
+          <Button
             size="small"
             color="inherit"
             onClick={() => {
@@ -256,12 +277,12 @@ export default function AnalyzingPage() {
               clearCaptureId();
               router.push("/camera");
             }}
-            sx={{ mt: 8, color: 'text.disabled', fontSize: '0.75rem' }}
+            sx={{ mt: 8, color: "text.disabled", fontSize: "0.75rem" }}
           >
             Cancelar
           </Button>
-
-      </Container>
-    </Box>
+        </Container>
+      </Box>
+    </PageLayout>
   );
 }

@@ -7,11 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run --config vitest.config.unit.ts",
+    "test": "npm run test:unit && npm run test:e2e && npm run test:load",
     "test:e2e": "playwright test",
-    "test:unit": "vitest run --config vitest.config.unit.ts --coverage && powershell -NoProfile -Command \"Start-Process 'test-results/vitest/coverage-all/index.html'\"",
-    "test:unit:watch": "vitest --config vitest.config.unit.ts",
-    "test:load": "k6 run tests/load/k6/capture-analyze.js"
+    "test:unit": "vitest run --config vitest.config.unit.ts",
+    "test:load": "k6 run tests/load/k6/capture-analyze.js",
+    "test:unit:report": "vitest run --config vitest.config.unit.ts --coverage && powershell -NoProfile -Command \"Start-Process 'test-results/vitest/coverage-all/index.html'\"",
+    "test:unit:watch": "vitest --config vitest.config.unit.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
