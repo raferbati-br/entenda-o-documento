@@ -81,7 +81,7 @@ function CameraContent() {
                 Galeria
               </Button>
 
-              {/* Botão Câmera (Destaque principal) */}
+              {/* Botão principal */}
               <Button
                 variant="contained"
                 size="large"
@@ -90,7 +90,7 @@ function CameraContent() {
                 onClick={openCamera}
                 sx={{ flex: 1, height: 56, fontWeight: 700 }}
               >
-                Câmera
+                Tirar foto
               </Button>
             </Stack>
 

@@ -225,7 +225,7 @@ export default function PerguntasPage() {
       <Stack spacing={3}>
         <Box>
           <Typography variant="h5" gutterBottom fontWeight={800}>
-            Perguntas sobre o documento
+            Tire suas duvidas
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Veja o documento e faca perguntas especificas. A resposta e curta e informativa.
@@ -287,7 +287,7 @@ export default function PerguntasPage() {
                 borderColor: "divider",
               }}
             >
-              <SectionBlock icon={<HelpOutlineRoundedIcon fontSize="inherit" />} title="Perguntas sobre o documento">
+              <SectionBlock icon={<HelpOutlineRoundedIcon fontSize="inherit" />} title="Sua pergunta">
                 <Stack spacing={1.25}>
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {commonQuestions.map((q) => (

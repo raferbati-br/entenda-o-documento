@@ -331,7 +331,7 @@ export default function ResultPage() {
                 }}
                 sx={{ flex: 1, height: 56, fontWeight: 700, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
               >
-                Perguntas
+                Tirar duvidas
               </Button>
               <Button
                 variant="contained"
