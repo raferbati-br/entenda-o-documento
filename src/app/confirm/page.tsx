@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { saveCaptureId } from "@/lib/captureIdStore";
@@ -24,6 +24,23 @@ export default function ConfirmPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const pinchStartDistanceRef = useRef<number | null>(null);
+  const pinchStartScaleRef = useRef(1);
+
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 3;
+
+  function getPinchDistance(touches: TouchList) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  function clampZoom(nextZoom: number) {
+    return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom));
+  }
+
 
   // Carrega a imagem do IndexedDB/Store
   useEffect(() => {
@@ -163,6 +180,15 @@ export default function ConfirmPage() {
                 Sim, usar
               </Button>
             </Stack>
+
+            <Stack spacing={0.5} textAlign="center">
+              <Typography variant="caption" color="text.secondary">
+                Se nao estiver nitido, tire outra.
+              </Typography>
+              <Typography variant="caption" color="text.disabled">
+                Sua foto e segura e deletada apos o uso.
+              </Typography>
+            </Stack>
           </Stack>
         </ActionBar>
       }
@@ -170,6 +196,26 @@ export default function ConfirmPage() {
       <Box sx={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
         {/* Área da Imagem (Centralizada) */}
         <Box
+          onTouchStart={(e) => {
+            if (e.touches.length !== 2) return;
+            pinchStartDistanceRef.current = getPinchDistance(e.touches as unknown as TouchList);
+            pinchStartScaleRef.current = zoom;
+          }}
+          onTouchMove={(e) => {
+            if (e.touches.length !== 2 || !pinchStartDistanceRef.current) return;
+            e.preventDefault();
+            const distance = getPinchDistance(e.touches as unknown as TouchList);
+            const nextZoom = clampZoom(pinchStartScaleRef.current * (distance / pinchStartDistanceRef.current));
+            setZoom(Number(nextZoom.toFixed(2)));
+          }}
+          onTouchEnd={(e) => {
+            if (e.touches.length < 2) {
+              pinchStartDistanceRef.current = null;
+            }
+          }}
+          onTouchCancel={() => {
+            pinchStartDistanceRef.current = null;
+          }}
           sx={{
             flexGrow: 1,
             display: "flex",
@@ -180,6 +226,7 @@ export default function ConfirmPage() {
             pb: 12,
             bgcolor: "#000",
             position: "relative",
+            touchAction: "none",
           }}
         >
           {/* Imagem ajustada na tela (contain) */}
@@ -187,7 +234,13 @@ export default function ConfirmPage() {
           <img
             src={previewUrl}
             alt="Captura"
-            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
+              transform: `scale(${zoom})`,
+              transformOrigin: "center center",
+            }}
           />
         </Box>
       </Box>

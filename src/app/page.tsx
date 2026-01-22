@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
 import { telemetryCapture } from "@/lib/telemetry";
 
-import { Box, Button, Chip, Divider, Stack, Typography } from "@mui/material";
+import { Box, Button, Divider, Stack, Typography } from "@mui/material";
 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
@@ -87,14 +87,6 @@ export default function HomePage() {
       >
         {/* HERO */}
         <Stack spacing={2} sx={{ mb: 2 }}>
-          <Stack direction="row" spacing={1}>
-            <Chip
-              label="Português simples"
-              size="small"
-              color="primary"
-              sx={{ bgcolor: "rgba(0,102,204,0.1)", color: "primary.main", border: "none", fontWeight: 600 }}
-            />
-          </Stack>
 
           <Typography variant="h4" gutterBottom fontWeight={800} sx={{ letterSpacing: "-0.02em" }}>
             Entenda qualquer documento num piscar de olhos
@@ -103,14 +95,10 @@ export default function HomePage() {
             Envie uma imagem de um documento e receba uma explicação direta ao ponto.
           </Typography>
 
-          <Stack direction="row" spacing={1}>
-            <Chip
-              label="Privado"
-              size="small"
-              variant="outlined"
-              sx={{ borderColor: "rgba(0,0,0,0.15)", fontWeight: 600 }}
-            />
-          </Stack>
+          <Typography variant="caption" color="text.disabled">
+            Privado e seguro. Sua foto e deletada apos o uso.
+          </Typography>
+
         </Stack>
 
         <Divider sx={{ my: 2 }} />

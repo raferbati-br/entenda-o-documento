@@ -130,7 +130,7 @@ function CameraContent() {
               description="Tente pegar o documento inteiro."
             />
 
-            <Notice severity="info" title="Dica">
+            <Notice severity="info" title="Dica" density="compact">
               Mantenha a mão firme ao clicar.
             </Notice>
           </Stack>

@@ -19,6 +19,7 @@ type NoticeProps = {
   actions?: ReactNode;
   onClose?: () => void;
   variant?: "inline" | "hero";
+  density?: "default" | "compact";
   sx?: SxProps<Theme>;
 };
 
@@ -36,15 +37,18 @@ export default function Notice({
   actions,
   onClose,
   variant = "inline",
+  density = "default",
   sx,
 }: NoticeProps) {
   const Icon = ICONS[severity];
   const isHero = variant === "hero";
+  const isCompact = density === "compact" && !isHero;
+  const iconSize = isHero ? 56 : isCompact ? 18 : 20;
 
   const baseSx: SxProps<Theme> = (theme) => ({
-    borderRadius: isHero ? 3 : 2,
-    p: isHero ? 3 : 2,
-    border: "1px solid",
+    borderRadius: isHero ? 3 : isCompact ? 1.5 : 2,
+    p: isHero ? 3 : isCompact ? 1 : 1.25,
+    border: "0.5px solid",
     borderColor: alpha(theme.palette[severity].main, 0.35),
     bgcolor: alpha(theme.palette[severity].main, 0.08),
   });
@@ -56,18 +60,33 @@ export default function Notice({
       <Stack
         direction={isHero ? "column" : "row"}
         spacing={isHero ? 1.5 : 1.25}
-        alignItems={isHero ? "center" : "flex-start"}
+        alignItems={isHero ? "center" : "center"}
       >
-        <Box sx={{ color: `${severity}.main`, fontSize: isHero ? 56 : 20 }}>
+        <Box
+          sx={{
+            color: `${severity}.main`,
+            fontSize: iconSize,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Icon fontSize="inherit" />
         </Box>
         <Box sx={{ flex: 1, textAlign: isHero ? "center" : "left" }}>
-          {title ? (
+          {title && children && !isHero ? (
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+              <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                {title}:
+              </Box>{" "}
+              {children}
+            </Typography>
+          ) : title ? (
             <Typography variant={isHero ? "h5" : "subtitle2"} fontWeight={700} sx={{ mb: children ? 0.5 : 0 }}>
               {title}
             </Typography>
           ) : null}
-          {children ? (
+          {children && (!title || isHero) ? (
             <Typography variant={isHero ? "body1" : "body2"} color="text.secondary">
               {children}
             </Typography>
