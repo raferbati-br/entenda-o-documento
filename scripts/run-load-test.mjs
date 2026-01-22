@@ -1,7 +1,10 @@
 import http from "node:http";
 import { spawn } from "node:child_process";
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+const DEFAULT_PORT = 3100;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${DEFAULT_PORT}`;
+const baseUrlParsed = new URL(BASE_URL);
+const devPort = baseUrlParsed.port ? Number(baseUrlParsed.port) : DEFAULT_PORT;
 const CHECK_TIMEOUT_MS = 60_000;
 
 function checkServerReady() {
@@ -52,7 +55,15 @@ async function main() {
   let devProcess = null;
 
   if (!alreadyRunning) {
-    devProcess = spawn("npm", ["run", "dev"], { stdio: "inherit", shell: true });
+    devProcess = spawn("npm", ["run", "dev", "--", "-p", String(devPort)], {
+      stdio: "inherit",
+      shell: true,
+      env: {
+        ...process.env,
+        LLM_PROVIDER: "mock",
+        APP_ORIGIN: BASE_URL,
+      },
+    });
     const ready = await waitForServer();
     if (!ready) {
       await stopProcessTree(devProcess.pid);

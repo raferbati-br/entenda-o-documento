@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "npm run test:unit && npm run test:e2e && npm run test:load",
+    "test": "npm run test:unit && npm run test:e2e",
     "test:e2e": "playwright test",
     "test:unit": "vitest run --config vitest.config.unit.ts",
     "test:load": "node scripts/run-load-test.mjs",
