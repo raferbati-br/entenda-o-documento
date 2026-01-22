@@ -9,20 +9,12 @@ import { ensureSessionToken } from "@/lib/sessionToken";
 import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
 import { telemetryCapture } from "@/lib/telemetry";
 
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  Stack,
-  Typography,
-  LinearProgress,
-} from "@mui/material";
+import { Box, Button, Container, Stack, Typography, LinearProgress } from "@mui/material";
 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PageLayout from "../_components/PageLayout";
+import Notice from "../_components/Notice";
 
 // === Tipos e Helpers de Erro (Mantidos) ===
 type FriendlyError = {
@@ -162,19 +154,13 @@ export default function AnalyzingPage() {
           sx={{ minHeight: "100dvh", display: "flex", flexDirection: "column", justifyContent: "center", py: 4 }}
         >
           <Stack spacing={3} alignItems="center" textAlign="center">
-            <ErrorOutlineRoundedIcon sx={{ fontSize: 64, color: "error.main", opacity: 0.8 }} />
-            <Box>
-              <Typography variant="h5" gutterBottom fontWeight={800}>
-                {friendlyError.title}
-              </Typography>
-              <Typography color="text.secondary" variant="body1">
-                {friendlyError.message}
-              </Typography>
-            </Box>
+            <Notice severity="error" variant="hero" title={friendlyError.title}>
+              {friendlyError.message}
+            </Notice>
             {friendlyError.hint && (
-              <Alert severity="info" sx={{ width: "100%", borderRadius: 3 }}>
+              <Notice severity="info" sx={{ width: "100%" }}>
                 {friendlyError.hint}
-              </Alert>
+              </Notice>
             )}
             <Box sx={{ width: "100%", pt: 2 }}>
               <Button

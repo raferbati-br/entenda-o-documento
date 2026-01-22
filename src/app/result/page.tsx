@@ -9,18 +9,7 @@ import { ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
 import SectionBlock from "../_components/SectionBlock";
 
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Divider,
-  IconButton,
-  Stack,
-  Typography,
-  Snackbar,
-  CircularProgress,
-} from "@mui/material";
+import { Box, Button, Chip, Divider, IconButton, Stack, Typography, Snackbar, CircularProgress } from "@mui/material";
 
 import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
@@ -40,6 +29,7 @@ import Disclaimer from "../_components/Disclaimer";
 import ActionBar from "../_components/ActionBar";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
+import Notice from "../_components/Notice";
 
 // === Tipos e Helpers ===
 type CardT = { id: string; title: string; text: string };
@@ -358,27 +348,24 @@ export default function ResultPage() {
         }
       >
         {ttsError && (
-          <Alert severity={ttsError === "Leitura interrompida." ? "info" : "warning"} sx={{ mb: 3 }}>
+          <Notice severity={ttsError === "Leitura interrompida." ? "info" : "warning"} sx={{ mb: 3 }}>
             {ttsError}
-          </Alert>
+          </Notice>
         )}
 
         {showLowConfidenceHelp && (
-          <Alert
+          <Notice
             severity="warning"
-            icon={<WarningRoundedIcon />}
-            sx={{ mb: 4, borderRadius: 3 }}
-            action={
+            title="Foto difícil de ler"
+            actions={
               <Button color="inherit" size="small" onClick={newDoc}>
                 Refazer
               </Button>
             }
+            sx={{ mb: 4 }}
           >
-            <Typography variant="subtitle2" fontWeight={700}>
-              Foto difícil de ler
-            </Typography>
-            <Typography variant="body2">O resultado pode ter erros.</Typography>
-          </Alert>
+            O resultado pode ter erros.
+          </Notice>
         )}
 
           {/* Conteúdo Principal */}
@@ -478,7 +465,7 @@ export default function ResultPage() {
                 Obrigado pelo feedback.
               </Typography>
             )}
-            {feedbackError && <Alert severity="warning">{feedbackError}</Alert>}
+            {feedbackError && <Notice severity="warning">{feedbackError}</Notice>}
           </Stack>
         </Box>
 

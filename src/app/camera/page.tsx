@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
 import { telemetryCapture } from "@/lib/telemetry";
 
-import { Alert, Box, Button, IconButton, Stack, Typography, CircularProgress } from "@mui/material";
+import { Box, Button, IconButton, Stack, Typography, CircularProgress } from "@mui/material";
 
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
@@ -17,6 +17,7 @@ import IconTextRow from "../_components/IconTextRow";
 import ActionBar from "../_components/ActionBar";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
+import Notice from "../_components/Notice";
 
 function CameraContent() {
   const router = useRouter();
@@ -129,14 +130,9 @@ function CameraContent() {
               description="Tente pegar o documento inteiro."
             />
 
-            <Alert
-              severity="info"
-              sx={{ borderRadius: 3, border: "1px solid", borderColor: "info.main", bgcolor: "rgba(2, 136, 209, 0.05)" }}
-            >
-              <Typography variant="body2" fontWeight={600}>
-                Dica: Mantenha a mão firme ao clicar.
-              </Typography>
-            </Alert>
+            <Notice severity="info" title="Dica">
+              Mantenha a mão firme ao clicar.
+            </Notice>
           </Stack>
         </Stack>
       </PageLayout>

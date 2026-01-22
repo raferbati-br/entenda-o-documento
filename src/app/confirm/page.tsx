@@ -9,16 +9,7 @@ import { compressBlobToDataUrl } from "@/lib/imageCompression";
 import { ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
 
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Typography,
-  IconButton,
-  Backdrop,
-} from "@mui/material";
+import { Box, Button, CircularProgress, Stack, Typography, IconButton, Backdrop } from "@mui/material";
 
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
@@ -26,6 +17,7 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ActionBar from "../_components/ActionBar";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
+import Notice from "../_components/Notice";
 
 export default function ConfirmPage() {
   const router = useRouter();
@@ -134,9 +126,9 @@ export default function ConfirmPage() {
       footer={
         <ActionBar variant="sheet" sx={{ p: 3 }}>
           {err && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErr(null)}>
+            <Notice severity="error" onClose={() => setErr(null)} sx={{ mb: 2 }}>
               {err}
-            </Alert>
+            </Notice>
           )}
 
           <Stack spacing={2}>

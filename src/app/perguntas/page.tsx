@@ -10,17 +10,7 @@ import { telemetryCapture } from "@/lib/telemetry";
 import SectionBlock from "../_components/SectionBlock";
 import Disclaimer from "../_components/Disclaimer";
 
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  IconButton,
-  TextField,
-  Stack,
-  Typography,
-  CircularProgress,
-} from "@mui/material";
+import { Box, Button, Chip, IconButton, TextField, Stack, Typography, CircularProgress } from "@mui/material";
 
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
@@ -33,6 +23,7 @@ import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import ActionBar from "../_components/ActionBar";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
+import Notice from "../_components/Notice";
 
 type CardT = { id: string; title: string; text: string };
 
@@ -353,7 +344,7 @@ export default function PerguntasPage() {
                       {question.trim().length}/{MAX_QUESTION_CHARS}
                     </Typography>
                   </Box>
-                  {qaError && <Alert severity="warning">{qaError}</Alert>}
+                  {qaError && <Notice severity="warning">{qaError}</Notice>}
                   {qaAnswer && (
                     <Box sx={{ p: 2, bgcolor: "background.paper", borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
                       <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 0.5 }}>
