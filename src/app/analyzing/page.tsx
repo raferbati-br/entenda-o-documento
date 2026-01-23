@@ -114,7 +114,13 @@ export default function AnalyzingPage() {
         });
 
         const ocrData = await ocrRes.json().catch(() => ({}));
-        recordLatencyStep("ocr_ms", performance.now() - ocrStart);
+        const ocrDurationMs = performance.now() - ocrStart;
+        recordLatencyStep("ocr_ms", ocrDurationMs);
+        telemetryCapture("openai_ocr_latency", {
+          ms: Math.round(ocrDurationMs),
+          attempt,
+          status: ocrRes.status,
+        });
         if (ocrRes.ok && ocrData?.ok && typeof ocrData?.documentText === "string" && ocrData.documentText.trim()) {
           saveQaContext(ocrData.documentText);
         }
@@ -128,7 +134,13 @@ export default function AnalyzingPage() {
         });
 
         const data = await res.json().catch(() => ({}));
-        recordLatencyStep("analyze_ms", performance.now() - analyzeStart);
+        const analyzeDurationMs = performance.now() - analyzeStart;
+        recordLatencyStep("analyze_ms", analyzeDurationMs);
+        telemetryCapture("openai_cards_latency", {
+          ms: Math.round(analyzeDurationMs),
+          attempt,
+          status: res.status,
+        });
         if (!res.ok || !data?.ok) throw { res, data };
 
         saveResult(data.result);
