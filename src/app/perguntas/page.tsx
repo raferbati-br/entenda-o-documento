@@ -57,6 +57,7 @@ export default function PerguntasPage() {
   const inputBarRef = useRef<HTMLDivElement | null>(null);
   const autoScrollRef = useRef(true);
   const prevLoadingRef = useRef(false);
+  const initialViewportRef = useRef<number | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -69,6 +70,7 @@ export default function PerguntasPage() {
   const [qaHistory, setQaHistory] = useState<QaItem[]>([]);
   const [showJump, setShowJump] = useState(false);
   const [scrollPad, setScrollPad] = useState(SCROLL_PAD_FALLBACK);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   const commonQuestions = useMemo(
     () => [
@@ -169,13 +171,37 @@ export default function PerguntasPage() {
     return () => observer.disconnect();
   }, [isEmptyState]);
 
-  function handleScroll() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!initialViewportRef.current) {
+      initialViewportRef.current = window.innerHeight;
+    }
+    const updateOffset = () => {
+      const base = initialViewportRef.current ?? window.innerHeight;
+      const offset = Math.max(0, base - window.innerHeight);
+      setKeyboardOffset(offset);
+    };
+    updateOffset();
+    window.addEventListener("resize", updateOffset);
+    return () => window.removeEventListener("resize", updateOffset);
+  }, []);
+
+  function updateJumpState() {
     const node = scrollRef.current;
     if (!node) return;
     const threshold = 24;
     const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - threshold;
     autoScrollRef.current = atBottom;
     setShowJump(!atBottom);
+  }
+
+  useEffect(() => {
+    if (isEmptyState) return;
+    requestAnimationFrame(updateJumpState);
+  }, [qaHistory.length, scrollPad, keyboardOffset, isEmptyState]);
+
+  function handleScroll() {
+    updateJumpState();
   }
 
   function zoomIn() {
@@ -278,7 +304,7 @@ export default function PerguntasPage() {
           </PageHeader>
         }
         footer={
-          <ActionBar sx={{ p: 1.5 }}>
+          <ActionBar sx={{ p: 1.5, transform: `translateY(${keyboardOffset}px)` }}>
             <Stack direction="row" spacing={1.5}>
               <Button
                 variant="text"
