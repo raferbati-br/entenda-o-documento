@@ -307,7 +307,7 @@ export default function PerguntasPage() {
           </PageHeader>
         }
         footer={
-          <ActionBar sx={{ p: 1.5, transform: `translateY(${keyboardOffset}px)` }}>
+          <ActionBar sx={{ p: 1.5 }}>
             <Stack direction="row" spacing={1.5}>
               <Button
                 variant="text"
