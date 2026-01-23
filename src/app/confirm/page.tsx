@@ -9,6 +9,7 @@ import { compressBlobToDataUrl } from "@/lib/imageCompression";
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { recordLatencyStep, startLatencyTrace } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
+import { mapCaptureError, mapNetworkError } from "@/lib/errorMesages";
 
 import { Box, CircularProgress, Typography, IconButton, Backdrop } from "@mui/material";
 
@@ -117,7 +118,8 @@ export default function ConfirmPage() {
         await clearSessionToken();
       }
       if (!res.ok || !data?.ok) {
-        throw new Error(typeof data?.error === "string" ? data.error : "Erro ao enviar imagem");
+        const apiError = typeof data?.error === "string" ? data.error : "";
+        throw new Error(mapCaptureError(res.status, apiError));
       }
 
       saveCaptureId(data.captureId);
@@ -125,7 +127,8 @@ export default function ConfirmPage() {
 
     } catch (e: any) {
       setLoading(false);
-      setErr(e?.message || "Falha ao enviar imagem");
+      const message = typeof e?.message === "string" ? e.message : "";
+      setErr(mapNetworkError(message));
       telemetryCapture("confirm_error");
     }
   }

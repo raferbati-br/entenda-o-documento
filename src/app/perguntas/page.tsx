@@ -7,6 +7,7 @@ import { loadQaContext } from "@/lib/qaContextStore";
 import { loadResult, AnalysisResult } from "@/lib/resultStore";
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
+import { mapNetworkError, mapQaError } from "@/lib/errorMesages";
 
 import {
   Box,
@@ -282,7 +283,8 @@ export default function PerguntasPage() {
         await clearSessionToken();
       }
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || "Falha ao responder.");
+        const apiError = typeof data?.error === "string" ? data.error : "";
+        throw new Error(mapQaError(res.status, apiError));
       }
 
       setQaHistory((prev) =>
@@ -290,8 +292,12 @@ export default function PerguntasPage() {
       );
       telemetryCapture("qa_answer_success");
     } catch (err: any) {
-      const msg = typeof err?.message === "string" ? err.message : "Nao foi possivel responder agora.";
-      setQaHistory((prev) => prev.map((item) => (item.id === itemId ? { ...item, pending: false, error: msg } : item)));
+      const msg = typeof err?.message === "string" ? err.message : "";
+      setQaHistory((prev) =>
+        prev.map((item) =>
+          item.id === itemId ? { ...item, pending: false, error: mapNetworkError(msg) } : item
+        )
+      );
       telemetryCapture("qa_answer_error");
     } finally {
       setQaLoading(false);

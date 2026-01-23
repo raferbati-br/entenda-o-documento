@@ -9,6 +9,7 @@ import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
 import { markLatencyTrace, recordLatencyStep } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
+import { buildAnalyzeFriendlyError, type FriendlyError } from "@/lib/errorMesages";
 
 import { Box, Button, Container, Stack, Typography, LinearProgress } from "@mui/material";
 
@@ -16,43 +17,6 @@ import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
-
-// === Tipos e Helpers de Erro (Mantidos) ===
-type FriendlyError = {
-  title: string;
-  message: string;
-  hint?: string;
-  actionLabel?: string;
-  actionHref?: string;
-};
-
-function parseRetryAfterSeconds(res: Response) {
-  const v = res.headers.get("Retry-After");
-  const n = v ? Number(v) : NaN;
-  return Number.isFinite(n) ? Math.max(1, Math.floor(n)) : null;
-}
-
-function buildFriendlyError(res: Response | null, data: any): FriendlyError {
-  const apiMsg = typeof data?.error === "string" ? data.error : "";
-  const status = res?.status ?? 0;
-
-  if (status === 401)
-    return {
-      title: "Sessao expirada",
-      message: "O tempo da sua sessao acabou.",
-      hint: "Tire outra foto para continuar.",
-      actionLabel: "Tirar nova foto",
-      actionHref: "/camera",
-    };
-
-  if (status === 410) return { title: "A foto expirou", message: "Por segurança, a foto foi apagada.", hint: "Tire outra foto.", actionLabel: "Tirar nova foto", actionHref: "/camera" };
-  if (status === 413) return { title: "Foto muito pesada", message: "A imagem ficou grande demais.", hint: "Tente aproximar o documento.", actionLabel: "Tirar outra foto", actionHref: "/camera" };
-  if (status === 429) {
-    const retry = parseRetryAfterSeconds(res!);
-    return { title: "Muitas tentativas", message: retry ? `Aguarde ${retry}s.` : "Aguarde um pouco.", hint: "Sua internet pode estar oscilando.", actionLabel: "Voltar", actionHref: "/camera" };
-  }
-  return { title: "Não entendi a foto", message: apiMsg || "Ocorreu um problema.", hint: "Tente com mais luz.", actionLabel: "Tentar outra foto", actionHref: "/camera" };
-}
 
 export default function AnalyzingPage() {
   const router = useRouter();
@@ -159,7 +123,7 @@ export default function AnalyzingPage() {
           clearSessionToken().catch(() => {});
         }
         clearCaptureId();
-        setFriendlyError(buildFriendlyError(res, data));
+        setFriendlyError(buildAnalyzeFriendlyError(res, data));
       }
     }
 

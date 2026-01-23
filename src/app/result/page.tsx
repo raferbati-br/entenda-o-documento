@@ -8,6 +8,7 @@ import { clearQaContext, loadQaContext } from "@/lib/qaContextStore";
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { clearLatencyTrace, getLatencyTraceSnapshot } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
+import { mapFeedbackError, mapNetworkError } from "@/lib/errorMesages";
 import SectionBlock from "../_components/SectionBlock";
 
 import {
@@ -187,7 +188,8 @@ export default function ResultPage() {
         await clearSessionToken();
       }
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || "Falha ao enviar feedback.");
+        const apiError = typeof data?.error === "string" ? data.error : "";
+        throw new Error(mapFeedbackError(res.status, apiError));
       }
 
       setFeedbackSent(true);
@@ -198,8 +200,8 @@ export default function ResultPage() {
       });
       setToastMsg("Obrigado pelo feedback!");
     } catch (err: any) {
-      const msg = typeof err?.message === "string" ? err.message : "Nao foi possivel enviar feedback.";
-      setFeedbackError(msg);
+      const msg = typeof err?.message === "string" ? err.message : "";
+      setFeedbackError(mapNetworkError(msg));
     } finally {
       setFeedbackLoading(false);
     }
