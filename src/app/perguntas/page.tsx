@@ -48,6 +48,7 @@ const ZOOM_STEP = 0.25;
 const ACTION_BAR_HEIGHT = 88;
 const INPUT_BAR_GAP = 8;
 const SCROLL_PAD_FALLBACK = ACTION_BAR_HEIGHT + INPUT_BAR_GAP + 120;
+const KEYBOARD_OPEN_THRESHOLD = 120;
 
 export default function PerguntasPage() {
   const router = useRouter();
@@ -138,6 +139,9 @@ export default function PerguntasPage() {
   const canZoomIn = docZoom < MAX_ZOOM;
   const canZoomOut = docZoom > MIN_ZOOM;
   const isEmptyState = qaHistory.length === 0;
+  const isKeyboardOpen = keyboardOffset > KEYBOARD_OPEN_THRESHOLD;
+  const actionBarOffset = isKeyboardOpen ? -keyboardOffset : 0;
+  const inputBarBottom = isKeyboardOpen ? INPUT_BAR_GAP : ACTION_BAR_HEIGHT + INPUT_BAR_GAP;
 
   useEffect(() => {
     if (!qaHistory.length) return;
@@ -173,17 +177,20 @@ export default function PerguntasPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const viewport = window.visualViewport;
+    const getHeight = () => viewport?.height ?? window.innerHeight;
     if (!initialViewportRef.current) {
-      initialViewportRef.current = window.innerHeight;
+      initialViewportRef.current = getHeight();
     }
     const updateOffset = () => {
-      const base = initialViewportRef.current ?? window.innerHeight;
-      const offset = Math.max(0, base - window.innerHeight);
+      const base = initialViewportRef.current ?? getHeight();
+      const offset = Math.max(0, base - getHeight());
       setKeyboardOffset(offset);
     };
     updateOffset();
-    window.addEventListener("resize", updateOffset);
-    return () => window.removeEventListener("resize", updateOffset);
+    const resizeTarget = viewport ?? window;
+    resizeTarget.addEventListener("resize", updateOffset);
+    return () => resizeTarget.removeEventListener("resize", updateOffset);
   }, []);
 
   function updateJumpState() {
@@ -308,6 +315,10 @@ export default function PerguntasPage() {
         }
         footer={
           <FooterActions
+            actionBarSx={{
+              bottom: actionBarOffset,
+              transition: "bottom 160ms ease-out",
+            }}
             secondary={{
               label: "Resultado",
               startIcon: <HelpOutlineRoundedIcon />,
@@ -523,10 +534,11 @@ export default function PerguntasPage() {
             position: "fixed",
             left: 0,
             right: 0,
-            bottom: ACTION_BAR_HEIGHT + INPUT_BAR_GAP,
+            bottom: inputBarBottom,
             zIndex: theme.zIndex.appBar,
             px: 2,
             bgcolor: theme.palette.background.default,
+            transition: "bottom 160ms ease-out",
           })}
         >
           <Box sx={{ maxWidth: 600, mx: "auto" }}>

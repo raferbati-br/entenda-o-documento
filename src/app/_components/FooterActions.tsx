@@ -22,6 +22,7 @@ type FooterActionsProps = {
   primary: FooterAction;
   secondary: FooterAction;
   leadingContent?: ReactNode;
+  actionBarSx?: SxProps<Theme>;
 };
 
 const BASE_BUTTON_SX: SxProps<Theme> = {
@@ -46,14 +47,14 @@ function buildButtonSx(variant: "contained" | "outlined", extra?: SxProps<Theme>
   return Array.isArray(extra) ? [BASE_BUTTON_SX, variantSx, ...extra] : [BASE_BUTTON_SX, variantSx, extra];
 }
 
-export default function FooterActions({ primary, secondary, leadingContent }: FooterActionsProps) {
+export default function FooterActions({ primary, secondary, leadingContent, actionBarSx }: FooterActionsProps) {
   const primaryVariant = primary.variant ?? "contained";
   const secondaryVariant = secondary.variant ?? "outlined";
   const secondaryComponentProps = secondary.component ? { component: secondary.component } : {};
   const primaryComponentProps = primary.component ? { component: primary.component } : {};
 
   return (
-    <ActionBar>
+    <ActionBar sx={actionBarSx}>
       <Stack spacing={2}>
         {leadingContent}
         <Stack direction="row" spacing={2} sx={{ width: "100%" }}>
