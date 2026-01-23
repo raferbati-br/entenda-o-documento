@@ -71,6 +71,7 @@ export default function PerguntasPage() {
   const [qaHistory, setQaHistory] = useState<QaItem[]>([]);
   const [showJump, setShowJump] = useState(false);
   const [scrollPad, setScrollPad] = useState(SCROLL_PAD_FALLBACK);
+  const [inputBarHeight, setInputBarHeight] = useState(0);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   const commonQuestions = useMemo(
@@ -142,6 +143,7 @@ export default function PerguntasPage() {
   const isKeyboardOpen = keyboardOffset > KEYBOARD_OPEN_THRESHOLD;
   const actionBarOffset = isKeyboardOpen ? -keyboardOffset : 0;
   const inputBarBottom = isKeyboardOpen ? INPUT_BAR_GAP : ACTION_BAR_HEIGHT + INPUT_BAR_GAP;
+  const jumpButtonBottom = inputBarBottom + inputBarHeight + 8;
 
   useEffect(() => {
     if (!qaHistory.length) return;
@@ -167,6 +169,7 @@ export default function PerguntasPage() {
     const node = inputBarRef.current;
     const updatePad = () => {
       const measured = Math.ceil(node.getBoundingClientRect().height);
+      setInputBarHeight(measured);
       setScrollPad(measured + INPUT_BAR_GAP + 16);
     };
     updatePad();
@@ -306,6 +309,8 @@ export default function PerguntasPage() {
     <>
       <PageLayout
         contentPaddingBottom={isEmptyState ? 14 : 22}
+        contentRef={scrollRef}
+        onContentScroll={handleScroll}
         header={
           <PageHeader>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -428,12 +433,9 @@ export default function PerguntasPage() {
               </Box>
             ) : (
               <Box
-                ref={scrollRef}
-                onScroll={handleScroll}
                 sx={{
                   flexGrow: 1,
                   minHeight: 0,
-                  overflowY: "auto",
                   pr: 1,
                   mr: -1,
                   pb: `${scrollPad}px`,
@@ -506,15 +508,35 @@ export default function PerguntasPage() {
                   ))}
 
                   {showJump && (
-                    <Box sx={{ position: "sticky", bottom: 8, display: "flex", justifyContent: "flex-end" }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<KeyboardArrowDownRoundedIcon />}
-                        onClick={handleJumpToEnd}
+                    <Box
+                      sx={(theme) => ({
+                        position: "fixed",
+                        left: 0,
+                        right: 0,
+                        bottom: jumpButtonBottom,
+                        zIndex: theme.zIndex.appBar + 1,
+                        px: 2,
+                        pointerEvents: "none",
+                      })}
+                    >
+                      <Box
+                        sx={{
+                          maxWidth: 600,
+                          mx: "auto",
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          pointerEvents: "auto",
+                        }}
                       >
-                        Ir para o fim
-                      </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<KeyboardArrowDownRoundedIcon />}
+                          onClick={handleJumpToEnd}
+                        >
+                          Ir para o fim
+                        </Button>
+                      </Box>
                     </Box>
                   )}
 
