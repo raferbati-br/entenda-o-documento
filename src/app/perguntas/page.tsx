@@ -7,7 +7,6 @@ import { loadQaContext } from "@/lib/qaContextStore";
 import { loadResult, AnalysisResult } from "@/lib/resultStore";
 import { ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
-import Disclaimer from "../_components/Disclaimer";
 
 import {
   Box,
@@ -25,9 +24,13 @@ import {
 
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
+import PaidRoundedIcon from "@mui/icons-material/PaidRounded";
+import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
 import ZoomOutRoundedIcon from "@mui/icons-material/ZoomOutRounded";
+import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import ActionBar from "../_components/ActionBar";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
@@ -42,11 +45,18 @@ const MAX_CONTEXT_CHARS = 3500;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.25;
+const ACTION_BAR_HEIGHT = 68;
+const INPUT_BAR_GAP = 8;
+const SCROLL_PAD_FALLBACK = ACTION_BAR_HEIGHT + INPUT_BAR_GAP + 120;
 
 export default function PerguntasPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const inputBarRef = useRef<HTMLDivElement | null>(null);
+  const autoScrollRef = useRef(true);
+  const prevLoadingRef = useRef(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -57,6 +67,8 @@ export default function PerguntasPage() {
   const [question, setQuestion] = useState("");
   const [qaLoading, setQaLoading] = useState(false);
   const [qaHistory, setQaHistory] = useState<QaItem[]>([]);
+  const [showJump, setShowJump] = useState(false);
+  const [scrollPad, setScrollPad] = useState(SCROLL_PAD_FALLBACK);
 
   const commonQuestions = useMemo(
     () => [
@@ -86,13 +98,6 @@ export default function PerguntasPage() {
     if (!result) return;
     telemetryCapture("qa_view", { contextSource: hasOcrContext ? "ocr" : "cards" });
   }, [result, hasOcrContext]);
-
-  useEffect(() => {
-    if (!qaHistory.length) return;
-    requestAnimationFrame(() => {
-      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    });
-  }, [qaHistory, qaLoading]);
 
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -130,6 +135,48 @@ export default function PerguntasPage() {
   const canAsk = question.trim().length >= MIN_QUESTION_CHARS && !qaLoading;
   const canZoomIn = docZoom < MAX_ZOOM;
   const canZoomOut = docZoom > MIN_ZOOM;
+  const isEmptyState = qaHistory.length === 0;
+
+  useEffect(() => {
+    if (!qaHistory.length) return;
+    if (!autoScrollRef.current) return;
+    requestAnimationFrame(() => {
+      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      setShowJump(false);
+    });
+  }, [qaHistory]);
+
+  useEffect(() => {
+    if (prevLoadingRef.current && !qaLoading && qaHistory.length) {
+      requestAnimationFrame(() => {
+        endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+        setShowJump(false);
+      });
+    }
+    prevLoadingRef.current = qaLoading;
+  }, [qaLoading, qaHistory.length]);
+
+  useEffect(() => {
+    if (!inputBarRef.current) return;
+    const node = inputBarRef.current;
+    const updatePad = () => {
+      const measured = Math.ceil(node.getBoundingClientRect().height);
+      setScrollPad(measured + INPUT_BAR_GAP + 16);
+    };
+    updatePad();
+    const observer = new ResizeObserver(updatePad);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isEmptyState]);
+
+  function handleScroll() {
+    const node = scrollRef.current;
+    if (!node) return;
+    const threshold = 24;
+    const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - threshold;
+    autoScrollRef.current = atBottom;
+    setShowJump(!atBottom);
+  }
 
   function zoomIn() {
     setDocZoom((z) => Math.min(MAX_ZOOM, Number((z + ZOOM_STEP).toFixed(2))));
@@ -212,62 +259,260 @@ export default function PerguntasPage() {
     }
   }
 
+  function handleJumpToEnd() {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    setShowJump(false);
+  }
+
   if (!result) return null;
 
   return (
     <>
       <PageLayout
-        contentPaddingBottom={22}
+        contentPaddingBottom={isEmptyState ? 14 : 22}
         header={
           <PageHeader>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Perguntas
+              Tire suas duvidas
             </Typography>
           </PageHeader>
         }
         footer={
-          <ActionBar>
-            <Stack spacing={1.5}>
-              <Stack direction="row" spacing={1.5}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<HelpOutlineRoundedIcon />}
-                  onClick={() => router.push("/result")}
-                  sx={{ height: 48, fontWeight: 700, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
-                >
-                  Resultado
-                </Button>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<DescriptionRoundedIcon />}
-                  onClick={openDocument}
-                  disabled={!imageUrl}
-                  sx={{ height: 48, fontWeight: 700, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
-                >
-                  Documento
-                </Button>
-              </Stack>
+          <ActionBar sx={{ p: 1.5 }}>
+            <Stack direction="row" spacing={1.5}>
+              <Button
+                variant="text"
+                fullWidth
+                startIcon={<HelpOutlineRoundedIcon />}
+                onClick={() => router.push("/result")}
+                sx={{ height: 44, fontWeight: 700 }}
+              >
+                Resultado
+              </Button>
+              <Button
+                variant="contained"
+                fullWidth
+                startIcon={<DescriptionRoundedIcon />}
+                onClick={openDocument}
+                disabled={!imageUrl}
+                sx={{ height: 44, fontWeight: 700 }}
+              >
+                Documento
+              </Button>
+            </Stack>
+          </ActionBar>
+        }
+      >
+        <Stack spacing={2} sx={{ minHeight: "100%" }}>
+          <Box sx={{ flexGrow: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+            {isEmptyState ? (
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  gap: 2,
+                }}
+              >
+                <Stack spacing={1.5}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <TextField
+                      inputRef={inputRef}
+                      label="Sua pergunta"
+                      placeholder="Ex: Qual e o prazo?"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION_CHARS))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAsk();
+                        }
+                      }}
+                      size="small"
+                      fullWidth
+                      inputProps={{ maxLength: MAX_QUESTION_CHARS }}
+                    />
+                    <IconButton
+                      onClick={handleAsk}
+                      disabled={!canAsk}
+                      sx={{
+                        height: 40,
+                        width: 40,
+                        borderRadius: "50%",
+                        bgcolor: canAsk ? "primary.main" : "action.disabledBackground",
+                        color: canAsk ? "primary.contrastText" : "text.disabled",
+                        "&:hover": { bgcolor: canAsk ? "primary.dark" : "action.disabledBackground" },
+                      }}
+                    >
+                      <SendRoundedIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                    Este aplicativo e informativo e pode cometer erros. Consulte um profissional para orientacoes.
+                  </Typography>
+                </Stack>
 
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {commonQuestions.map((q) => (
-                  <Chip
-                    key={q}
-                    label={q}
-                    size="small"
-                    variant="outlined"
-                    sx={{
-                      bgcolor: "background.paper",
-                      borderColor: "divider",
-                      fontSize: "0.75rem",
-                    }}
-                    onClick={() => handleQuickQuestion(q)}
-                  />
-                ))}
+                <Stack spacing={1} alignItems="flex-start">
+                  {commonQuestions.map((q) => {
+                    const iconColor =
+                      q === "Qual e o prazo?"
+                        ? "info.main"
+                        : q === "Qual e o valor?"
+                        ? "success.main"
+                        : q === "O que este documento pede?"
+                        ? "warning.main"
+                        : "secondary.main";
+                    const icon =
+                      q === "Qual e o prazo?"
+                        ? <ScheduleRoundedIcon fontSize="small" />
+                        : q === "Qual e o valor?"
+                        ? <PaidRoundedIcon fontSize="small" />
+                        : q === "O que este documento pede?"
+                        ? <DescriptionRoundedIcon fontSize="small" />
+                        : <HelpOutlineRoundedIcon fontSize="small" />;
+                    return (
+                      <Chip
+                        key={q}
+                        icon={icon}
+                        label={q}
+                        size="medium"
+                        variant="outlined"
+                        sx={{
+                          bgcolor: "background.paper",
+                          borderColor: "divider",
+                          fontSize: "0.85rem",
+                          justifyContent: "flex-start",
+                          borderRadius: 999,
+                          px: 2,
+                          py: 0.75,
+                          height: "auto",
+                          "& .MuiChip-label": { py: 0.25 },
+                          "& .MuiChip-icon": { color: iconColor },
+                        }}
+                        onClick={() => handleQuickQuestion(q)}
+                      />
+                    );
+                  })}
+                </Stack>
               </Box>
+            ) : (
+              <Box
+                ref={scrollRef}
+                onScroll={handleScroll}
+                sx={{
+                  flexGrow: 1,
+                  minHeight: 0,
+                  overflowY: "auto",
+                  pr: 1,
+                  mr: -1,
+                  pb: `${scrollPad}px`,
+                }}
+              >
+                <Stack spacing={1.5}>
+                  {qaHistory.map((item) => (
+                    <Stack key={item.id} spacing={1}>
+                      <Box
+                        sx={{
+                          alignSelf: "flex-end",
+                          bgcolor: "primary.main",
+                          color: "primary.contrastText",
+                          px: 2,
+                          py: 1,
+                          borderRadius: 2,
+                          maxWidth: "85%",
+                        }}
+                      >
+                        <Typography variant="body2">{item.question}</Typography>
+                      </Box>
 
-              <Stack direction="row" spacing={1.5} alignItems="center">
+                      {item.pending && (
+                        <Box
+                          sx={{
+                            alignSelf: "flex-start",
+                            px: 2,
+                            py: 1,
+                            borderRadius: 2,
+                            border: "1px solid",
+                            borderColor: "divider",
+                            bgcolor: "action.hover",
+                            maxWidth: "85%",
+                          }}
+                        >
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <CircularProgress size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                              Respondendo...
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      )}
+
+                      {item.answer && (
+                        <Box
+                          sx={{
+                            alignSelf: "flex-start",
+                            px: 2,
+                            py: 1,
+                            borderRadius: 2,
+                            border: "1px solid",
+                            borderColor: "divider",
+                            bgcolor: "background.paper",
+                            maxWidth: "85%",
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                            {item.answer}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {item.error && (
+                        <Box sx={{ alignSelf: "flex-start", maxWidth: "85%" }}>
+                          <Notice severity="warning">{item.error}</Notice>
+                        </Box>
+                      )}
+                    </Stack>
+                  ))}
+
+                  {showJump && (
+                    <Box sx={{ position: "sticky", bottom: 8, display: "flex", justifyContent: "flex-end" }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<KeyboardArrowDownRoundedIcon />}
+                        onClick={handleJumpToEnd}
+                      >
+                        Ir para o fim
+                      </Button>
+                    </Box>
+                  )}
+
+                  <Box ref={endRef} sx={{ height: `${scrollPad}px`, scrollMarginBottom: `${scrollPad}px` }} />
+                </Stack>
+              </Box>
+            )}
+          </Box>
+
+        </Stack>
+      </PageLayout>
+
+      {!isEmptyState && (
+        <Box
+          ref={inputBarRef}
+          sx={(theme) => ({
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: ACTION_BAR_HEIGHT + INPUT_BAR_GAP,
+            zIndex: theme.zIndex.appBar,
+            px: 2,
+            bgcolor: theme.palette.background.default,
+          })}
+        >
+          <Box sx={{ maxWidth: 600, mx: "auto" }}>
+            <Stack spacing={1}>
+              <Stack direction="row" spacing={1} alignItems="center">
                 <TextField
                   inputRef={inputRef}
                   label="Sua pergunta"
@@ -284,116 +529,28 @@ export default function PerguntasPage() {
                   fullWidth
                   inputProps={{ maxLength: MAX_QUESTION_CHARS }}
                 />
-                <Button
-                  variant="contained"
+                <IconButton
                   onClick={handleAsk}
                   disabled={!canAsk}
-                  sx={{ height: 40, fontWeight: 700, px: 3 }}
+                  sx={{
+                    height: 40,
+                    width: 40,
+                    borderRadius: "50%",
+                    bgcolor: canAsk ? "primary.main" : "action.disabledBackground",
+                    color: canAsk ? "primary.contrastText" : "text.disabled",
+                    "&:hover": { bgcolor: canAsk ? "primary.dark" : "action.disabledBackground" },
+                  }}
                 >
-                  Perguntar
-                </Button>
+                  <SendRoundedIcon fontSize="small" />
+                </IconButton>
               </Stack>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                Este aplicativo e informativo e pode cometer erros. Consulte um profissional para orientacoes.
+              </Typography>
             </Stack>
-          </ActionBar>
-        }
-      >
-        <Stack spacing={2} sx={{ minHeight: "100%" }}>
-          <Box sx={{ position: "sticky", top: 0, zIndex: 1, bgcolor: "background.default", pb: 1 }}>
-            <Typography variant="h5" gutterBottom fontWeight={800}>
-              Tire suas duvidas
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Veja o documento e faca perguntas especificas. A resposta e curta e informativa.
-            </Typography>
           </Box>
-
-          <Stack spacing={2} sx={{ flexGrow: 1 }}>
-            <Box>
-              <Typography variant="subtitle1" fontWeight={700}>
-                Perguntas e respostas
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                As conversas ficam aqui enquanto voce pergunta.
-              </Typography>
-            </Box>
-            {qaHistory.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                Escolha uma pergunta rapida ou escreva a sua.
-              </Typography>
-            ) : (
-              <Stack spacing={2}>
-                {qaHistory.map((item) => (
-                  <Stack key={item.id} spacing={1}>
-                    <Box
-                      sx={{
-                        alignSelf: "flex-end",
-                        bgcolor: "primary.main",
-                        color: "primary.contrastText",
-                        px: 2,
-                        py: 1,
-                        borderRadius: 2,
-                        maxWidth: "85%",
-                      }}
-                    >
-                      <Typography variant="body2">{item.question}</Typography>
-                    </Box>
-
-                    {item.pending && (
-                      <Box
-                        sx={{
-                          alignSelf: "flex-start",
-                          px: 2,
-                          py: 1,
-                          borderRadius: 2,
-                          border: "1px solid",
-                          borderColor: "divider",
-                          bgcolor: "action.hover",
-                          maxWidth: "85%",
-                        }}
-                      >
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <CircularProgress size={16} />
-                          <Typography variant="body2" color="text.secondary">
-                            Respondendo...
-                          </Typography>
-                        </Stack>
-                      </Box>
-                    )}
-
-                    {item.answer && (
-                      <Box
-                        sx={{
-                          alignSelf: "flex-start",
-                          px: 2,
-                          py: 1,
-                          borderRadius: 2,
-                          border: "1px solid",
-                          borderColor: "divider",
-                          bgcolor: "background.paper",
-                          maxWidth: "85%",
-                        }}
-                      >
-                        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                          {item.answer}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    {item.error && (
-                      <Box sx={{ alignSelf: "flex-start", maxWidth: "85%" }}>
-                        <Notice severity="warning">{item.error}</Notice>
-                      </Box>
-                    )}
-                  </Stack>
-                ))}
-                <Box ref={endRef} />
-              </Stack>
-            )}
-          </Stack>
-
-          <Disclaimer />
-        </Stack>
-      </PageLayout>
+        </Box>
+      )}
 
       <Dialog open={docOpen} onClose={closeDocument} fullWidth maxWidth="sm">
         <DialogTitle>Documento</DialogTitle>
@@ -420,7 +577,7 @@ export default function PerguntasPage() {
               {imageUrl ? (
                 <Box sx={{ width: `${docZoom * 100}%`, transformOrigin: "top center" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imageUrl} alt="Documento" style={{ width: "100%", display: "block" }} />
+                  <img src={imageUrl} alt={documentTitle} style={{ width: "100%", display: "block" }} />
                 </Box>
               ) : (
                 <Box sx={{ p: 3, textAlign: "center" }}>
