@@ -9,12 +9,12 @@ import { compressBlobToDataUrl } from "@/lib/imageCompression";
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
 
-import { Box, Button, CircularProgress, Stack, Typography, IconButton, Backdrop } from "@mui/material";
+import { Box, CircularProgress, Typography, IconButton, Backdrop } from "@mui/material";
 
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import ActionBar from "../_components/ActionBar";
+import FooterActions from "../_components/FooterActions";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
@@ -139,61 +139,32 @@ export default function ConfirmPage() {
             <ArrowBackRoundedIcon />
           </IconButton>
           <Typography variant="h6" sx={{ color: "white", ml: 1, fontWeight: 600 }}>
-            Confira a foto
+            Confira a imagem
           </Typography>
         </PageHeader>
       }
       footer={
-        <ActionBar variant="sheet" sx={{ p: 3 }}>
-          {err && (
-            <Notice severity="error" onClose={() => setErr(null)} sx={{ mb: 2 }}>
-              {err}
-            </Notice>
-          )}
-
-          <Stack spacing={2}>
-            <Typography variant="subtitle1" align="center" fontWeight={700}>
-              Dá para ler o texto?
-            </Typography>
-
-            <Stack direction="row" spacing={2}>
-              {/* Botão Secundário: Tirar Outra */}
-              <Button
-                variant="outlined"
-                fullWidth
-                size="large"
-                startIcon={<ReplayRoundedIcon />}
-                onClick={retake}
-                disabled={loading}
-                sx={{ height: 56, fontWeight: 700, borderRadius: 3, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
-              >
-                Tirar outra
-              </Button>
-
-              {/* Botão Principal: Sim, usar */}
-              <Button
-                variant="contained"
-                fullWidth
-                size="large"
-                startIcon={<CheckCircleRoundedIcon />}
-                onClick={handleConfirm}
-                disabled={loading}
-                sx={{ height: 56, fontWeight: 700, borderRadius: 3, boxShadow: "none" }}
-              >
-                Sim, usar
-              </Button>
-            </Stack>
-
-            <Stack spacing={0.5} textAlign="center">
-              <Typography variant="caption" color="text.secondary">
-                Se nao estiver nitido, tire outra.
-              </Typography>
-              <Typography variant="caption" color="text.disabled">
-                Sua foto e segura e deletada apos o uso.
-              </Typography>
-            </Stack>
-          </Stack>
-        </ActionBar>
+        <FooterActions
+          leadingContent={
+            err && (
+              <Notice severity="error" onClose={() => setErr(null)}>
+                {err}
+              </Notice>
+            )
+          }
+          secondary={{
+            label: "Escolher outra",
+            startIcon: <ReplayRoundedIcon />,
+            onClick: retake,
+            disabled: loading,
+          }}
+          primary={{
+            label: "Usar esta imagem",
+            startIcon: <CheckCircleRoundedIcon />,
+            onClick: handleConfirm,
+            disabled: loading,
+          }}
+        />
       }
     >
       <Box sx={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>

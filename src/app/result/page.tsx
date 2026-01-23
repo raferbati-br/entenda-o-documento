@@ -39,7 +39,7 @@ import ThumbDownAltRoundedIcon from "@mui/icons-material/ThumbDownAltRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import Disclaimer from "../_components/Disclaimer";
-import ActionBar from "../_components/ActionBar";
+import FooterActions from "../_components/FooterActions";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
@@ -320,33 +320,21 @@ export default function ResultPage() {
 </PageHeader>
         }
         footer={
-          <ActionBar>
-            <Stack direction="row" spacing={2}>
-              <Button
-                variant="outlined"
-                size="large"
-                fullWidth
-                startIcon={<HelpOutlineRoundedIcon />}
-                onClick={() => {
-                  telemetryCapture("qa_open");
-                  router.push("/perguntas");
-                }}
-                sx={{ flex: 1, height: 56, fontWeight: 700, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
-              >
-                Tirar duvidas
-              </Button>
-              <Button
-                variant="contained"
-                size="large"
-                fullWidth
-                startIcon={<CameraAltRoundedIcon />}
-                onClick={newDoc}
-                sx={{ flex: 1, height: 56, fontWeight: 700 }}
-              >
-                Analisar Outro
-              </Button>
-            </Stack>
-</ActionBar>
+          <FooterActions
+            secondary={{
+              label: "Tirar duvidas",
+              startIcon: <HelpOutlineRoundedIcon />,
+              onClick: () => {
+                telemetryCapture("qa_open");
+                router.push("/perguntas");
+              },
+            }}
+            primary={{
+              label: "Analisar Outro",
+              startIcon: <CameraAltRoundedIcon />,
+              onClick: newDoc,
+            }}
+          />
         }
       >
         {ttsError && (

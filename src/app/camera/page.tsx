@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
 import { telemetryCapture } from "@/lib/telemetry";
 
-import { Box, Button, IconButton, Stack, Typography, CircularProgress } from "@mui/material";
+import { Box, IconButton, Stack, Typography, CircularProgress } from "@mui/material";
 
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
@@ -14,7 +14,7 @@ import CropFreeRoundedIcon from "@mui/icons-material/CropFreeRounded";
 import TextFieldsRoundedIcon from "@mui/icons-material/TextFieldsRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import IconTextRow from "../_components/IconTextRow";
-import ActionBar from "../_components/ActionBar";
+import FooterActions from "../_components/FooterActions";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
@@ -67,37 +67,18 @@ function CameraContent() {
           </PageHeader>
         }
         footer={
-          <ActionBar>
-            <Stack direction="row" spacing={2}>
-              {/* Botão Galeria (Caso a pessoa mude de ideia aqui dentro) */}
-              <Button
-                variant="outlined"
-                size="large"
-                fullWidth
-                startIcon={<PhotoLibraryRoundedIcon />}
-                onClick={openFiles}
-                sx={{ flex: 1, height: 56, fontWeight: 700, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
-              >
-                Galeria
-              </Button>
-
-              {/* Botão principal */}
-              <Button
-                variant="contained"
-                size="large"
-                fullWidth
-                startIcon={<CameraAltRoundedIcon />}
-                onClick={openCamera}
-                sx={{ flex: 1, height: 56, fontWeight: 700 }}
-              >
-                Tirar foto
-              </Button>
-            </Stack>
-
-            <Typography variant="caption" display="block" textAlign="center" color="text.disabled" sx={{ mt: 2 }}>
-              Sua foto é segura e deletada após o uso.
-            </Typography>
-          </ActionBar>
+          <FooterActions
+            secondary={{
+              label: "Galeria",
+              startIcon: <PhotoLibraryRoundedIcon />,
+              onClick: openFiles,
+            }}
+            primary={{
+              label: "Tirar foto",
+              startIcon: <CameraAltRoundedIcon />,
+              onClick: openCamera,
+            }}
+          />
         }
       >
         <Stack spacing={3}>

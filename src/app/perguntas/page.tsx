@@ -31,7 +31,7 @@ import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
 import ZoomOutRoundedIcon from "@mui/icons-material/ZoomOutRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
-import ActionBar from "../_components/ActionBar";
+import FooterActions from "../_components/FooterActions";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
@@ -45,7 +45,7 @@ const MAX_CONTEXT_CHARS = 3500;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.25;
-const ACTION_BAR_HEIGHT = 68;
+const ACTION_BAR_HEIGHT = 88;
 const INPUT_BAR_GAP = 8;
 const SCROLL_PAD_FALLBACK = ACTION_BAR_HEIGHT + INPUT_BAR_GAP + 120;
 
@@ -307,29 +307,19 @@ export default function PerguntasPage() {
           </PageHeader>
         }
         footer={
-          <ActionBar sx={{ p: 1.5 }}>
-            <Stack direction="row" spacing={1.5}>
-              <Button
-                variant="text"
-                fullWidth
-                startIcon={<HelpOutlineRoundedIcon />}
-                onClick={() => router.push("/result")}
-                sx={{ height: 44, fontWeight: 700 }}
-              >
-                Resultado
-              </Button>
-              <Button
-                variant="contained"
-                fullWidth
-                startIcon={<DescriptionRoundedIcon />}
-                onClick={openDocument}
-                disabled={!imageUrl}
-                sx={{ height: 44, fontWeight: 700 }}
-              >
-                Documento
-              </Button>
-            </Stack>
-          </ActionBar>
+          <FooterActions
+            secondary={{
+              label: "Resultado",
+              startIcon: <HelpOutlineRoundedIcon />,
+              onClick: () => router.push("/result"),
+            }}
+            primary={{
+              label: "Documento",
+              startIcon: <DescriptionRoundedIcon />,
+              onClick: openDocument,
+              disabled: !imageUrl,
+            }}
+          />
         }
       >
         <Stack spacing={2} sx={{ minHeight: "100%" }}>

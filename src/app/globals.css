@@ -10,6 +10,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   /* Aplica a fonte nativa no corpo geral */
   font-family: var(--font-system);
@@ -27,6 +31,7 @@ body {
   
   font-size: 16px;
   line-height: 1.5;
+  overflow-y: scroll;
 }
 
 input, textarea {

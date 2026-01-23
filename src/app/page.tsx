@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { saveCapture } from "@/lib/captureStore";
 import { telemetryCapture } from "@/lib/telemetry";
 
-import { Box, Button, Divider, Stack, Typography } from "@mui/material";
+import { Box, Divider, Stack, Typography } from "@mui/material";
 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
@@ -14,7 +14,7 @@ import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
 import IconTextRow from "./_components/IconTextRow";
-import ActionBar from "./_components/ActionBar";
+import FooterActions from "./_components/FooterActions";
 import PageLayout from "./_components/PageLayout";
 
 export default function HomePage() {
@@ -56,33 +56,20 @@ export default function HomePage() {
       <PageLayout
         contentPaddingTop={4}
         footer={
-          <ActionBar>
-            <Stack direction="row" spacing={2}>
-              {/* Botão Galeria - Ação Direta */}
-              <Button
-                onClick={handleOpenGallery}
-                variant="outlined"
-                size="large"
-                startIcon={<PhotoLibraryRoundedIcon />}
-                sx={{ flex: 1, height: 56, fontWeight: 700, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
-              >
-                Galeria
-              </Button>
-
-              {/* Botão Câmera */}
-              <Button
-                component={Link}
-                href="/camera"
-                variant="contained"
-                size="large"
-                startIcon={<CameraAltRoundedIcon />}
-                onClick={() => telemetryCapture("camera_start", { source: "home" })}
-                sx={{ flex: 1, height: 56, fontWeight: 700, fontSize: "1rem", boxShadow: "0 8px 16px rgba(0,102,204,0.2)" }}
-              >
-                Tirar foto
-              </Button>
-            </Stack>
-          </ActionBar>
+          <FooterActions
+            secondary={{
+              label: "Galeria",
+              startIcon: <PhotoLibraryRoundedIcon />,
+              onClick: handleOpenGallery,
+            }}
+            primary={{
+              label: "Tirar foto",
+              startIcon: <CameraAltRoundedIcon />,
+              component: Link,
+              href: "/camera",
+              onClick: () => telemetryCapture("camera_start", { source: "home" }),
+            }}
+          />
         }
       >
         {/* HERO */}
@@ -93,10 +80,6 @@ export default function HomePage() {
           </Typography>
           <Typography color="text.secondary" variant="body1" sx={{ lineHeight: 1.6 }}>
             Envie uma imagem de um documento e receba uma explicação direta ao ponto.
-          </Typography>
-
-          <Typography variant="caption" color="text.disabled">
-            Privado e seguro. Sua foto e deletada apos o uso.
           </Typography>
 
         </Stack>
