@@ -7,6 +7,7 @@ import { saveResult } from "@/lib/resultStore";
 import { motion, AnimatePresence } from "framer-motion"; // Instale: npm install framer-motion
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
+import { markLatencyTrace, recordLatencyStep } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 
 import { Box, Button, Container, Stack, Typography, LinearProgress } from "@mui/material";
@@ -104,6 +105,7 @@ export default function AnalyzingPage() {
       try {
         telemetryCapture("analyze_start");
         const token = await ensureSessionToken();
+        const ocrStart = performance.now();
         const ocrRes = await fetch("/api/ocr", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
@@ -112,10 +114,12 @@ export default function AnalyzingPage() {
         });
 
         const ocrData = await ocrRes.json().catch(() => ({}));
+        recordLatencyStep("ocr_ms", performance.now() - ocrStart);
         if (ocrRes.ok && ocrData?.ok && typeof ocrData?.documentText === "string" && ocrData.documentText.trim()) {
           saveQaContext(ocrData.documentText);
         }
 
+        const analyzeStart = performance.now();
         const res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
@@ -124,9 +128,11 @@ export default function AnalyzingPage() {
         });
 
         const data = await res.json().catch(() => ({}));
+        recordLatencyStep("analyze_ms", performance.now() - analyzeStart);
         if (!res.ok || !data?.ok) throw { res, data };
 
         saveResult(data.result);
+        markLatencyTrace("analyze_done");
         telemetryCapture("analyze_success");
         router.replace("/result");
       } catch (e: any) {

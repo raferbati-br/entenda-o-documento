@@ -7,6 +7,7 @@ import { saveCaptureId } from "@/lib/captureIdStore";
 import { loadCapture, clearCapture } from "@/lib/captureStore";
 import { compressBlobToDataUrl } from "@/lib/imageCompression";
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
+import { recordLatencyStep, startLatencyTrace } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 
 import { Box, CircularProgress, Typography, IconButton, Backdrop } from "@mui/material";
@@ -73,6 +74,7 @@ export default function ConfirmPage() {
     setLoading(true);
     setErr(null);
     telemetryCapture("confirm_submit");
+    startLatencyTrace();
 
     try {
       const payload = await loadCapture();
@@ -82,6 +84,7 @@ export default function ConfirmPage() {
       }
 
       // 1) Lógica de Compressão (Mantida do seu arquivo original)
+      const compressStart = performance.now();
       let { dataUrl, bytes } = await compressBlobToDataUrl(payload.blob, {
         maxDimension: 1600,
         quality: 0.78,
@@ -97,9 +100,11 @@ export default function ConfirmPage() {
         dataUrl = second.dataUrl;
         bytes = second.bytes;
       }
+      recordLatencyStep("compress_ms", performance.now() - compressStart);
 
       // 2) Envio para API
       const token = await ensureSessionToken();
+      const captureStart = performance.now();
       const res = await fetch("/api/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
@@ -107,6 +112,7 @@ export default function ConfirmPage() {
       });
 
       const data = await res.json().catch(() => ({}));
+      recordLatencyStep("capture_ms", performance.now() - captureStart);
       if (res.status === 401) {
         await clearSessionToken();
       }

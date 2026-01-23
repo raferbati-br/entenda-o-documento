@@ -6,6 +6,7 @@ import { clearCaptureId } from "@/lib/captureIdStore";
 import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
 import { clearQaContext, loadQaContext } from "@/lib/qaContextStore";
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
+import { clearLatencyTrace, getLatencyTraceSnapshot } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 import SectionBlock from "../_components/SectionBlock";
 
@@ -127,6 +128,23 @@ export default function ResultPage() {
       contextSource: hasOcrContext ? "ocr" : "cards",
     });
   }, [result, confidenceBucket, hasOcrContext]);
+
+  useEffect(() => {
+    if (!result) return;
+    const nowMs = Date.now();
+    const trace = getLatencyTraceSnapshot(nowMs);
+    if (!trace) return;
+    const payload: Record<string, number> = {
+      total_ms: trace.totalMs,
+      ...trace.steps,
+    };
+    const analyzeDoneMs = trace.marks.analyze_done;
+    if (Number.isFinite(analyzeDoneMs)) {
+      payload.result_render_ms = Math.max(0, Math.round(nowMs - analyzeDoneMs));
+    }
+    telemetryCapture("latency_e2e", payload);
+    clearLatencyTrace();
+  }, [result]);
 
   // Texto completo para Leitura e Compartilhamento
   const fullText = useMemo(() => {
