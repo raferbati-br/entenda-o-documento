@@ -49,6 +49,8 @@ function buildButtonSx(variant: "contained" | "outlined", extra?: SxProps<Theme>
 export default function FooterActions({ primary, secondary, leadingContent }: FooterActionsProps) {
   const primaryVariant = primary.variant ?? "contained";
   const secondaryVariant = secondary.variant ?? "outlined";
+  const secondaryComponentProps = secondary.component ? { component: secondary.component } : {};
+  const primaryComponentProps = primary.component ? { component: primary.component } : {};
 
   return (
     <ActionBar>
@@ -61,9 +63,9 @@ export default function FooterActions({ primary, secondary, leadingContent }: Fo
             startIcon={secondary.startIcon}
             onClick={secondary.onClick}
             href={secondary.href}
-            component={secondary.component}
             disabled={secondary.disabled}
             sx={buildButtonSx(secondaryVariant, secondary.sx)}
+            {...secondaryComponentProps}
           >
             {secondary.label}
           </Button>
@@ -73,9 +75,9 @@ export default function FooterActions({ primary, secondary, leadingContent }: Fo
             startIcon={primary.startIcon}
             onClick={primary.onClick}
             href={primary.href}
-            component={primary.component}
             disabled={primary.disabled}
             sx={buildButtonSx(primaryVariant, primary.sx)}
+            {...primaryComponentProps}
           >
             {primary.label}
           </Button>
