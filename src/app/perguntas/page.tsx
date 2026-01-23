@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { loadCapture } from "@/lib/captureStore";
 import { loadQaContext } from "@/lib/qaContextStore";
 import { loadResult, AnalysisResult } from "@/lib/resultStore";
-import { ensureSessionToken } from "@/lib/sessionToken";
+import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
 
 import {
@@ -268,6 +268,9 @@ export default function PerguntasPage() {
       });
 
       const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        await clearSessionToken();
+      }
       if (!res.ok || !data?.ok) {
         throw new Error(data?.error || "Falha ao responder.");
       }

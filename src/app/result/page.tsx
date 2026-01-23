@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { clearCaptureId } from "@/lib/captureIdStore";
 import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
 import { clearQaContext, loadQaContext } from "@/lib/qaContextStore";
-import { ensureSessionToken } from "@/lib/sessionToken";
+import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
 import SectionBlock from "../_components/SectionBlock";
 
@@ -165,6 +165,9 @@ export default function ResultPage() {
       });
 
       const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        await clearSessionToken();
+      }
       if (!res.ok || !data?.ok) {
         throw new Error(data?.error || "Falha ao enviar feedback.");
       }

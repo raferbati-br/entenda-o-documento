@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { loadCaptureId, clearCaptureId } from "@/lib/captureIdStore";
 import { saveResult } from "@/lib/resultStore";
 import { motion, AnimatePresence } from "framer-motion"; // Instale: npm install framer-motion
-import { ensureSessionToken } from "@/lib/sessionToken";
+import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
 import { telemetryCapture } from "@/lib/telemetry";
 
@@ -137,6 +137,9 @@ export default function AnalyzingPage() {
           status: res?.status ?? 0,
           error: typeof data?.error === "string" ? data.error : "unknown",
         });
+        if (res?.status === 401) {
+          clearSessionToken().catch(() => {});
+        }
         clearCaptureId();
         setFriendlyError(buildFriendlyError(res, data));
       }

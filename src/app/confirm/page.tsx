@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { saveCaptureId } from "@/lib/captureIdStore";
 import { loadCapture, clearCapture } from "@/lib/captureStore";
 import { compressBlobToDataUrl } from "@/lib/imageCompression";
-import { ensureSessionToken } from "@/lib/sessionToken";
+import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
 
 import { Box, Button, CircularProgress, Stack, Typography, IconButton, Backdrop } from "@mui/material";
@@ -107,6 +107,9 @@ export default function ConfirmPage() {
       });
 
       const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        await clearSessionToken();
+      }
       if (!res.ok || !data?.ok) {
         throw new Error(typeof data?.error === "string" ? data.error : "Erro ao enviar imagem");
       }

@@ -5,6 +5,11 @@ export async function getSessionToken(): Promise<string | null> {
   return sessionStorage.getItem(KEY);
 }
 
+export async function clearSessionToken(): Promise<void> {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(KEY);
+}
+
 export async function ensureSessionToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   const existing = sessionStorage.getItem(KEY);

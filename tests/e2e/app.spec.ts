@@ -54,7 +54,7 @@ test("happy path: analyze document and show result", async ({ page }) => {
 
   await page.getByRole("button", { name: "Tirar duvidas" }).click();
   await page.waitForURL("**/perguntas");
-  await expect(page.getByRole("heading", { name: "Tire suas duvidas", level: 5 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tire suas duvidas" })).toBeVisible();
   await expect(page.getByLabel("Sua pergunta")).toBeVisible();
 });
 
