@@ -33,7 +33,7 @@ Visão geral e endpoints em `docs/architecture/README.md`.
 
 ## 🤖 Integração com IA
 
-- **Modelo:** OpenAI GPT-4o (multimodal)
+- **Modelo:** OpenAI GPT-4o-mini (multimodal)
 - **Entrada:** texto + imagem (foto do documento)
 - **Saída (JSON):**
 

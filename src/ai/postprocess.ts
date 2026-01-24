@@ -1,15 +1,9 @@
 import type { AnalyzeResult, Card, CardId, Prompt } from "./types";
+import { redactSensitiveData, safeShorten } from "../lib/text";
 
 function clamp01(n: number) {
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.min(1, n));
-}
-
-function safeShorten(s: string, max = 500) {
-  const t = (s || "").trim();
-  if (!t) return "";
-  if (t.length <= max) return t;
-  return t.slice(0, max - 1).trimEnd() + "…";
 }
 
 function asString(x: unknown): string {
@@ -43,22 +37,6 @@ function softenPrescriptiveLanguage(s: string): { text: string; softened: boolea
     out = next;
   }
   return { text: out, softened };
-}
-
-function redactSensitiveData(s: string): string {
-  if (!s) return s;
-
-  const patterns: RegExp[] = [
-    /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, // CPF
-    /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g, // CNPJ
-    /\b\d{5}\.?\d{5}\s?\d{5}\.?\d{6}\s?\d{5}\.?\d{6}\s?\d{1,2}\b/g, // linha digitavel (boleto)
-    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, // email
-    /\b(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}-?\d{4}\b/g, // telefone
-  ];
-
-  let out = s;
-  for (const rx of patterns) out = out.replace(rx, "***");
-  return out;
 }
 
 function normalizeCardText(value: unknown, fallback: string, stats: SanitizerStats, max = 500) {
@@ -151,3 +129,4 @@ export function postprocessWithStats(raw: any, prompt: Prompt): { result: Analyz
 export function postprocess(raw: any, prompt: Prompt): AnalyzeResult {
   return postprocessWithStats(raw, prompt).result;
 }
+
