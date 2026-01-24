@@ -21,7 +21,7 @@ export async function answerQuestion(input: {
   context: string;
 }): Promise<{ answer: string; meta: { provider: string; model: string }; promptId: string }> {
   const promptId = process.env.QA_PROMPT_ID ?? "entendaDocumento.qa.v1";
-  const model = process.env.LLM_MODEL ?? "gpt-4o";
+  const model = process.env.LLM_MODEL ?? "gpt-4o-mini";
 
   const prompt = getQaPrompt(promptId);
   const provider = getProvider();
@@ -48,7 +48,7 @@ export async function answerQuestionStream(input: {
   context: string;
 }): Promise<{ stream: AsyncIterable<string>; meta: { provider: string; model: string }; promptId: string }> {
   const promptId = process.env.QA_PROMPT_ID ?? "entendaDocumento.qa.v1";
-  const model = process.env.LLM_MODEL ?? "gpt-4o";
+  const model = process.env.LLM_MODEL ?? "gpt-4o-mini";
 
   const prompt = getQaPrompt(promptId);
   const provider = getProvider();

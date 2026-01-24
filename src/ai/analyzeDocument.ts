@@ -16,7 +16,7 @@ export async function analyzeDocument(input: { imageDataUrl?: string; documentTe
   const promptId = useText
     ? process.env.ANALYZE_TEXT_PROMPT_ID ?? "entendaDocumento.text.v1"
     : process.env.PROMPT_ID ?? "entendaDocumento.v1";
-  const model = process.env.LLM_MODEL ?? "gpt-4o";
+  const model = process.env.LLM_MODEL ?? "gpt-4o-mini";
 
   const prompt = getPrompt(promptId);
   const provider = getProvider(process.env.ANALYZE_LLM_PROVIDER);

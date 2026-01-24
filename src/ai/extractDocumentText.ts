@@ -30,7 +30,7 @@ export async function extractDocumentText(imageDataUrl: string): Promise<{
   promptId: string;
 }> {
   const promptId = process.env.OCR_PROMPT_ID ?? "entendaDocumento.ocr.v1";
-  const model = process.env.LLM_MODEL ?? "gpt-4o";
+  const model = process.env.LLM_MODEL ?? "gpt-4o-mini";
 
   const prompt = getOcrPrompt(promptId);
   const provider = getProvider();
