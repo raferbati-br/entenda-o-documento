@@ -19,7 +19,7 @@ export function buildAnalyzeFriendlyError(res: Response | null, data: any): Frie
   if (status === 401)
     return {
       title: "Sessão expirada",
-      message: "O tempo da sua sessão acabou.",
+      message: "Sua sessão expirou.",
       hint: "Tire outra foto para continuar.",
       actionLabel: "Tirar nova foto",
       actionHref: "/camera",
@@ -27,7 +27,7 @@ export function buildAnalyzeFriendlyError(res: Response | null, data: any): Frie
 
   if (status === 410)
     return {
-      title: "A foto expirou",
+      title: "Foto expirada",
       message: "Por segurança, a foto foi apagada.",
       hint: "Tire outra foto.",
       actionLabel: "Tirar nova foto",
@@ -37,7 +37,7 @@ export function buildAnalyzeFriendlyError(res: Response | null, data: any): Frie
     return {
       title: "Foto muito pesada",
       message: "A imagem ficou grande demais.",
-      hint: "Tente aproximar o documento.",
+      hint: "Aproxime o documento e tente novamente.",
       actionLabel: "Tirar outra foto",
       actionHref: "/camera",
     };
@@ -54,7 +54,7 @@ export function buildAnalyzeFriendlyError(res: Response | null, data: any): Frie
 
   return {
     title: "Não entendi a foto",
-    message: apiMsg || "Ocorreu um problema.",
+    message: apiMsg || "Não conseguimos analisar a foto.",
     hint: "Tente com mais luz.",
     actionLabel: "Tentar outra foto",
     actionHref: "/camera",
@@ -72,7 +72,7 @@ export function mapCaptureError(status: number, apiError: string) {
     case "Requisição inválida.":
       return "Não conseguimos enviar a foto. Tente novamente.";
     case "Imagem inválida.":
-      return "A foto não pôde ser lida. Tente outra foto.";
+      return "Não foi possível ler a foto. Tente outra foto.";
     case "Imagem não informada.":
       return "Nenhuma foto foi enviada. Tente novamente.";
     case "Base64 inválido.":
@@ -86,7 +86,7 @@ export function mapCaptureError(status: number, apiError: string) {
     case "O sistema está temporariamente cheio. Tente novamente em instantes.":
       return "Sistema cheio no momento. Tente novamente em instantes.";
     default:
-      return apiError || "Falha ao enviar imagem";
+      return apiError || "Falha ao enviar a imagem.";
   }
 }
 
@@ -94,7 +94,7 @@ export function mapQaError(status: number, apiError: string) {
   if (status === 401) return "Sessão expirada. Refaça a análise do documento.";
   if (status === 403) return "Não foi possível validar a solicitação. Tente novamente.";
   if (status === 429) return "Muitas tentativas. Aguarde um pouco.";
-  if (status === 502) return "Não conseguimos gerar a resposta agora. Tente novamente.";
+  if (status === 502) return "Não conseguimos gerar a resposta. Tente novamente.";
   if (status >= 500) return "Erro interno. Tente novamente.";
 
   switch (apiError) {
@@ -107,9 +107,9 @@ export function mapQaError(status: number, apiError: string) {
     case "Contexto do documento não informado.":
       return "Não conseguimos encontrar o conteúdo do documento.";
     case "Contexto muito longo.":
-      return "O conteúdo do documento ficou muito grande para responder.";
+      return "O conteúdo do documento é muito longo para responder.";
     default:
-      return apiError || "Não foi possível responder agora.";
+      return apiError || "Não conseguimos responder agora.";
   }
 }
 
@@ -125,7 +125,7 @@ export function mapFeedbackError(status: number, apiError: string) {
     case "Feedback inválido.":
       return "Feedback inválido. Tente novamente.";
     default:
-      return apiError || "Não foi possível enviar feedback.";
+      return apiError || "Não conseguimos enviar o feedback.";
   }
 }
 
