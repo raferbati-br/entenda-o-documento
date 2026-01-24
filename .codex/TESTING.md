@@ -61,6 +61,7 @@ Em caso de falha no build:
 - corrigir o problema antes de prosseguir
 
 ## Comando padrão para rodar testes
+- Codigo: npm run lint
 - Testes: npm run test
 - Build: npm run build
 
