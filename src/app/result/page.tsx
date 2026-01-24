@@ -19,6 +19,7 @@ import {
   Button,
   Chip,
   Divider,
+  Fab,
   IconButton,
   Stack,
   Typography,
@@ -40,6 +41,7 @@ import ThumbUpAltRoundedIcon from "@mui/icons-material/ThumbUpAltRounded";
 import ThumbDownAltRoundedIcon from "@mui/icons-material/ThumbDownAltRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import Disclaimer from "../_components/Disclaimer";
 import FooterActions from "../_components/FooterActions";
 import PageHeader from "../_components/PageHeader";
@@ -48,6 +50,8 @@ import Notice from "../_components/Notice";
 
 // === Tipos e Helpers ===
 type CardT = { id: string; title: string; text: string };
+const ACTION_BAR_HEIGHT = 88;
+const JUMP_BUTTON_OFFSET = ACTION_BAR_HEIGHT + 12;
 
 function confidenceToInfo(confidence: number) {
   if (confidence < 0.45) return { label: "Baixa", color: "error.main", bg: "error.lighter", text: "Difícil de ler" };
@@ -62,7 +66,10 @@ function isSpeechSupported() {
 
 export default function ResultPage() {
   const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [showJump, setShowJump] = useState(false);
 
   // TTS State
   const [ttsSupported, setTtsSupported] = useState(false);
@@ -111,6 +118,40 @@ export default function ResultPage() {
     const timeoutId = window.setTimeout(() => setTtsError(null), 3000);
     return () => window.clearTimeout(timeoutId);
   }, [ttsError]);
+
+  function updateJumpState() {
+    const node = scrollRef.current;
+    const target =
+      node && node.scrollHeight > node.clientHeight
+        ? node
+        : typeof document !== "undefined"
+        ? document.documentElement
+        : null;
+    if (!target) return;
+    const threshold = 24;
+    const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - threshold;
+    setShowJump(!atBottom);
+  }
+
+  function handleContentScroll() {
+    updateJumpState();
+  }
+
+  function handleJumpToEnd() {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }
+
+  useEffect(() => {
+    if (!result) return;
+    requestAnimationFrame(updateJumpState);
+  }, [result]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleWindowScroll = () => updateJumpState();
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, []);
 
   const cardsArr = useMemo<CardT[]>(() => (result?.cards as CardT[]) || [], [result]);
   const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
@@ -304,6 +345,8 @@ export default function ResultPage() {
     <>
       <PageLayout
         contentPaddingBottom={20}
+        contentRef={scrollRef}
+        onContentScroll={handleContentScroll}
         header={
           <PageHeader>
             <IconButton edge="start" onClick={() => router.push("/")} sx={{ mr: 1 }}>
@@ -483,8 +526,26 @@ export default function ResultPage() {
         </Box>
 
 
-        <Box sx={{ height: 20 }} />
+        <Box ref={endRef} sx={{ height: 20 }} />
       </PageLayout>
+
+      {showJump && (
+        <Fab
+          size="small"
+          color="primary"
+          aria-label="Ir para o fim"
+          onClick={handleJumpToEnd}
+          sx={(theme) => ({
+            position: "fixed",
+            right: 16,
+            bottom: JUMP_BUTTON_OFFSET,
+            zIndex: theme.zIndex.appBar + 2,
+            boxShadow: 3,
+          })}
+        >
+          <KeyboardArrowDownRoundedIcon />
+        </Fab>
+      )}
 
       <Snackbar
         open={!!toastMsg}

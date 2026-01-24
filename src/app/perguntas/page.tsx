@@ -19,6 +19,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  Fab,
   IconButton,
   Stack,
   TextField,
@@ -54,7 +55,7 @@ const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.25;
 const ACTION_BAR_HEIGHT = 88;
 const INPUT_BAR_GAP = 8;
-const SCROLL_PAD_FALLBACK = ACTION_BAR_HEIGHT + INPUT_BAR_GAP + 120;
+const SCROLL_PAD_FALLBACK = ACTION_BAR_HEIGHT + INPUT_BAR_GAP + 96;
 const KEYBOARD_OPEN_THRESHOLD = 120;
 
 function isSpeechSupported() {
@@ -199,7 +200,7 @@ export default function PerguntasPage() {
     const updatePad = () => {
       const measured = Math.ceil(node.getBoundingClientRect().height);
       setInputBarHeight(measured);
-      setScrollPad(measured + INPUT_BAR_GAP + 16);
+      setScrollPad(measured + INPUT_BAR_GAP + 8);
     };
     updatePad();
     const observer = new ResizeObserver(updatePad);
@@ -227,9 +228,15 @@ export default function PerguntasPage() {
 
   function updateJumpState() {
     const node = scrollRef.current;
-    if (!node) return;
+    const target =
+      node && node.scrollHeight > node.clientHeight
+        ? node
+        : typeof document !== "undefined"
+        ? document.documentElement
+        : null;
+    if (!target) return;
     const threshold = 24;
-    const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - threshold;
+    const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - threshold;
     autoScrollRef.current = atBottom;
     setShowJump(!atBottom);
   }
@@ -238,6 +245,13 @@ export default function PerguntasPage() {
     if (isEmptyState) return;
     requestAnimationFrame(updateJumpState);
   }, [qaHistory.length, scrollPad, keyboardOffset, isEmptyState]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleWindowScroll = () => updateJumpState();
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, []);
 
   function handleScroll() {
     updateJumpState();
@@ -611,39 +625,6 @@ export default function PerguntasPage() {
                     </Stack>
                   ))}
 
-                  {showJump && (
-                    <Box
-                      sx={(theme) => ({
-                        position: "fixed",
-                        left: 0,
-                        right: 0,
-                        bottom: jumpButtonBottom,
-                        zIndex: theme.zIndex.appBar + 1,
-                        px: 2,
-                        pointerEvents: "none",
-                      })}
-                    >
-                      <Box
-                        sx={{
-                          maxWidth: 600,
-                          mx: "auto",
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          pointerEvents: "auto",
-                        }}
-                      >
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<KeyboardArrowDownRoundedIcon />}
-                          onClick={handleJumpToEnd}
-                        >
-                          Ir para o fim
-                        </Button>
-                      </Box>
-                    </Box>
-                  )}
-
                   <Box ref={endRef} sx={{ height: `${scrollPad}px`, scrollMarginBottom: `${scrollPad}px` }} />
                 </Stack>
               </Box>
@@ -707,6 +688,24 @@ export default function PerguntasPage() {
             </Stack>
           </Box>
         </Box>
+      )}
+
+      {showJump && (
+        <Fab
+          size="small"
+          color="primary"
+          aria-label="Ir para o fim"
+          onClick={handleJumpToEnd}
+          sx={(theme) => ({
+            position: "fixed",
+            right: 16,
+            bottom: jumpButtonBottom,
+            zIndex: theme.zIndex.appBar + 2,
+            boxShadow: 3,
+          })}
+        >
+          <KeyboardArrowDownRoundedIcon />
+        </Fab>
       )}
 
       <Dialog open={docOpen} onClose={closeDocument} fullWidth maxWidth="sm">
