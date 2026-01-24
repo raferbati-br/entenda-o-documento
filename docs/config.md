@@ -20,6 +20,15 @@ Este documento descreve as variaveis de ambiente usadas pelo app e como preenche
 - `PROMPT_ID`: prompt principal em `src/ai/prompts`. Padrao: `entendaDocumento.v1`.
 - `OCR_PROMPT_ID`: prompt de OCR. Padrao: `entendaDocumento.ocr.v1`.
 - `QA_PROMPT_ID`: prompt de perguntas e respostas. Padrao: `entendaDocumento.qa.v1`.
+- `ANALYZE_TEXT_ONLY`: quando `true`, a segunda chamada usa somente texto OCR.
+- `ANALYZE_TEXT_PROMPT_ID`: prompt de analise para texto. Padrao: `entendaDocumento.text.v1`.
+- `ANALYZE_LLM_PROVIDER`: override do provedor para `/api/analyze` (ex.: `openai`).
+- `ANALYZE_OCR_MIN_CHARS`: minimo de caracteres para considerar o OCR suficiente. Padrao: `200`.
+- `ANALYZE_OCR_MIN_ALPHA_RATIO`: minimo de proporcao de letras no OCR (0..1). Padrao: `0.3`.
+
+### Analise text-only (OCR)
+- Custo/latencia: reduz tokens multimodais na segunda chamada quando o OCR e suficiente.
+- Qualidade: depende do OCR; quando o texto vem incompleto, o sistema faz fallback para analise com imagem.
 
 ### Redis / Upstash (opcional)
 Usado para armazenar capturas temporarias, rate limit e contadores agregados.

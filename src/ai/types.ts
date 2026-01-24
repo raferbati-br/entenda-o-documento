@@ -34,7 +34,14 @@ export type AnswerResponse = {
   meta: ProviderMeta;
 };
 
+export type AnalyzeInput = {
+  model: string;
+  prompt: Prompt;
+  imageDataUrl?: string;
+  inputText?: string;
+};
+
 export interface LlmProvider {
-  analyze(input: { model: string; prompt: Prompt; imageDataUrl: string }): Promise<ProviderResponse>;
+  analyze(input: AnalyzeInput): Promise<ProviderResponse>;
   answer(input: { model: string; prompt: Prompt }): Promise<AnswerResponse>;
 }

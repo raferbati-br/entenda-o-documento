@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { LlmProvider, ProviderResponse, Prompt, AnswerResponse } from "../types";
+import type { AnalyzeInput, LlmProvider, ProviderResponse, Prompt, AnswerResponse } from "../types";
 
 function extractFirstJsonObject(text: string): string | null {
   const start = text.indexOf("{");
@@ -26,7 +26,22 @@ export class OpenAIProvider implements LlmProvider {
     this.client = new OpenAI({ apiKey });
   }
 
-  async analyze(input: { model: string; prompt: Prompt; imageDataUrl: string }): Promise<ProviderResponse> {
+  async analyze(input: AnalyzeInput): Promise<ProviderResponse> {
+    if (!input.inputText && !input.imageDataUrl) {
+      throw new Error("ANALYZE_INPUT_MISSING");
+    }
+
+    const userContent: Array<
+      { type: "input_text"; text: string } | { type: "input_image"; image_url: string; detail: "auto" }
+    > = [{ type: "input_text", text: input.prompt.user }];
+
+    if (input.inputText) {
+      userContent.push({ type: "input_text", text: input.inputText });
+    }
+    if (input.imageDataUrl) {
+      userContent.push({ type: "input_image", image_url: input.imageDataUrl, detail: "auto" });
+    }
+
     const resp = await this.client.responses.create({
       model: input.model,
       input: [
@@ -38,10 +53,7 @@ export class OpenAIProvider implements LlmProvider {
         {
           type: "message",
           role: "user",
-          content: [
-            { type: "input_text", text: input.prompt.user },
-            { type: "input_image", image_url: input.imageDataUrl, detail: "auto" },
-          ],
+          content: userContent,
         },
       ],
     });

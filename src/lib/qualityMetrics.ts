@@ -6,6 +6,8 @@ type MetricName =
   | "analyze_low_confidence"
   | "analyze_sanitizer"
   | "analyze_retry"
+  | "analyze_text_only"
+  | "analyze_image_fallback"
   | "ocr_invalid_json"
   | "ocr_retry"
   | "qa_model_error"
@@ -19,6 +21,8 @@ const COUNT_METRICS: MetricName[] = [
   "analyze_low_confidence",
   "analyze_sanitizer",
   "analyze_retry",
+  "analyze_text_only",
+  "analyze_image_fallback",
   "ocr_invalid_json",
   "ocr_retry",
   "qa_model_error",

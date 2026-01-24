@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { analyzeDocument } from "@/ai/analyzeDocument";
 import { cleanupMemoryStore, deleteCapture, getCapture } from "@/lib/captureStoreServer";
+import { evaluateOcrText } from "@/lib/ocrTextQuality";
 import { rateLimit } from "@/lib/rateLimit";
 import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
 
 export const runtime = "nodejs";
+
+const TEXT_ONLY_VALUES = new Set(["1", "true", "yes", "on"]);
+
+function isTextOnlyEnabled() {
+  const value = String(process.env.ANALYZE_TEXT_ONLY || "").toLowerCase();
+  return TEXT_ONLY_VALUES.has(value);
+}
 
 // ===== Route =====
 export async function POST(req: Request) {
@@ -38,19 +46,29 @@ export async function POST(req: Request) {
 
     const captureId = typeof body.captureId === "string" ? body.captureId : "";
     const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
+    const ocrText = typeof body.ocrText === "string" ? body.ocrText : "";
     let imageDataUrl = "";
 
     if (captureId) {
       const entry = await getCapture(captureId);
       if (entry?.imageBase64) {
         imageDataUrl = entry.imageBase64;
-
-        // Free after use
-        await deleteCapture(captureId);
       }
+
+      // Free after use
+      await deleteCapture(captureId);
     }
 
-    if (!imageDataUrl || !imageDataUrl.startsWith("data:image/")) {
+    const textOnlyEnabled = isTextOnlyEnabled();
+    const ocrQuality = textOnlyEnabled && ocrText ? evaluateOcrText(ocrText) : null;
+    const useTextOnly = Boolean(textOnlyEnabled && ocrQuality?.ok);
+    const analysisMode = useTextOnly
+      ? "text_only"
+      : textOnlyEnabled && ocrText
+        ? "image_fallback"
+        : "image";
+
+    if (!useTextOnly && (!imageDataUrl || !imageDataUrl.startsWith("data:image/"))) {
       return NextResponse.json(
         { ok: false, error: "Imagem não encontrada ou inválida (capture expirou)" },
         { status: 404 }
@@ -58,7 +76,9 @@ export async function POST(req: Request) {
     }
 
     // Chama a camada de IA (prompt + provider + parse + postprocess)
-    const { result, meta, promptId, stats } = await analyzeDocument(imageDataUrl);
+    const { result, meta, promptId, stats } = await analyzeDocument(
+      useTextOnly ? { documentText: ocrText } : { imageDataUrl }
+    );
     const durationMs = Date.now() - startedAt;
     try {
       await Promise.all([
@@ -67,6 +87,8 @@ export async function POST(req: Request) {
         stats.confidenceLow ? recordQualityCount("analyze_low_confidence") : Promise.resolve(),
         stats.sanitizerApplied ? recordQualityCount("analyze_sanitizer") : Promise.resolve(),
         attempt > 1 ? recordQualityCount("analyze_retry") : Promise.resolve(),
+        useTextOnly ? recordQualityCount("analyze_text_only") : Promise.resolve(),
+        analysisMode === "image_fallback" ? recordQualityCount("analyze_image_fallback") : Promise.resolve(),
       ]);
     } catch (err) {
       console.warn("[metrics]", err);
@@ -79,6 +101,9 @@ export async function POST(req: Request) {
       provider: meta.provider,
       model: meta.model,
       promptId,
+      analysisMode,
+      ocr_chars: ocrQuality?.length ?? 0,
+      ocr_alpha_ratio: ocrQuality ? Number(ocrQuality.alphaRatio.toFixed(2)) : 0,
       duration_ms: durationMs,
     });
 

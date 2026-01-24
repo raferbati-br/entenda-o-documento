@@ -85,15 +85,18 @@ export default function AnalyzingPage() {
           attempt,
           status: ocrRes.status,
         });
+        let ocrText = "";
         if (ocrRes.ok && ocrData?.ok && typeof ocrData?.documentText === "string" && ocrData.documentText.trim()) {
-          saveQaContext(ocrData.documentText);
+          ocrText = ocrData.documentText.trim();
+          saveQaContext(ocrText);
         }
 
         const analyzeStart = performance.now();
+        const analyzePayload = { captureId, attempt, ...(ocrText ? { ocrText } : {}) };
         const res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-          body: JSON.stringify({ captureId, attempt }),
+          body: JSON.stringify(analyzePayload),
           signal: controller.signal,
         });
 

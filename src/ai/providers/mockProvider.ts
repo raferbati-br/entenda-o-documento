@@ -1,4 +1,4 @@
-import type { AnswerResponse, LlmProvider, ProviderResponse, Prompt } from "../types";
+import type { AnalyzeInput, AnswerResponse, LlmProvider, ProviderResponse, Prompt } from "../types";
 
 function mockAnalyzeResponse(): { confidence: number; cards: Array<{ id: string; title: string; text: string }>; notice: string } {
   return {
@@ -19,7 +19,7 @@ function mockOcrResponse(): { documentText: string } {
 }
 
 export class MockProvider implements LlmProvider {
-  async analyze(input: { model: string; prompt: Prompt; imageDataUrl: string }): Promise<ProviderResponse> {
+  async analyze(input: AnalyzeInput): Promise<ProviderResponse> {
     const isOcr = input.prompt.id.includes(".ocr");
     const raw = isOcr ? mockOcrResponse() : mockAnalyzeResponse();
     return {

@@ -44,6 +44,8 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
               <th style={{ textAlign: "right", borderBottom: "1px solid #ddd", padding: "8px" }}>Low Confidence</th>
               <th style={{ textAlign: "right", borderBottom: "1px solid #ddd", padding: "8px" }}>Sanitizer</th>
               <th style={{ textAlign: "right", borderBottom: "1px solid #ddd", padding: "8px" }}>Retries</th>
+              <th style={{ textAlign: "right", borderBottom: "1px solid #ddd", padding: "8px" }}>Text-only</th>
+              <th style={{ textAlign: "right", borderBottom: "1px solid #ddd", padding: "8px" }}>Image Fallback</th>
               <th style={{ textAlign: "right", borderBottom: "1px solid #ddd", padding: "8px" }}>Avg Latency (ms)</th>
             </tr>
           </thead>
@@ -65,6 +67,12 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
                 </td>
                 <td style={{ padding: "8px", borderBottom: "1px solid #eee", textAlign: "right" }}>
                   {formatNumber(row.counts.analyze_retry || 0)}
+                </td>
+                <td style={{ padding: "8px", borderBottom: "1px solid #eee", textAlign: "right" }}>
+                  {formatNumber(row.counts.analyze_text_only || 0)}
+                </td>
+                <td style={{ padding: "8px", borderBottom: "1px solid #eee", textAlign: "right" }}>
+                  {formatNumber(row.counts.analyze_image_fallback || 0)}
                 </td>
                 <td style={{ padding: "8px", borderBottom: "1px solid #eee", textAlign: "right" }}>
                   {formatNumber(row.latency.analyze_latency_ms?.avg || 0)}
