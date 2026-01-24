@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { clearCaptureId } from "@/lib/captureIdStore";
-import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
-import { clearQaContext, loadQaContext } from "@/lib/qaContextStore";
+import { useRouter, useSearchParams } from "next/navigation";
+import { clearCaptureId, loadCaptureId } from "@/lib/captureIdStore";
+import { loadCapture } from "@/lib/captureStore";
+import { clearResult, loadResult, saveResult, AnalysisResult } from "@/lib/resultStore";
+import { clearQaContext, loadQaContext, saveQaContext } from "@/lib/qaContextStore";
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
-import { clearLatencyTrace, getLatencyTraceSnapshot } from "@/lib/latencyTrace";
+import { clearLatencyTrace, getLatencyTraceSnapshot, markLatencyTrace, recordLatencyStep } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
-import { mapFeedbackError, mapNetworkError } from "@/lib/errorMesages";
+import { buildAnalyzeFriendlyError, mapFeedbackError, mapNetworkError, type FriendlyError } from "@/lib/errorMesages";
+import { readAnalyzeStream } from "@/lib/analyzeStream";
 import SectionBlock from "../_components/SectionBlock";
 
 import {
@@ -19,8 +21,12 @@ import {
   Button,
   Chip,
   Divider,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Fab,
   IconButton,
+  Skeleton,
   Stack,
   Typography,
   Snackbar,
@@ -42,6 +48,9 @@ import ThumbDownAltRoundedIcon from "@mui/icons-material/ThumbDownAltRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
+import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
+import ZoomOutRoundedIcon from "@mui/icons-material/ZoomOutRounded";
 import Disclaimer from "../_components/Disclaimer";
 import FooterActions from "../_components/FooterActions";
 import PageHeader from "../_components/PageHeader";
@@ -52,6 +61,9 @@ import Notice from "../_components/Notice";
 type CardT = { id: string; title: string; text: string };
 const ACTION_BAR_HEIGHT = 88;
 const JUMP_BUTTON_OFFSET = ACTION_BAR_HEIGHT + 12;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 3;
+const ZOOM_STEP = 0.25;
 
 function confidenceToInfo(confidence: number) {
   if (confidence < 0.45) return { label: "Baixa", color: "error.main", bg: "error.lighter", text: "Difícil de ler" };
@@ -63,12 +75,31 @@ function isSpeechSupported() {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
+function buildEmptyResult(): AnalysisResult {
+  return {
+    confidence: 0,
+    notice: "",
+    cards: [
+      { id: "whatIs", title: "O que Ã© este documento", text: "" },
+      { id: "whatSays", title: "O que este documento estÃ¡ comunicando", text: "" },
+      { id: "dates", title: "Datas ou prazos importantes", text: "" },
+      { id: "terms", title: "ðŸ“˜ Palavras difÃ­ceis explicadas", text: "" },
+      { id: "whatUsuallyHappens", title: "O que normalmente acontece", text: "" },
+    ],
+  };
+}
+
 
 export default function ResultPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const streamStartedRef = useRef(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [analysisDone, setAnalysisDone] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [analysisError, setAnalysisError] = useState<FriendlyError | null>(null);
   const [showJump, setShowJump] = useState(false);
 
   // TTS State
@@ -79,6 +110,12 @@ export default function ResultPage() {
 
   // Share State
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Document State
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [docOpen, setDocOpen] = useState(false);
+  const [docZoom, setDocZoom] = useState(1);
 
   // Feedback State
   const [feedbackChoice, setFeedbackChoice] = useState<"up" | "down" | null>(null);
@@ -97,19 +134,177 @@ export default function ResultPage() {
     []
   );
 
-  useEffect(() => {
-    const res = loadResult();
-    if (!res) {
+  const streamRequested = searchParams.get("stream") === "1";
+
+  function mergeCardUpdate(card: Partial<CardT> & { id: string }) {
+    setResult((prev) => {
+      const base = prev ?? buildEmptyResult();
+      const cards = base.cards.map((item) =>
+        item.id === card.id
+          ? {
+              ...item,
+              title: card.title || item.title,
+              text: typeof card.text === "string" ? card.text : item.text,
+            }
+          : item
+      );
+      return { ...base, cards };
+    });
+  }
+
+  async function runAnalyzeStream() {
+    if (streamStartedRef.current) return;
+    streamStartedRef.current = true;
+
+    const captureId = loadCaptureId();
+    if (!captureId) {
       router.replace("/");
       return;
     }
-    setResult(res);
-  }, [router]);
+
+    const attemptKey = `analyze_attempt:${captureId}`;
+    const attempt = Number(sessionStorage.getItem(attemptKey) || "0") + 1;
+    sessionStorage.setItem(attemptKey, String(attempt));
+
+    setAnalysisError(null);
+    setIsStreaming(true);
+    setAnalysisDone(false);
+    setResult(buildEmptyResult());
+
+    let ocrText = (loadQaContext() || "").trim();
+    const token = await ensureSessionToken();
+
+    if (!ocrText) {
+      const ocrStart = performance.now();
+      const ocrRes = await fetch("/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
+        body: JSON.stringify({ captureId, attempt }),
+      });
+
+      const ocrData = await ocrRes.json().catch(() => ({}));
+      const ocrDurationMs = performance.now() - ocrStart;
+      recordLatencyStep("ocr_ms", ocrDurationMs);
+      telemetryCapture("openai_ocr_latency", {
+        ms: Math.round(ocrDurationMs),
+        attempt,
+        status: ocrRes.status,
+      });
+      if (ocrRes.ok && ocrData?.ok && typeof ocrData?.documentText === "string" && ocrData.documentText.trim()) {
+        ocrText = ocrData.documentText.trim();
+        saveQaContext(ocrText);
+        setHasOcrContext(true);
+      }
+    }
+
+    const analyzeStart = performance.now();
+    telemetryCapture("analyze_start");
+    const analyzePayload = { captureId, attempt, ...(ocrText ? { ocrText } : {}) };
+    const res = await fetch("/api/analyze/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
+      body: JSON.stringify(analyzePayload),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        await clearSessionToken();
+      }
+      telemetryCapture("analyze_error", {
+        status: res.status,
+        error: typeof data?.error === "string" ? data.error : "unknown",
+      });
+      setAnalysisError(buildAnalyzeFriendlyError(res, data));
+      setIsStreaming(false);
+      return;
+    }
+
+    if (!res.body) {
+      setAnalysisError({
+        title: "Erro ao analisar",
+        message: "Resposta vazia do servidor.",
+      });
+      setIsStreaming(false);
+      return;
+    }
+
+    try {
+      for await (const event of readAnalyzeStream(res.body)) {
+        if (event.type === "card") {
+          mergeCardUpdate(event.card);
+        }
+        if (event.type === "result") {
+          setResult(event.result);
+          saveResult(event.result);
+          setIsStreaming(false);
+          setAnalysisDone(true);
+          recordLatencyStep("analyze_ms", performance.now() - analyzeStart);
+          telemetryCapture("openai_cards_latency", {
+            ms: Math.round(performance.now() - analyzeStart),
+            attempt,
+            status: 200,
+          });
+          telemetryCapture("analyze_success");
+          markLatencyTrace("analyze_done");
+          break;
+        }
+        if (event.type === "error") {
+          telemetryCapture("analyze_error", { status: 502, error: event.message });
+          setAnalysisError({
+            title: "Erro ao analisar",
+            message: event.message || "Nao foi possivel analisar o documento.",
+          });
+          setIsStreaming(false);
+          setAnalysisDone(false);
+          break;
+        }
+      }
+    } catch (err: any) {
+      const message = typeof err?.message === "string" ? err.message : "";
+      setAnalysisError({
+        title: "Erro ao analisar",
+        message: mapNetworkError(message),
+      });
+      setIsStreaming(false);
+      setAnalysisDone(false);
+    }
+  }
+
+  useEffect(() => {
+    const res = loadResult();
+    if (res && !streamRequested) {
+      setAnalysisError(null);
+      setIsStreaming(false);
+      setResult(res);
+      setAnalysisDone(true);
+      return;
+    }
+    runAnalyzeStream();
+  }, [router, streamRequested]);
 
   useEffect(() => {
     setTtsSupported(isSpeechSupported());
     return () => {
       try { window.speechSynthesis.cancel(); } catch { }
+    };
+  }, []);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+
+    (async () => {
+      const payload = await loadCapture();
+      if (!payload?.blob) {
+        setImageError("Documento indisponivel para visualizacao.");
+        return;
+      }
+      objectUrl = URL.createObjectURL(payload.blob);
+      setImageUrl(objectUrl);
+    })();
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, []);
 
@@ -153,26 +348,37 @@ export default function ResultPage() {
     return () => window.removeEventListener("scroll", handleWindowScroll);
   }, []);
 
-  const cardsArr = useMemo<CardT[]>(() => (result?.cards as CardT[]) || [], [result]);
+  const safeResult = useMemo(() => result ?? buildEmptyResult(), [result]);
+  const cardsArr = useMemo<CardT[]>(() => (safeResult.cards as CardT[]) || buildEmptyResult().cards, [safeResult]);
   const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
 
-  const confidence = result?.confidence ?? 0;
+  const confidence = safeResult.confidence ?? 0;
   const confInfo = useMemo(() => confidenceToInfo(confidence), [confidence]);
-  const showLowConfidenceHelp = confidence < 0.45;
+  const showLowConfidenceHelp = analysisDone && confidence < 0.45;
+  const canShare = analysisDone;
+  const canSpeak = ttsSupported && analysisDone;
+  const showSkeleton = isStreaming && !analysisDone;
+  const loadingBody = (
+    <Stack spacing={1}>
+      <Skeleton variant="text" width="92%" />
+      <Skeleton variant="text" width="84%" />
+      <Skeleton variant="text" width="70%" />
+    </Stack>
+  );
 
   const confidenceBucket = confidence < 0.45 ? "low" : confidence < 0.75 ? "medium" : "high";
-  const hasOcrContext = useMemo(() => Boolean(loadQaContext()?.trim()), []);
+  const [hasOcrContext, setHasOcrContext] = useState(() => Boolean(loadQaContext()?.trim()));
 
   useEffect(() => {
-    if (!result) return;
+    if (!result || !analysisDone) return;
     telemetryCapture("result_view", {
       confidenceBucket,
       contextSource: hasOcrContext ? "ocr" : "cards",
     });
-  }, [result, confidenceBucket, hasOcrContext]);
+  }, [result, analysisDone, confidenceBucket, hasOcrContext]);
 
   useEffect(() => {
-    if (!result) return;
+    if (!result || !analysisDone) return;
     const nowMs = Date.now();
     const trace = getLatencyTraceSnapshot(nowMs);
     if (!trace) return;
@@ -186,11 +392,11 @@ export default function ResultPage() {
     }
     telemetryCapture("latency_e2e", payload);
     clearLatencyTrace();
-  }, [result]);
+  }, [result, analysisDone]);
 
   // Texto completo para Leitura e Compartilhamento
   const fullText = useMemo(() => {
-    const notice = result?.notice || "";
+    const notice = safeResult.notice || "";
     const parts = [
       "📋 *Explicação do Documento*",
       "",
@@ -204,7 +410,7 @@ export default function ResultPage() {
       "Gerado por Entenda o Documento"
     ].filter(Boolean).join("\n\n");
     return parts;
-  }, [cardMap, result?.notice]);
+  }, [cardMap, safeResult.notice]);
 
   async function sendFeedback(helpful: boolean, reason?: string) {
     if (feedbackSent || feedbackLoading) return;
@@ -287,6 +493,8 @@ export default function ResultPage() {
 
   // Funções de Áudio
   const speakText = useMemo(() => fullText.replace(/\*/g, ""), [fullText]);
+  const canZoomIn = docZoom < MAX_ZOOM;
+  const canZoomOut = docZoom > MIN_ZOOM;
 
   function stopSpeaking() {
     stopRequestedRef.current = true;
@@ -331,6 +539,27 @@ export default function ResultPage() {
     }
   }
 
+  function zoomIn() {
+    setDocZoom((z) => Math.min(MAX_ZOOM, Number((z + ZOOM_STEP).toFixed(2))));
+  }
+
+  function zoomOut() {
+    setDocZoom((z) => Math.max(MIN_ZOOM, Number((z - ZOOM_STEP).toFixed(2))));
+  }
+
+  function resetZoom() {
+    setDocZoom(1);
+  }
+
+  function openDocument() {
+    setDocZoom(1);
+    setDocOpen(true);
+  }
+
+  function closeDocument() {
+    setDocOpen(false);
+  }
+
   function newDoc() {
     stopSpeaking();
     clearResult();
@@ -338,8 +567,6 @@ export default function ResultPage() {
     clearCaptureId();
     router.push("/camera");
   }
-
-  if (!result) return null;
 
   return (
     <>
@@ -357,26 +584,35 @@ export default function ResultPage() {
               <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
                 Explicação
               </Typography>
-              <Chip
-                label={confInfo.text}
-                size="small"
-                sx={{
-                  height: 20,
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                  bgcolor: confInfo.bg || "action.hover",
-                  color: confInfo.color || "text.primary",
-                }}
-              />
+              {analysisDone && (
+                <Chip
+                  label={confInfo.text}
+                  size="small"
+                  sx={{
+                    height: 20,
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    bgcolor: confInfo.bg || "action.hover",
+                    color: confInfo.color || "text.primary",
+                  }}
+                />
+              )}
             </Box>
 
             <Stack direction="row" spacing={1} alignItems="center">
               {ttsSupported && (
-                <IconButton onClick={isSpeaking ? stopSpeaking : startSpeaking} color="primary">
+                <IconButton
+                  onClick={isSpeaking ? stopSpeaking : startSpeaking}
+                  color="primary"
+                  disabled={!canSpeak}
+                >
                   {isSpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
                 </IconButton>
               )}
-              <IconButton onClick={handleShare} color="primary">
+              <IconButton onClick={openDocument} color="primary" disabled={!imageUrl}>
+                <DescriptionRoundedIcon />
+              </IconButton>
+              <IconButton onClick={handleShare} color="primary" disabled={!canShare}>
                 <IosShareRoundedIcon />
               </IconButton>
             </Stack>
@@ -400,6 +636,23 @@ export default function ResultPage() {
           />
         }
       >
+        {analysisError && (
+          <Notice
+            severity="error"
+            title={analysisError.title}
+            actions={
+              analysisError.actionLabel ? (
+                <Button color="inherit" size="small" onClick={() => router.push(analysisError.actionHref || "/")}>
+                  {analysisError.actionLabel}
+                </Button>
+              ) : null
+            }
+            sx={{ mb: 3 }}
+          >
+            {analysisError.message}
+          </Notice>
+        )}
+
         {ttsError && (
           <Notice severity={ttsError === "Leitura interrompida." ? "info" : "warning"} sx={{ mb: 3 }}>
             {ttsError}
@@ -427,49 +680,59 @@ export default function ResultPage() {
             icon={<DescriptionRoundedIcon fontSize="inherit" />}
             title={cardMap["whatIs"]?.title || "O que é"}
             text={cardMap["whatIs"]?.text}
-            />
+          >
+            {showSkeleton && !cardMap["whatIs"]?.text ? loadingBody : null}
+          </SectionBlock>
             <SectionBlock
               icon={<InfoRoundedIcon fontSize="inherit" />}
               title={cardMap["whatSays"]?.title || "O que diz"}
               text={cardMap["whatSays"]?.text}
-            />
+            >
+              {showSkeleton && !cardMap["whatSays"]?.text ? loadingBody : null}
+            </SectionBlock>
             <SectionBlock
               icon={<EventRoundedIcon fontSize="inherit" />}
               title={cardMap["dates"]?.title || "Datas e prazos"}
               text={cardMap["dates"]?.text}
-            />
+            >
+              {showSkeleton && !cardMap["dates"]?.text ? loadingBody : null}
+            </SectionBlock>
             <SectionBlock
               icon={<ListAltRoundedIcon fontSize="inherit" />}
               // Remove emojis duplicados do título se a IA mandar
               title={cardMap["terms"]?.title?.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '') || "Termos importantes"}
               text={cardMap["terms"]?.text}
-            />
+            >
+              {showSkeleton && !cardMap["terms"]?.text ? loadingBody : null}
+            </SectionBlock>
             <SectionBlock
               icon={<HelpOutlineRoundedIcon fontSize="inherit" />}
               title={cardMap["whatUsuallyHappens"]?.title || "O que costuma acontecer"}
               text={cardMap["whatUsuallyHappens"]?.text}
-            />
+            >
+              {showSkeleton && !cardMap["whatUsuallyHappens"]?.text ? loadingBody : null}
+            </SectionBlock>
         </Stack>
 
           {/* --- AVISOS E RODAPÉ DO CONTEÚDO --- */}
 
           {/* 1. Aviso Dinâmico da IA (Só aparece se tiver observação importante) */}
-        {result.notice && (
+        {safeResult.notice && (
           <Box sx={{ mt: 3, mb: 1.5 }}>
             <Divider sx={{ my: 1 }} />
             <SectionBlock
               icon={<WarningRoundedIcon fontSize="inherit" />}
               title="Observação importante"
-              text={result.notice}
+              text={safeResult.notice}
               iconColor="warning.main"
             />
           </Box>
         )}
 
                 {/* 2. Aviso Legal Padrão (Igual Home) */}
-        <Disclaimer variant="beforeFooter" withNotice={Boolean(result.notice)} />
+        <Disclaimer variant="beforeFooter" withNotice={Boolean(safeResult.notice)} />
 
-        <Box sx={{ mt: result.notice ? 2 : 3, mb: 1.5 }}>
+        <Box sx={{ mt: safeResult.notice ? 2 : 3, mb: 1.5 }}>
           <Divider sx={{ my: 1 }} />
           <Stack spacing={1}>
             <Stack direction="row" spacing={1} alignItems="center">
@@ -546,6 +809,45 @@ export default function ResultPage() {
           <KeyboardArrowDownRoundedIcon />
         </Fab>
       )}
+
+      <Dialog open={docOpen} onClose={closeDocument} fullWidth maxWidth="sm">
+        <DialogTitle>Documento</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5}>
+            <Typography variant="caption" color="text.secondary">
+              Toque no texto para ampliar
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="caption" color="text.secondary">
+                {Math.round(docZoom * 100)}%
+              </Typography>
+              <IconButton onClick={zoomOut} disabled={!imageUrl || !canZoomOut}>
+                <ZoomOutRoundedIcon />
+              </IconButton>
+              <IconButton onClick={zoomIn} disabled={!imageUrl || !canZoomIn}>
+                <ZoomInRoundedIcon />
+              </IconButton>
+              <IconButton onClick={resetZoom} disabled={!imageUrl || docZoom === 1}>
+                <RestartAltRoundedIcon />
+              </IconButton>
+            </Stack>
+            <Box sx={{ bgcolor: "#000", borderRadius: 2, overflow: "auto", maxHeight: "60vh" }}>
+              {imageUrl ? (
+                <Box sx={{ width: `${docZoom * 100}%`, transformOrigin: "top center" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imageUrl} alt="Documento" style={{ width: "100%", display: "block" }} />
+                </Box>
+              ) : (
+                <Box sx={{ p: 3, textAlign: "center" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {imageError || "Documento indisponivel."}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Stack>
+        </DialogContent>
+      </Dialog>
 
       <Snackbar
         open={!!toastMsg}

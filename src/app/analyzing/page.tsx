@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { loadCaptureId, clearCaptureId } from "@/lib/captureIdStore";
-import { saveResult } from "@/lib/resultStore";
 import { motion, AnimatePresence } from "framer-motion"; // Instale: npm install framer-motion
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
-import { markLatencyTrace, recordLatencyStep } from "@/lib/latencyTrace";
+import { recordLatencyStep } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 import { buildAnalyzeFriendlyError, type FriendlyError } from "@/lib/errorMesages";
 
@@ -67,7 +66,6 @@ export default function AnalyzingPage() {
       abortRef.current = controller;
 
       try {
-        telemetryCapture("analyze_start");
         const token = await ensureSessionToken();
         const ocrStart = performance.now();
         const ocrRes = await fetch("/api/ocr", {
@@ -91,29 +89,7 @@ export default function AnalyzingPage() {
           saveQaContext(ocrText);
         }
 
-        const analyzeStart = performance.now();
-        const analyzePayload = { captureId, attempt, ...(ocrText ? { ocrText } : {}) };
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-          body: JSON.stringify(analyzePayload),
-          signal: controller.signal,
-        });
-
-        const data = await res.json().catch(() => ({}));
-        const analyzeDurationMs = performance.now() - analyzeStart;
-        recordLatencyStep("analyze_ms", analyzeDurationMs);
-        telemetryCapture("openai_cards_latency", {
-          ms: Math.round(analyzeDurationMs),
-          attempt,
-          status: res.status,
-        });
-        if (!res.ok || !data?.ok) throw { res, data };
-
-        saveResult(data.result);
-        markLatencyTrace("analyze_done");
-        telemetryCapture("analyze_success");
-        router.replace("/result");
+        router.replace("/result?stream=1");
       } catch (e: any) {
         if (e?.name === "AbortError") return;
         const res: Response | null = e?.res ?? null;

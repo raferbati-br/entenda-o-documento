@@ -1,5 +1,13 @@
 import OpenAI from "openai";
-import type { AnalyzeInput, LlmProvider, ProviderResponse, Prompt, AnswerResponse, AnswerStreamResponse } from "../types";
+import type {
+  AnalyzeInput,
+  LlmProvider,
+  ProviderResponse,
+  Prompt,
+  AnswerResponse,
+  AnswerStreamResponse,
+  AnalyzeStreamResponse,
+} from "../types";
 
 function extractFirstJsonObject(text: string): string | null {
   const start = text.indexOf("{");
@@ -81,6 +89,53 @@ export class OpenAIProvider implements LlmProvider {
 
     return {
       raw: parsed,
+      meta: { provider: "openai", model: input.model },
+    };
+  }
+
+  async analyzeStream(input: AnalyzeInput): Promise<AnalyzeStreamResponse> {
+    if (!input.inputText && !input.imageDataUrl) {
+      throw new Error("ANALYZE_INPUT_MISSING");
+    }
+
+    const userContent: Array<
+      { type: "input_text"; text: string } | { type: "input_image"; image_url: string; detail: "auto" }
+    > = [{ type: "input_text", text: input.prompt.user }];
+
+    if (input.inputText) {
+      userContent.push({ type: "input_text", text: input.inputText });
+    }
+    if (input.imageDataUrl) {
+      userContent.push({ type: "input_image", image_url: input.imageDataUrl, detail: "auto" });
+    }
+
+    const stream = await this.client.responses.create({
+      model: input.model,
+      stream: true,
+      input: [
+        {
+          type: "message",
+          role: "system",
+          content: [{ type: "input_text", text: input.prompt.system }],
+        },
+        {
+          type: "message",
+          role: "user",
+          content: userContent,
+        },
+      ],
+    });
+
+    async function* iterator() {
+      for await (const event of stream) {
+        if (event.type === "response.output_text.delta" && event.delta) {
+          yield event.delta;
+        }
+      }
+    }
+
+    return {
+      stream: iterator(),
       meta: { provider: "openai", model: input.model },
     };
   }

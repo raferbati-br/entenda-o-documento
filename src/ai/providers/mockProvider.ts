@@ -1,4 +1,12 @@
-import type { AnalyzeInput, AnswerResponse, AnswerStreamResponse, LlmProvider, ProviderResponse, Prompt } from "../types";
+import type {
+  AnalyzeInput,
+  AnswerResponse,
+  AnswerStreamResponse,
+  AnalyzeStreamResponse,
+  LlmProvider,
+  ProviderResponse,
+  Prompt,
+} from "../types";
 
 function mockAnalyzeResponse(): { confidence: number; cards: Array<{ id: string; title: string; text: string }>; notice: string } {
   return {
@@ -24,6 +32,21 @@ export class MockProvider implements LlmProvider {
     const raw = isOcr ? mockOcrResponse() : mockAnalyzeResponse();
     return {
       raw,
+      meta: { provider: "mock", model: input.model },
+    };
+  }
+
+  async analyzeStream(input: AnalyzeInput): Promise<AnalyzeStreamResponse> {
+    const isOcr = input.prompt.id.includes(".ocr");
+    const raw = isOcr ? mockOcrResponse() : mockAnalyzeResponse();
+    const text = JSON.stringify(raw);
+
+    async function* iterator() {
+      yield text;
+    }
+
+    return {
+      stream: iterator(),
       meta: { provider: "mock", model: input.model },
     };
   }
