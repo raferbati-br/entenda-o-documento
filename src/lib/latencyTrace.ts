@@ -1,3 +1,5 @@
+import { isRecord } from "./typeGuards";
+
 type LatencyTrace = {
   startMs?: number;
   steps: Record<string, number>;
@@ -10,10 +12,22 @@ function isBrowser() {
   return typeof window !== "undefined" && typeof sessionStorage !== "undefined";
 }
 
-function normalizeTrace(value: any): LatencyTrace {
-  const steps = value && typeof value.steps === "object" && value.steps ? value.steps : {};
-  const marks = value && typeof value.marks === "object" && value.marks ? value.marks : {};
-  const startMs = typeof value?.startMs === "number" ? value.startMs : undefined;
+function toNumberRecord(value: unknown): Record<string, number> {
+  if (!isRecord(value)) return {};
+  const out: Record<string, number> = {};
+  for (const [key, v] of Object.entries(value)) {
+    if (typeof v === "number" && Number.isFinite(v)) {
+      out[key] = v;
+    }
+  }
+  return out;
+}
+
+function normalizeTrace(value: unknown): LatencyTrace {
+  const record = isRecord(value) ? value : {};
+  const steps = toNumberRecord(record.steps);
+  const marks = toNumberRecord(record.marks);
+  const startMs = typeof record.startMs === "number" ? record.startMs : undefined;
   return { startMs, steps, marks };
 }
 

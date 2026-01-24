@@ -9,7 +9,11 @@ type RateLimitResult = {
 const WINDOW_SECONDS = 60;
 const MAX_PER_WINDOW = 5;
 
-const g = globalThis as any;
+type RateLimitGlobal = typeof globalThis & {
+  __RATE_LIMIT__?: Map<string, { count: number; resetAt: number }>;
+};
+
+const g = globalThis as RateLimitGlobal;
 g.__RATE_LIMIT__ = g.__RATE_LIMIT__ || new Map<string, { count: number; resetAt: number }>();
 const memoryStore: Map<string, { count: number; resetAt: number }> = g.__RATE_LIMIT__;
 

@@ -5,6 +5,7 @@ import { evaluateOcrText } from "@/lib/ocrTextQuality";
 import { rateLimit } from "@/lib/rateLimit";
 import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
+import { isRecord } from "@/lib/typeGuards";
 
 export const runtime = "nodejs";
 
@@ -41,8 +42,10 @@ export async function POST(req: Request) {
 
     cleanupMemoryStore();
 
-    const body: any = await req.json().catch(() => null);
-    if (!body) return NextResponse.json({ ok: false, error: "Requisição inválida." }, { status: 400 });
+    const body = await req.json().catch(() => null);
+    if (!isRecord(body)) {
+      return NextResponse.json({ ok: false, error: "Requisição inválida." }, { status: 400 });
+    }
 
     const captureId = typeof body.captureId === "string" ? body.captureId : "";
     const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
@@ -108,8 +111,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ ok: true, result });
-  } catch (err: any) {
-    const code = String(err?.message || "");
+  } catch (err: unknown) {
+    const code = err instanceof Error ? err.message : "";
 
     if (code === "OPENAI_API_KEY_NOT_SET") {
       return NextResponse.json({ ok: false, error: "OPENAI_API_KEY não configurada" }, { status: 500 });

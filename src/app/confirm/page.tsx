@@ -125,9 +125,9 @@ export default function ConfirmPage() {
       saveCaptureId(data.captureId);
       router.push("/analyzing");
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       setLoading(false);
-      const message = typeof e?.message === "string" ? e.message : "";
+      const message = e instanceof Error ? e.message : "";
       setErr(mapNetworkError(message));
       telemetryCapture("confirm_error");
     }

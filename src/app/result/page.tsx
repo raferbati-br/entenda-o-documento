@@ -12,9 +12,6 @@ import { mapFeedbackError, mapNetworkError } from "@/lib/errorMesages";
 import SectionBlock from "../_components/SectionBlock";
 
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Button,
   Chip,
@@ -40,7 +37,6 @@ import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import ThumbUpAltRoundedIcon from "@mui/icons-material/ThumbUpAltRounded";
 import ThumbDownAltRoundedIcon from "@mui/icons-material/ThumbDownAltRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import Disclaimer from "../_components/Disclaimer";
 import FooterActions from "../_components/FooterActions";
@@ -240,8 +236,8 @@ export default function ResultPage() {
         contextSource: hasOcrContext ? "ocr" : "cards",
       });
       setToastMsg("Obrigado pelo feedback!");
-    } catch (err: any) {
-      const msg = typeof err?.message === "string" ? err.message : "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
       setFeedbackError(mapNetworkError(msg));
     } finally {
       setFeedbackLoading(false);
@@ -271,7 +267,7 @@ export default function ResultPage() {
           title: 'Explicação do Documento',
           text: fullText,
         });
-      } catch (error) {
+      } catch {
         console.log('Compartilhamento cancelado');
       }
     } else {
@@ -279,7 +275,7 @@ export default function ResultPage() {
       try {
         await navigator.clipboard.writeText(fullText);
         setToastMsg("Texto copiado para a área de transferência!");
-      } catch (err) {
+      } catch {
         setToastMsg("Não foi possível copiar o texto.");
       }
     }

@@ -11,7 +11,7 @@ export const options = {
 const tinyPngBase64 =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
-export default function () {
+export default function captureAnalyze() {
   const tokenRes = http.get(`${BASE_URL}/api/session-token`, {
     headers: { Origin: BASE_URL },
   });

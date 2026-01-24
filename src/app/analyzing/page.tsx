@@ -10,6 +10,7 @@ import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
 import { markLatencyTrace, recordLatencyStep } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 import { buildAnalyzeFriendlyError, type FriendlyError } from "@/lib/errorMesages";
+import { isRecord } from "@/lib/typeGuards";
 
 import { Box, Button, Container, Stack, Typography, LinearProgress } from "@mui/material";
 
@@ -114,13 +115,15 @@ export default function AnalyzingPage() {
         markLatencyTrace("analyze_done");
         telemetryCapture("analyze_success");
         router.replace("/result");
-      } catch (e: any) {
-        if (e?.name === "AbortError") return;
-        const res: Response | null = e?.res ?? null;
-        const data = e?.data ?? null;
+      } catch (e: unknown) {
+        const err = isRecord(e) ? e : {};
+        const name = typeof err.name === "string" ? err.name : "";
+        if (name === "AbortError") return;
+        const res = err.res instanceof Response ? err.res : null;
+        const data = err.data ?? null;
         telemetryCapture("analyze_error", {
           status: res?.status ?? 0,
-          error: typeof data?.error === "string" ? data.error : "unknown",
+          error: isRecord(data) && typeof data.error === "string" ? data.error : "unknown",
         });
         if (res?.status === 401) {
           clearSessionToken().catch(() => {});

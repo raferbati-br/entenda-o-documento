@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { Redis } from "@upstash/redis";
 import { rateLimit } from "@/lib/rateLimit";
 import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
+import { isRecord } from "@/lib/typeGuards";
 
 export const runtime = "nodejs";
 
@@ -68,8 +69,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const body: any = await req.json().catch(() => null);
-    if (!body) return badRequest("Requisição inválida.");
+    const body = await req.json().catch(() => null);
+    if (!isRecord(body)) return badRequest("Requisi??o inv?lida.");
 
     if (typeof body.helpful !== "boolean") return badRequest("Feedback inválido.");
 

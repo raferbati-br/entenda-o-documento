@@ -13,7 +13,6 @@ import { readQaStream } from "@/lib/qaStream";
 
 import {
   Box,
-  Button,
   Chip,
   CircularProgress,
   Dialog,
@@ -391,8 +390,8 @@ export default function PerguntasPage() {
 
       updateQaItem(itemId, { pending: false });
       telemetryCapture("qa_answer_success");
-    } catch (err: any) {
-      const msg = typeof err?.message === "string" ? err.message : "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
       updateQaItem(itemId, { pending: false, error: mapNetworkError(msg) });
       telemetryCapture("qa_answer_error");
     } finally {

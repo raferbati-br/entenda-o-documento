@@ -35,14 +35,14 @@ export async function compressBlobToDataUrl(
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  ctx.drawImage(bitmap as any, 0, 0, w, h);
+  ctx.drawImage(bitmap, 0, 0, w, h);
 
   const dataUrl = canvas.toDataURL(o.mimeType, o.quality);
   const bytes = estimateDataUrlBytes(dataUrl);
 
-  try {
-    (bitmap as any).close?.();
-  } catch {}
+  if ("close" in bitmap) {
+    bitmap.close();
+  }
 
   return { dataUrl, bytes, width: w, height: h };
 }
@@ -58,8 +58,8 @@ async function decodeImage(blob: Blob): Promise<ImageBitmap | HTMLImageElement> 
   // Tenta respeitar orientação EXIF quando suportado
   if ("createImageBitmap" in window) {
     try {
-      // @ts-ignore
-      return await createImageBitmap(blob, { imageOrientation: "from-image" });
+      const options = { imageOrientation: "from-image" } as ImageBitmapOptions;
+      return await createImageBitmap(blob, options);
     } catch {
       // fallback abaixo
     }

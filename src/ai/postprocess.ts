@@ -1,5 +1,6 @@
 import type { AnalyzeResult, Card, CardId, Prompt } from "./types";
 import { redactSensitiveData, safeShorten } from "../lib/text";
+import { isRecord } from "../lib/typeGuards";
 
 function clamp01(n: number) {
   if (!Number.isFinite(n)) return 0;
@@ -47,11 +48,16 @@ function normalizeCardText(value: unknown, fallback: string, stats: SanitizerSta
   return text || fallback;
 }
 
+type RawCard = {
+  title?: unknown;
+  text?: unknown;
+};
+
 function buildCard(
   id: CardId,
   titleFallback: string,
   textFallback: string,
-  byId: Record<string, any>,
+  byId: Record<string, RawCard>,
   stats: SanitizerStats
 ): Card {
   return {
@@ -66,14 +72,15 @@ export type PostprocessStats = {
   confidenceLow: boolean;
 };
 
-export function postprocessWithStats(raw: any, prompt: Prompt): { result: AnalyzeResult; stats: PostprocessStats } {
-  let confidence = clamp01(Number(raw?.confidence));
+export function postprocessWithStats(raw: unknown, prompt: Prompt): { result: AnalyzeResult; stats: PostprocessStats } {
+  const rawRecord = isRecord(raw) ? raw : {};
+  let confidence = clamp01(Number(rawRecord.confidence));
   const stats: SanitizerStats = { softened: false };
 
-  const inputCards = Array.isArray(raw?.cards) ? raw.cards : [];
-  const byId: Record<string, any> = {};
+  const inputCards = Array.isArray(rawRecord.cards) ? rawRecord.cards : [];
+  const byId: Record<string, RawCard> = {};
   for (const c of inputCards) {
-    if (c && typeof c.id === "string") byId[c.id] = c;
+    if (isRecord(c) && typeof c.id === "string") byId[c.id] = c as RawCard;
   }
 
   const cards: Card[] = [
@@ -108,7 +115,7 @@ export function postprocessWithStats(raw: any, prompt: Prompt): { result: Analyz
     ),
   ];
 
-  const rawNotice = asString(raw?.notice) || prompt.noticeDefault;
+  const rawNotice = asString(rawRecord.notice) || prompt.noticeDefault;
   const softenedNotice = softenPrescriptiveLanguage(rawNotice);
   if (softenedNotice.softened) stats.softened = true;
   let notice = safeShorten(redactSensitiveData(softenedNotice.text), 420);
@@ -126,7 +133,7 @@ export function postprocessWithStats(raw: any, prompt: Prompt): { result: Analyz
   };
 }
 
-export function postprocess(raw: any, prompt: Prompt): AnalyzeResult {
+export function postprocess(raw: unknown, prompt: Prompt): AnalyzeResult {
   return postprocessWithStats(raw, prompt).result;
 }
 

@@ -21,7 +21,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
     if (!key) return;
-    if ((posthog as any).__loaded) return;
+    const posthogLoaded = (posthog as { __loaded?: boolean }).__loaded;
+    if (posthogLoaded) return;
 
     posthog.init(key, {
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com",

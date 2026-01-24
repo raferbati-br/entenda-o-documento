@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
 import { serializeQaStreamEvent } from "@/lib/qaStream";
+import { isRecord } from "@/lib/typeGuards";
 
 export const runtime = "nodejs";
 
@@ -42,8 +43,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const body: any = await req.json().catch(() => null);
-    if (!body) return badRequest("Requisição inválida.");
+    const body = await req.json().catch(() => null);
+    if (!isRecord(body)) {
+      return badRequest("Requisição inválida.");
+    }
 
     const question = typeof body.question === "string" ? body.question.trim() : "";
     const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
@@ -139,8 +142,8 @@ export async function POST(req: Request) {
         "Cache-Control": "no-cache",
       },
     });
-  } catch (err: any) {
-    const code = String(err?.message || "");
+  } catch (err: unknown) {
+    const code = err instanceof Error ? err.message : "";
 
     if (code === "OPENAI_API_KEY_NOT_SET") {
       return NextResponse.json({ ok: false, error: "OPENAI_API_KEY não configurada" }, { status: 500 });

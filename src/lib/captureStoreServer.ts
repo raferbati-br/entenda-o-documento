@@ -9,7 +9,11 @@ export type CaptureEntry = {
 
 const TTL_MS = 10 * 60 * 1000;
 
-const g = globalThis as any;
+type CaptureStoreGlobal = typeof globalThis & {
+  __CAPTURE_STORE__?: Map<string, CaptureEntry>;
+};
+
+const g = globalThis as CaptureStoreGlobal;
 g.__CAPTURE_STORE__ = g.__CAPTURE_STORE__ || new Map<string, CaptureEntry>();
 const memoryStore: Map<string, CaptureEntry> = g.__CAPTURE_STORE__;
 

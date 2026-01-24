@@ -1,3 +1,5 @@
+import { isRecord } from "./typeGuards";
+
 export type FriendlyError = {
   title: string;
   message: string;
@@ -12,8 +14,8 @@ function parseRetryAfterSeconds(res: Response) {
   return Number.isFinite(n) ? Math.max(1, Math.floor(n)) : null;
 }
 
-export function buildAnalyzeFriendlyError(res: Response | null, data: any): FriendlyError {
-  const apiMsg = typeof data?.error === "string" ? data.error : "";
+export function buildAnalyzeFriendlyError(res: Response | null, data: unknown): FriendlyError {
+  const apiMsg = isRecord(data) && typeof data.error === "string" ? data.error : "";
   const status = res?.status ?? 0;
 
   if (status === 401)
