@@ -20,7 +20,7 @@ type FooterAction = {
 
 type FooterActionsProps = {
   primary: FooterAction;
-  secondary: FooterAction;
+  secondary?: FooterAction;
   leadingContent?: ReactNode;
   actionBarSx?: SxProps<Theme>;
 };
@@ -49,8 +49,8 @@ function buildButtonSx(variant: "contained" | "outlined", extra?: SxProps<Theme>
 
 export default function FooterActions({ primary, secondary, leadingContent, actionBarSx }: FooterActionsProps) {
   const primaryVariant = primary.variant ?? "contained";
-  const secondaryVariant = secondary.variant ?? "outlined";
-  const secondaryComponentProps = secondary.component ? { component: secondary.component } : {};
+  const secondaryVariant = secondary?.variant ?? "outlined";
+  const secondaryComponentProps = secondary?.component ? { component: secondary.component } : {};
   const primaryComponentProps = primary.component ? { component: primary.component } : {};
 
   return (
@@ -58,18 +58,20 @@ export default function FooterActions({ primary, secondary, leadingContent, acti
       <Stack spacing={2}>
         {leadingContent}
         <Stack direction="row" spacing={2} sx={{ width: "100%" }}>
-          <Button
-            variant={secondaryVariant}
-            size="large"
-            startIcon={secondary.startIcon}
-            onClick={secondary.onClick}
-            href={secondary.href}
-            disabled={secondary.disabled}
-            sx={buildButtonSx(secondaryVariant, secondary.sx)}
-            {...secondaryComponentProps}
-          >
-            {secondary.label}
-          </Button>
+          {secondary && (
+            <Button
+              variant={secondaryVariant}
+              size="large"
+              startIcon={secondary.startIcon}
+              onClick={secondary.onClick}
+              href={secondary.href}
+              disabled={secondary.disabled}
+              sx={buildButtonSx(secondaryVariant, secondary.sx)}
+              {...secondaryComponentProps}
+            >
+              {secondary.label}
+            </Button>
+          )}
           <Button
             variant={primaryVariant}
             size="large"

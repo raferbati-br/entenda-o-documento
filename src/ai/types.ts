@@ -34,6 +34,11 @@ export type AnswerResponse = {
   meta: ProviderMeta;
 };
 
+export type AnswerStreamResponse = {
+  stream: AsyncIterable<string>;
+  meta: ProviderMeta;
+};
+
 export type AnalyzeInput = {
   model: string;
   prompt: Prompt;
@@ -44,4 +49,5 @@ export type AnalyzeInput = {
 export interface LlmProvider {
   analyze(input: AnalyzeInput): Promise<ProviderResponse>;
   answer(input: { model: string; prompt: Prompt }): Promise<AnswerResponse>;
+  answerStream?(input: { model: string; prompt: Prompt }): Promise<AnswerStreamResponse>;
 }

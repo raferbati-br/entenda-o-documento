@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { AnalyzeInput, LlmProvider, ProviderResponse, Prompt, AnswerResponse } from "../types";
+import type { AnalyzeInput, LlmProvider, ProviderResponse, Prompt, AnswerResponse, AnswerStreamResponse } from "../types";
 
 function extractFirstJsonObject(text: string): string | null {
   const start = text.indexOf("{");
@@ -109,6 +109,38 @@ export class OpenAIProvider implements LlmProvider {
 
     return {
       text,
+      meta: { provider: "openai", model: input.model },
+    };
+  }
+
+  async answerStream(input: { model: string; prompt: Prompt }): Promise<AnswerStreamResponse> {
+    const stream = await this.client.responses.create({
+      model: input.model,
+      stream: true,
+      input: [
+        {
+          type: "message",
+          role: "system",
+          content: [{ type: "input_text", text: input.prompt.system }],
+        },
+        {
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: input.prompt.user }],
+        },
+      ],
+    });
+
+    async function* iterator() {
+      for await (const event of stream) {
+        if (event.type === "response.output_text.delta" && event.delta) {
+          yield event.delta;
+        }
+      }
+    }
+
+    return {
+      stream: iterator(),
       meta: { provider: "openai", model: input.model },
     };
   }

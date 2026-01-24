@@ -1,4 +1,4 @@
-import type { AnalyzeInput, AnswerResponse, LlmProvider, ProviderResponse, Prompt } from "../types";
+import type { AnalyzeInput, AnswerResponse, AnswerStreamResponse, LlmProvider, ProviderResponse, Prompt } from "../types";
 
 function mockAnalyzeResponse(): { confidence: number; cards: Array<{ id: string; title: string; text: string }>; notice: string } {
   return {
@@ -31,6 +31,17 @@ export class MockProvider implements LlmProvider {
   async answer(input: { model: string; prompt: Prompt }): Promise<AnswerResponse> {
     return {
       text: "Resposta simulada para perguntas.",
+      meta: { provider: "mock", model: input.model },
+    };
+  }
+
+  async answerStream(input: { model: string; prompt: Prompt }): Promise<AnswerStreamResponse> {
+    async function* iterator() {
+      yield "Resposta simulada para perguntas.";
+    }
+
+    return {
+      stream: iterator(),
       meta: { provider: "mock", model: input.model },
     };
   }

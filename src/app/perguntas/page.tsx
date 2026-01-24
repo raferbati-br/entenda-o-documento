@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { clearCaptureId } from "@/lib/captureIdStore";
 import { loadCapture } from "@/lib/captureStore";
-import { loadQaContext } from "@/lib/qaContextStore";
-import { loadResult, AnalysisResult } from "@/lib/resultStore";
+import { clearQaContext, loadQaContext } from "@/lib/qaContextStore";
+import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
 import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
 import { telemetryCapture } from "@/lib/telemetry";
 import { mapNetworkError, mapQaError } from "@/lib/errorMesages";
+import { readQaStream } from "@/lib/qaStream";
 
 import {
   Box,
@@ -28,10 +30,14 @@ import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import PaidRoundedIcon from "@mui/icons-material/PaidRounded";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
+import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
 import ZoomOutRoundedIcon from "@mui/icons-material/ZoomOutRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
+import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
 import FooterActions from "../_components/FooterActions";
 import PageHeader from "../_components/PageHeader";
 import PageLayout from "../_components/PageLayout";
@@ -51,6 +57,10 @@ const INPUT_BAR_GAP = 8;
 const SCROLL_PAD_FALLBACK = ACTION_BAR_HEIGHT + INPUT_BAR_GAP + 120;
 const KEYBOARD_OPEN_THRESHOLD = 120;
 
+function isSpeechSupported() {
+  return typeof window !== "undefined" && "speechSynthesis" in window;
+}
+
 export default function PerguntasPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -68,6 +78,8 @@ export default function PerguntasPage() {
   const [docZoom, setDocZoom] = useState(1);
 
   const [question, setQuestion] = useState("");
+  const [ttsSupported, setTtsSupported] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [qaLoading, setQaLoading] = useState(false);
   const [qaHistory, setQaHistory] = useState<QaItem[]>([]);
   const [showJump, setShowJump] = useState(false);
@@ -89,6 +101,13 @@ export default function PerguntasPage() {
   const cardsArr = useMemo<CardT[]>(() => (result?.cards as CardT[]) || [], [result]);
   const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
   const documentTitle = useMemo(() => cardMap["whatIs"]?.title || "Documento", [cardMap]);
+  const lastAnswer = useMemo(() => {
+    for (let i = qaHistory.length - 1; i >= 0; i -= 1) {
+      const answer = qaHistory[i]?.answer?.trim();
+      if (answer) return answer;
+    }
+    return "";
+  }, [qaHistory]);
 
   useEffect(() => {
     const res = loadResult();
@@ -98,6 +117,15 @@ export default function PerguntasPage() {
     }
     setResult(res);
   }, [router]);
+
+  useEffect(() => {
+    setTtsSupported(isSpeechSupported());
+    return () => {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    };
+  }, []);
 
   useEffect(() => {
     if (!result) return;
@@ -236,6 +264,43 @@ export default function PerguntasPage() {
     setDocOpen(false);
   }
 
+  function stopSpeaking() {
+    try {
+      window.speechSynthesis.cancel();
+    } catch {}
+    setIsSpeaking(false);
+  }
+
+  function startSpeaking() {
+    if (!ttsSupported || !lastAnswer) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(lastAnswer);
+      utterance.lang = "pt-BR";
+      utterance.rate = 0.95;
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+      };
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+      };
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      setIsSpeaking(false);
+    }
+  }
+
+  function newDoc() {
+    stopSpeaking();
+    clearResult();
+    clearQaContext();
+    clearCaptureId();
+    router.push("/camera");
+  }
+
   function handleQuickQuestion(q: string) {
     if (q === "Outras") {
       setQuestion("");
@@ -244,6 +309,10 @@ export default function PerguntasPage() {
     }
     setQuestion(q);
     inputRef.current?.focus();
+  }
+
+  function updateQaItem(id: string, updates: Partial<QaItem>) {
+    setQaHistory((prev) => prev.map((item) => (item.id === id ? { ...item, ...updates } : item)));
   }
 
   async function handleAsk() {
@@ -262,7 +331,8 @@ export default function PerguntasPage() {
     sessionStorage.setItem(attemptKey, String(attempt));
 
     const itemId = `qa-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    setQaHistory((prev) => [...prev, { id: itemId, question: q, pending: true }]);
+    stopSpeaking();
+    setQaHistory((prev) => [...prev, { id: itemId, question: q, pending: true, answer: "" }]);
     setQuestion("");
     setQaLoading(true);
     telemetryCapture("qa_question_submit", {
@@ -278,26 +348,38 @@ export default function PerguntasPage() {
         body: JSON.stringify({ question: q, context: qaContext, attempt }),
       });
 
-      const data = await res.json().catch(() => ({}));
-      if (res.status === 401) {
-        await clearSessionToken();
-      }
-      if (!res.ok || !data?.ok) {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          await clearSessionToken();
+        }
         const apiError = typeof data?.error === "string" ? data.error : "";
         throw new Error(mapQaError(res.status, apiError));
       }
 
-      setQaHistory((prev) =>
-        prev.map((item) => (item.id === itemId ? { ...item, pending: false, answer: String(data?.answer || "") } : item))
-      );
+      if (!res.body) {
+        throw new Error("Resposta vazia.");
+      }
+
+      let answerText = "";
+      for await (const event of readQaStream(res.body)) {
+        if (event.type === "delta") {
+          answerText += event.text;
+          updateQaItem(itemId, { answer: answerText, pending: true });
+        }
+        if (event.type === "error") {
+          throw new Error(event.message || "Erro ao responder pergunta.");
+        }
+        if (event.type === "done") {
+          break;
+        }
+      }
+
+      updateQaItem(itemId, { pending: false });
       telemetryCapture("qa_answer_success");
     } catch (err: any) {
       const msg = typeof err?.message === "string" ? err.message : "";
-      setQaHistory((prev) =>
-        prev.map((item) =>
-          item.id === itemId ? { ...item, pending: false, error: mapNetworkError(msg) } : item
-        )
-      );
+      updateQaItem(itemId, { pending: false, error: mapNetworkError(msg) });
       telemetryCapture("qa_answer_error");
     } finally {
       setQaLoading(false);
@@ -319,9 +401,31 @@ export default function PerguntasPage() {
         onContentScroll={handleScroll}
         header={
           <PageHeader>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Tire suas duvidas
-            </Typography>
+            <IconButton edge="start" onClick={() => router.push("/result")} sx={{ mr: 1 }}>
+              <ArrowBackRoundedIcon />
+            </IconButton>
+
+            <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center" }}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Tire suas duvidas
+              </Typography>
+            </Box>
+
+            <Stack direction="row" spacing={1} alignItems="center">
+              {ttsSupported && (
+                <IconButton
+                  onClick={isSpeaking ? stopSpeaking : startSpeaking}
+                  color="primary"
+                  disabled={!lastAnswer}
+                  aria-label={isSpeaking ? "Parar leitura" : "Ouvir resposta"}
+                >
+                  {isSpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
+                </IconButton>
+              )}
+              <IconButton onClick={openDocument} color="primary" disabled={!imageUrl} aria-label="Ver documento">
+                <DescriptionRoundedIcon />
+              </IconButton>
+            </Stack>
           </PageHeader>
         }
         footer={
@@ -330,16 +434,10 @@ export default function PerguntasPage() {
               bottom: actionBarOffset,
               transition: "bottom 160ms ease-out",
             }}
-            secondary={{
-              label: "Resultado",
-              startIcon: <HelpOutlineRoundedIcon />,
-              onClick: () => router.push("/result"),
-            }}
             primary={{
-              label: "Documento",
-              startIcon: <DescriptionRoundedIcon />,
-              onClick: openDocument,
-              disabled: !imageUrl,
+              label: "Analisar Outro",
+              startIcon: <CameraAltRoundedIcon />,
+              onClick: newDoc,
             }}
           />
         }
@@ -464,7 +562,7 @@ export default function PerguntasPage() {
                         <Typography variant="body2">{item.question}</Typography>
                       </Box>
 
-                      {item.pending && (
+                      {item.pending && !item.answer && (
                         <Box
                           sx={{
                             alignSelf: "flex-start",

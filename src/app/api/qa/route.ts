@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { answerQuestion } from "@/ai/answerQuestion";
+import { answerQuestionStream } from "@/ai/answerQuestion";
 import { rateLimit } from "@/lib/rateLimit";
 import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
+import { serializeQaStreamEvent } from "@/lib/qaStream";
 
 export const runtime = "nodejs";
 
 const MAX_QUESTION_CHARS = 240;
 const MAX_CONTEXT_CHARS = 3500;
+const MAX_ANSWER_CHARS = 420;
 
 function badRequest(msg: string, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
@@ -52,28 +54,91 @@ export async function POST(req: Request) {
     if (!context) return badRequest("Contexto do documento não informado.");
     if (context.length > MAX_CONTEXT_CHARS) return badRequest("Contexto muito longo.");
 
-    const { answer, meta, promptId } = await answerQuestion({ question, context });
-    const durationMs = Date.now() - startedAt;
-    try {
-      await Promise.all([
-        recordQualityLatency("qa_latency_ms", durationMs),
-        attempt > 1 ? recordQualityCount("qa_retry") : Promise.resolve(),
-      ]);
-    } catch (err) {
-      console.warn("[metrics]", err);
-    }
+    const { stream, meta, promptId } = await answerQuestionStream({ question, context });
 
-    console.log("[api.qa]", {
-      requestId,
-      ip,
-      status: 200,
-      provider: meta.provider,
-      model: meta.model,
-      promptId,
-      duration_ms: durationMs,
+    const encoder = new TextEncoder();
+    const responseStream = new ReadableStream({
+      async start(controller) {
+        let answerText = "";
+        let sentChars = 0;
+        try {
+          for await (const chunk of stream) {
+            if (!chunk) continue;
+            if (sentChars >= MAX_ANSWER_CHARS) break;
+
+            const remaining = MAX_ANSWER_CHARS - sentChars;
+            const next = chunk.length > remaining ? chunk.slice(0, remaining) : chunk;
+            if (!next) continue;
+
+            sentChars += next.length;
+            answerText += next;
+            controller.enqueue(encoder.encode(serializeQaStreamEvent({ type: "delta", text: next })));
+          }
+
+          const durationMs = Date.now() - startedAt;
+          if (!answerText.trim()) {
+            try {
+              await Promise.all([
+                recordQualityCount("qa_model_error"),
+                recordQualityLatency("qa_latency_ms", durationMs),
+              ]);
+            } catch (err) {
+              console.warn("[metrics]", err);
+            }
+            console.log("[api.qa]", {
+              requestId,
+              ip,
+              status: 502,
+              provider: meta.provider,
+              model: meta.model,
+              promptId,
+              duration_ms: durationMs,
+            });
+            controller.enqueue(
+              encoder.encode(serializeQaStreamEvent({ type: "error", message: "Modelo nao retornou texto valido" }))
+            );
+            controller.close();
+            return;
+          }
+
+          try {
+            await Promise.all([
+              recordQualityLatency("qa_latency_ms", durationMs),
+              attempt > 1 ? recordQualityCount("qa_retry") : Promise.resolve(),
+            ]);
+          } catch (err) {
+            console.warn("[metrics]", err);
+          }
+
+          console.log("[api.qa]", {
+            requestId,
+            ip,
+            status: 200,
+            provider: meta.provider,
+            model: meta.model,
+            promptId,
+            duration_ms: durationMs,
+          });
+
+          controller.enqueue(encoder.encode(serializeQaStreamEvent({ type: "done" })));
+          controller.close();
+        } catch (err) {
+          console.error("[api.qa]", err);
+          controller.enqueue(
+            encoder.encode(serializeQaStreamEvent({ type: "error", message: "Erro interno ao responder pergunta" }))
+          );
+          controller.close();
+        }
+      },
     });
 
-    return NextResponse.json({ ok: true, answer });
+    return new NextResponse(responseStream, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache",
+      },
+    });
   } catch (err: any) {
     const code = String(err?.message || "");
 
