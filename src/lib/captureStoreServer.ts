@@ -5,6 +5,8 @@ export type CaptureEntry = {
   mimeType: string;
   createdAt: number;
   bytes: number;
+  ocrImageBase64?: string;
+  ocrBytes?: number;
 };
 
 const TTL_MS = 10 * 60 * 1000;
@@ -47,7 +49,7 @@ export function cleanupMemoryStore() {
 
 export function memoryStats() {
   let totalBytes = 0;
-  for (const e of memoryStore.values()) totalBytes += e.bytes || 0;
+  for (const e of memoryStore.values()) totalBytes += (e.bytes || 0) + (e.ocrBytes || 0);
   return { count: memoryStore.size, totalBytes };
 }
 

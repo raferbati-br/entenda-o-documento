@@ -86,22 +86,33 @@ export default function ConfirmPage() {
 
       // 1) Lógica de Compressão (Mantida do seu arquivo original)
       const compressStart = performance.now();
-      let { dataUrl, bytes } = await compressBlobToDataUrl(payload.blob, {
+      let mainImage = await compressBlobToDataUrl(payload.blob, {
         maxDimension: 1600,
         quality: 0.78,
         mimeType: "image/jpeg",
       });
 
-      if (bytes > 1_700_000) {
-        const second = await compressBlobToDataUrl(payload.blob, {
+      if (mainImage.bytes > 1_700_000) {
+        mainImage = await compressBlobToDataUrl(payload.blob, {
           maxDimension: 1400,
           quality: 0.72,
           mimeType: "image/jpeg",
         });
-        dataUrl = second.dataUrl;
-        bytes = second.bytes;
       }
       recordLatencyStep("compress_ms", performance.now() - compressStart);
+
+      const ocrMaxDimension = 1200;
+      let ocrDataUrl = "";
+      if (Math.max(mainImage.width, mainImage.height) > ocrMaxDimension) {
+        const ocrStart = performance.now();
+        const ocrImage = await compressBlobToDataUrl(payload.blob, {
+          maxDimension: ocrMaxDimension,
+          quality: 0.7,
+          mimeType: "image/jpeg",
+        });
+        recordLatencyStep("compress_ocr_ms", performance.now() - ocrStart);
+        ocrDataUrl = ocrImage.dataUrl;
+      }
 
       // 2) Envio para API
       const token = await ensureSessionToken();
@@ -109,7 +120,7 @@ export default function ConfirmPage() {
       const res = await fetch("/api/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-        body: JSON.stringify({ imageBase64: dataUrl }),
+        body: JSON.stringify({ imageBase64: mainImage.dataUrl, ...(ocrDataUrl ? { ocrImageBase64: ocrDataUrl } : {}) }),
       });
 
       const data = await res.json().catch(() => ({}));

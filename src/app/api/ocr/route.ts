@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     if (!captureId) return badRequest("CaptureId não informado.");
 
     const entry = await getCapture(captureId);
-    const imageDataUrl = entry?.imageBase64 || "";
+    const imageDataUrl = entry?.ocrImageBase64 || entry?.imageBase64 || "";
     if (!imageDataUrl || !imageDataUrl.startsWith("data:image/")) {
       return NextResponse.json(
         { ok: false, error: "Imagem não encontrada ou inválida (capture expirou)" },
