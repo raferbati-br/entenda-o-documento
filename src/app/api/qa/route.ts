@@ -145,8 +145,8 @@ export async function POST(req: Request) {
   } catch (err: unknown) {
     const code = err instanceof Error ? err.message : "";
 
-    if (code === "OPENAI_API_KEY_NOT_SET") {
-      return NextResponse.json({ ok: false, error: "OPENAI_API_KEY não configurada" }, { status: 500 });
+    if (code === "API_KEY_NOT_SET") {
+      return NextResponse.json({ ok: false, error: "Chave de API nao configurada" }, { status: 500 });
     }
 
     if (code === "MODEL_NO_TEXT") {

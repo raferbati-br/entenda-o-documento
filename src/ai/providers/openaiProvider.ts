@@ -24,7 +24,7 @@ export class OpenAIProvider implements LlmProvider {
 
   constructor() {
     const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error("OPENAI_API_KEY_NOT_SET");
+    if (!apiKey) throw new Error("API_KEY_NOT_SET");
     this.client = new OpenAI({ apiKey });
   }
 
