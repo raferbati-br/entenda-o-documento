@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { cleanupMemoryStore, isRedisConfigured, memoryStats, setCapture } from "@/lib/captureStoreServer";
-import { rateLimit } from "@/lib/rateLimit";
-import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
-import { isRecord } from "@/lib/typeGuards";
+import { badRequest, createRouteContext, readJsonRecord, runCommonGuards } from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
 
@@ -48,82 +46,58 @@ function validateImageBase64(base64: string, declaredMime: string): ValidatedIma
   try {
     buf = Buffer.from(base64, "base64");
   } catch {
-    return { ok: false, error: "Base64 inválido." };
+    return { ok: false, error: "Base64 invalido." };
   }
 
-  if (buf.byteLength < 32) return { ok: false, error: "Imagem inválida." };
+  if (buf.byteLength < 32) return { ok: false, error: "Imagem invalida." };
 
   if (buf.byteLength > MAX_IMAGE_BYTES) {
     return {
       ok: false,
-      error: "A imagem é muito grande. Tente aproximar o documento ou usar boa iluminação.",
+      error: "A imagem e muito grande. Tente aproximar o documento ou usar boa iluminacao.",
       status: 413,
     };
   }
 
   const detected = detectMime(buf);
-  if (!detected) return { ok: false, error: "Tipo de imagem não suportado. Use JPG, PNG ou WebP." };
+  if (!detected) return { ok: false, error: "Tipo de imagem nao suportado. Use JPG, PNG ou WebP." };
 
-  if (declaredMime && detected !== declaredMime) return { ok: false, error: "Tipo de imagem inválido." };
+  if (declaredMime && detected !== declaredMime) return { ok: false, error: "Tipo de imagem invalido." };
 
   return { ok: true, buffer: buf, bytes: buf.byteLength, mimeType: detected };
 }
 
-function badRequest(msg: string, status = 400) {
-  return NextResponse.json({ ok: false, error: msg }, { status });
-}
-
 export async function POST(req: Request) {
+  const ctx = createRouteContext(req);
   try {
-    const startedAt = Date.now();
-    const requestId = crypto.randomUUID();
-    if (!isOriginAllowed(req)) {
-      return NextResponse.json({ ok: false, error: "Origem não permitida" }, { status: 403 });
-    }
-
-    const token = req.headers.get("x-session-token") || "";
-    if (!verifySessionToken(token)) {
-      return NextResponse.json(
-        { ok: false, error: "Sessao expirada. Volte para a camera e tire outra foto para continuar." },
-        { status: 401 }
-      );
-    }
-
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = await rateLimit(`capture:${ip}`);
-    if (!rl.ok) {
-      console.log("[api.capture]", { requestId, ip, status: 429, duration_ms: Date.now() - startedAt });
-      return NextResponse.json(
-        { ok: false, error: "Muitas tentativas. Aguarde um pouco e tente novamente." },
-        { status: 429, headers: { "Retry-After": String(rl.resetSeconds) } }
-      );
-    }
+    const guardError = await runCommonGuards(req, ctx, {
+      sessionMessage: "Sessao expirada. Volte para a camera e tire outra foto para continuar.",
+      rateLimitPrefix: "capture",
+      rateLimitTag: "api.capture",
+    });
+    if (guardError) return guardError;
 
     cleanupMemoryStore();
 
-    const body = await req.json().catch(() => null);
-    if (!isRecord(body)) return badRequest("Requisi??o inv?lida.");
+    const body = await readJsonRecord(req);
+    if (!body) return badRequest("Requisicao invalida.");
 
-    // ✅ IMPORTANTE: string SEMPRE (não null)
     let rawBase64 = "";
     let declaredMime = "";
 
-    // A) DataURL
     if (typeof body.imageBase64 === "string") {
       const parsed = parseDataUrl(body.imageBase64);
-      if (!parsed) return badRequest("Imagem inválida.");
+      if (!parsed) return badRequest("Imagem invalida.");
       declaredMime = parsed.mimeType;
       rawBase64 = parsed.base64;
-    }
-    // B) base64 puro + mimeType
-    else if (typeof body.imageBase64Raw === "string" && typeof body.mimeType === "string") {
+    } else if (typeof body.imageBase64Raw === "string" && typeof body.mimeType === "string") {
       rawBase64 = body.imageBase64Raw;
       declaredMime = body.mimeType;
     } else {
-      return badRequest("Imagem não informada.");
+      return badRequest("Imagem nao informada.");
     }
 
-    if (!rawBase64) return badRequest("Imagem inválida.");
+    if (!rawBase64) return badRequest("Imagem invalida.");
 
     const validated = validateImageBase64(rawBase64, declaredMime);
     if (!validated.ok) return badRequest(validated.error, validated.status);
@@ -152,11 +126,11 @@ export async function POST(req: Request) {
     if (!isRedisConfigured()) {
       const { count, totalBytes } = memoryStats();
       if (count >= MAX_CAPTURE_COUNT) {
-        return badRequest("O sistema está temporariamente ocupado. Tente novamente em alguns minutos.");
+        return badRequest("O sistema esta temporariamente ocupado. Tente novamente em alguns minutos.");
       }
       const projectedTotal = totalBytes + buf.byteLength + ocrBytes;
       if (projectedTotal > MAX_TOTAL_BYTES) {
-        return badRequest("O sistema está temporariamente cheio. Tente novamente em instantes.");
+        return badRequest("O sistema esta temporariamente cheio. Tente novamente em instantes.");
       }
     }
 
@@ -170,17 +144,17 @@ export async function POST(req: Request) {
     });
 
     console.log("[api.capture]", {
-      requestId,
-      ip,
+      requestId: ctx.requestId,
+      ip: ctx.ip,
       status: 200,
       bytes: buf.byteLength,
       ocr_bytes: ocrBytes || 0,
-      duration_ms: Date.now() - startedAt,
+      duration_ms: ctx.durationMs(),
     });
 
     return NextResponse.json({ ok: true, captureId });
   } catch (err) {
     console.error("[api.capture]", err);
-    return NextResponse.json({ ok: false, error: "Erro interno ao receber imagem." }, { status: 500 });
+    return badRequest("Erro interno ao receber imagem.", 500);
   }
 }

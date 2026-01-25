@@ -1,20 +1,24 @@
 import { NextResponse } from "next/server";
-import { createSessionToken, isOriginAllowed } from "@/lib/requestAuth";
+import { createSessionToken } from "@/lib/requestAuth";
+import { badRequest, createRouteContext, handleTokenSecretError, runCommonGuards } from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
-  if (!isOriginAllowed(req)) {
-    return NextResponse.json({ ok: false, error: "Origem não permitida" }, { status: 403 });
-  }
+  const ctx = createRouteContext(req);
+
+  const guardError = await runCommonGuards(req, ctx, { requireSession: false });
+  if (guardError) return guardError;
 
   try {
     const token = createSessionToken();
     return NextResponse.json({ ok: true, token }, { headers: { "Cache-Control": "no-store" } });
   } catch (err: unknown) {
-    if (err instanceof Error && err.message === "API_TOKEN_SECRET_NOT_SET") {
-      return NextResponse.json({ ok: false, error: "API_TOKEN_SECRET não configurada" }, { status: 500 });
-    }
-    return NextResponse.json({ ok: false, error: "Erro ao gerar token" }, { status: 500 });
+    const code = err instanceof Error ? err.message : "";
+
+    const secretError = handleTokenSecretError(code);
+    if (secretError) return secretError;
+
+    return badRequest("Erro ao gerar token", 500);
   }
 }

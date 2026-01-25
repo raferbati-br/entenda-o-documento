@@ -2,10 +2,16 @@ import { NextResponse } from "next/server";
 import { analyzeDocument } from "@/ai/analyzeDocument";
 import { cleanupMemoryStore, deleteCapture, getCapture } from "@/lib/captureStoreServer";
 import { evaluateOcrText } from "@/lib/ocrTextQuality";
-import { rateLimit } from "@/lib/rateLimit";
-import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
-import { isRecord } from "@/lib/typeGuards";
+import {
+  badRequest,
+  createRouteContext,
+  handleApiKeyError,
+  handleModelJsonError,
+  readJsonRecord,
+  runCommonGuards,
+  safeRecordMetrics,
+} from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
 
@@ -16,36 +22,20 @@ function isTextOnlyEnabled() {
   return TEXT_ONLY_VALUES.has(value);
 }
 
-// ===== Route =====
 export async function POST(req: Request) {
-  const startedAt = Date.now();
+  const ctx = createRouteContext(req);
   try {
-    const requestId = crypto.randomUUID();
-    if (!isOriginAllowed(req)) {
-      return NextResponse.json({ ok: false, error: "Origem não permitida" }, { status: 403 });
-    }
-
-    const token = req.headers.get("x-session-token") || "";
-    if (!verifySessionToken(token)) {
-      return NextResponse.json({ ok: false, error: "Sessao expirada. Tire outra foto para continuar." }, { status: 401 });
-    }
-
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = await rateLimit(`analyze:${ip}`);
-    if (!rl.ok) {
-      console.log("[api.analyze]", { requestId, ip, status: 429, duration_ms: Date.now() - startedAt });
-      return NextResponse.json(
-        { ok: false, error: "Muitas tentativas. Aguarde um pouco e tente novamente." },
-        { status: 429, headers: { "Retry-After": String(rl.resetSeconds) } }
-      );
-    }
+    const guardError = await runCommonGuards(req, ctx, {
+      sessionMessage: "Sessao expirada. Tire outra foto para continuar.",
+      rateLimitPrefix: "analyze",
+      rateLimitTag: "api.analyze",
+    });
+    if (guardError) return guardError;
 
     cleanupMemoryStore();
 
-    const body = await req.json().catch(() => null);
-    if (!isRecord(body)) {
-      return NextResponse.json({ ok: false, error: "Requisição inválida." }, { status: 400 });
-    }
+    const body = await readJsonRecord(req);
+    if (!body) return badRequest("Requisicao invalida.");
 
     const captureId = typeof body.captureId === "string" ? body.captureId : "";
     const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
@@ -58,7 +48,6 @@ export async function POST(req: Request) {
         imageDataUrl = entry.imageBase64;
       }
 
-      // Free after use
       await deleteCapture(captureId);
     }
 
@@ -72,34 +61,27 @@ export async function POST(req: Request) {
         : "image";
 
     if (!useTextOnly && (!imageDataUrl || !imageDataUrl.startsWith("data:image/"))) {
-      return NextResponse.json(
-        { ok: false, error: "Imagem não encontrada ou inválida (capture expirou)" },
-        { status: 404 }
-      );
+      return badRequest("Imagem nao encontrada ou invalida (capture expirou)", 404);
     }
 
-    // Chama a camada de IA (prompt + provider + parse + postprocess)
     const { result, meta, promptId, stats } = await analyzeDocument(
       useTextOnly ? { documentText: ocrText } : { imageDataUrl }
     );
-    const durationMs = Date.now() - startedAt;
-    try {
-      await Promise.all([
-        recordQualityCount("analyze_total"),
-        recordQualityLatency("analyze_latency_ms", durationMs),
-        stats.confidenceLow ? recordQualityCount("analyze_low_confidence") : Promise.resolve(),
-        stats.sanitizerApplied ? recordQualityCount("analyze_sanitizer") : Promise.resolve(),
-        attempt > 1 ? recordQualityCount("analyze_retry") : Promise.resolve(),
-        useTextOnly ? recordQualityCount("analyze_text_only") : Promise.resolve(),
-        analysisMode === "image_fallback" ? recordQualityCount("analyze_image_fallback") : Promise.resolve(),
-      ]);
-    } catch (err) {
-      console.warn("[metrics]", err);
-    }
+    const durationMs = ctx.durationMs();
+
+    await safeRecordMetrics([
+      recordQualityCount("analyze_total"),
+      recordQualityLatency("analyze_latency_ms", durationMs),
+      stats.confidenceLow ? recordQualityCount("analyze_low_confidence") : Promise.resolve(),
+      stats.sanitizerApplied ? recordQualityCount("analyze_sanitizer") : Promise.resolve(),
+      attempt > 1 ? recordQualityCount("analyze_retry") : Promise.resolve(),
+      useTextOnly ? recordQualityCount("analyze_text_only") : Promise.resolve(),
+      analysisMode === "image_fallback" ? recordQualityCount("analyze_image_fallback") : Promise.resolve(),
+    ]);
 
     console.log("[api.analyze]", {
-      requestId,
-      ip,
+      requestId: ctx.requestId,
+      ip: ctx.ip,
       status: 200,
       provider: meta.provider,
       model: meta.model,
@@ -114,24 +96,18 @@ export async function POST(req: Request) {
   } catch (err: unknown) {
     const code = err instanceof Error ? err.message : "";
 
-    if (code === "API_KEY_NOT_SET") {
-      return NextResponse.json({ ok: false, error: "Chave de API nao configurada" }, { status: 500 });
-    }
+    const apiKeyError = handleApiKeyError(code);
+    if (apiKeyError) return apiKeyError;
 
-    if (code === "MODEL_NO_JSON" || code === "MODEL_INVALID_JSON") {
-      const durationMs = Date.now() - startedAt;
-      try {
-        await Promise.all([
-          recordQualityCount("analyze_invalid_json"),
-          recordQualityLatency("analyze_latency_ms", durationMs),
-        ]);
-      } catch (err) {
-        console.warn("[metrics]", err);
-      }
-      return NextResponse.json({ ok: false, error: "Modelo nao retornou JSON valido" }, { status: 502 });
-    }
+    const modelJsonError = await handleModelJsonError(code, {
+      ctx,
+      countMetric: "analyze_invalid_json",
+      latencyMetric: "analyze_latency_ms",
+      message: "Modelo nao retornou JSON valido",
+    });
+    if (modelJsonError) return modelJsonError;
 
     console.error("[api.analyze]", err);
-    return NextResponse.json({ ok: false, error: "Erro interno ao analisar documento" }, { status: 500 });
+    return badRequest("Erro interno ao analisar documento", 500);
   }
 }

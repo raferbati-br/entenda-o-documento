@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { QaStreamEvent } from "@/lib/qaStream";
 import { readQaStream, serializeQaStreamEvent } from "@/lib/qaStream";
 
 function makeStream(chunks: string[]) {
@@ -25,7 +26,7 @@ describe("qaStream", () => {
     const midpoint = Math.floor(payload.length / 2);
     const stream = makeStream([payload.slice(0, midpoint), payload.slice(midpoint)]);
 
-    const received: typeof events[number][] = [];
+    const received: QaStreamEvent[] = [];
     for await (const event of readQaStream(stream)) {
       received.push(event);
     }
@@ -38,7 +39,7 @@ describe("qaStream", () => {
     const payload = serializeQaStreamEvent(event).trimEnd();
     const stream = makeStream([payload]);
 
-    const received: typeof event[] = [];
+    const received: QaStreamEvent[] = [];
     for await (const item of readQaStream(stream)) {
       received.push(item);
     }

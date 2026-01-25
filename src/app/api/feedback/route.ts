@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import { Redis } from "@upstash/redis";
-import { rateLimit } from "@/lib/rateLimit";
-import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
-import { isRecord } from "@/lib/typeGuards";
+import { badRequest, createRouteContext, readJsonRecord, runCommonGuards } from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
 
@@ -26,10 +23,6 @@ function getRedis(): Redis {
   return redisClient;
 }
 
-function badRequest(msg: string, status = 400) {
-  return NextResponse.json({ ok: false, error: msg }, { status });
-}
-
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -44,35 +37,19 @@ function slugify(value: string) {
 }
 
 export async function POST(req: Request) {
+  const ctx = createRouteContext(req);
   try {
-    const startedAt = Date.now();
-    const requestId = crypto.randomUUID();
-    if (!isOriginAllowed(req)) {
-      return NextResponse.json({ ok: false, error: "Origem não permitida" }, { status: 403 });
-    }
+    const guardError = await runCommonGuards(req, ctx, {
+      sessionMessage: "Sessao expirada. Refaca a analise para enviar feedback.",
+      rateLimitPrefix: "feedback",
+      rateLimitTag: "api.feedback",
+    });
+    if (guardError) return guardError;
 
-    const token = req.headers.get("x-session-token") || "";
-    if (!verifySessionToken(token)) {
-      return NextResponse.json(
-        { ok: false, error: "Sessao expirada. Refaça a analise para enviar feedback." },
-        { status: 401 }
-      );
-    }
+    const body = await readJsonRecord(req);
+    if (!body) return badRequest("Requisicao invalida.");
 
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = await rateLimit(`feedback:${ip}`);
-    if (!rl.ok) {
-      console.log("[api.feedback]", { requestId, ip, status: 429, duration_ms: Date.now() - startedAt });
-      return NextResponse.json(
-        { ok: false, error: "Muitas tentativas. Aguarde um pouco e tente novamente." },
-        { status: 429, headers: { "Retry-After": String(rl.resetSeconds) } }
-      );
-    }
-
-    const body = await req.json().catch(() => null);
-    if (!isRecord(body)) return badRequest("Requisi??o inv?lida.");
-
-    if (typeof body.helpful !== "boolean") return badRequest("Feedback inválido.");
+    if (typeof body.helpful !== "boolean") return badRequest("Feedback invalido.");
 
     const helpful = Boolean(body.helpful);
     const rawReason = typeof body.reason === "string" ? body.reason.trim().slice(0, MAX_REASON_CHARS) : "";
@@ -92,19 +69,19 @@ export async function POST(req: Request) {
     }
 
     console.log("[api.feedback]", {
-      requestId,
-      ip,
+      requestId: ctx.requestId,
+      ip: ctx.ip,
       status: 200,
       helpful,
       reason,
       confidenceBucket,
       contextSource,
-      duration_ms: Date.now() - startedAt,
+      duration_ms: ctx.durationMs(),
     });
 
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[api.feedback]", err);
-    return NextResponse.json({ ok: false, error: "Erro interno ao registrar feedback" }, { status: 500 });
+    return badRequest("Erro interno ao registrar feedback", 500);
   }
 }

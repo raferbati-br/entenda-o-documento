@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import { answerQuestionStream } from "@/ai/answerQuestion";
-import { rateLimit } from "@/lib/rateLimit";
-import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
 import { serializeQaStreamEvent } from "@/lib/qaStream";
-import { isRecord } from "@/lib/typeGuards";
+import {
+  badRequest,
+  createRouteContext,
+  handleApiKeyError,
+  handleModelTextError,
+  readJsonRecord,
+  runCommonGuards,
+  safeRecordMetrics,
+} from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
 
@@ -13,40 +18,18 @@ const MAX_QUESTION_CHARS = 240;
 const MAX_CONTEXT_CHARS = 3500;
 const MAX_ANSWER_CHARS = 420;
 
-function badRequest(msg: string, status = 400) {
-  return NextResponse.json({ ok: false, error: msg }, { status });
-}
-
 export async function POST(req: Request) {
-  const startedAt = Date.now();
-  const requestId = crypto.randomUUID();
+  const ctx = createRouteContext(req);
   try {
-    if (!isOriginAllowed(req)) {
-      return NextResponse.json({ ok: false, error: "Origem não permitida" }, { status: 403 });
-    }
+    const guardError = await runCommonGuards(req, ctx, {
+      sessionMessage: "Sessao expirada. Refaca a analise do documento e tente novamente.",
+      rateLimitPrefix: "qa",
+      rateLimitTag: "api.qa",
+    });
+    if (guardError) return guardError;
 
-    const token = req.headers.get("x-session-token") || "";
-    if (!verifySessionToken(token)) {
-      return NextResponse.json(
-        { ok: false, error: "Sessao expirada. Refaça a analise do documento e tente novamente." },
-        { status: 401 }
-      );
-    }
-
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = await rateLimit(`qa:${ip}`);
-    if (!rl.ok) {
-      console.log("[api.qa]", { requestId, ip, status: 429, duration_ms: Date.now() - startedAt });
-      return NextResponse.json(
-        { ok: false, error: "Muitas tentativas. Aguarde um pouco e tente novamente." },
-        { status: 429, headers: { "Retry-After": String(rl.resetSeconds) } }
-      );
-    }
-
-    const body = await req.json().catch(() => null);
-    if (!isRecord(body)) {
-      return badRequest("Requisição inválida.");
-    }
+    const body = await readJsonRecord(req);
+    if (!body) return badRequest("Requisicao invalida.");
 
     const question = typeof body.question === "string" ? body.question.trim() : "";
     const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
@@ -54,7 +37,7 @@ export async function POST(req: Request) {
 
     if (!question || question.length < 4) return badRequest("Pergunta muito curta.");
     if (question.length > MAX_QUESTION_CHARS) return badRequest("Pergunta longa demais.");
-    if (!context) return badRequest("Contexto do documento não informado.");
+    if (!context) return badRequest("Contexto do documento nao informado.");
     if (context.length > MAX_CONTEXT_CHARS) return badRequest("Contexto muito longo.");
 
     const { stream, meta, promptId } = await answerQuestionStream({ question, context });
@@ -78,25 +61,23 @@ export async function POST(req: Request) {
             controller.enqueue(encoder.encode(serializeQaStreamEvent({ type: "delta", text: next })));
           }
 
-          const durationMs = Date.now() - startedAt;
+          const durationMs = ctx.durationMs();
           if (!answerText.trim()) {
-            try {
-              await Promise.all([
-                recordQualityCount("qa_model_error"),
-                recordQualityLatency("qa_latency_ms", durationMs),
-              ]);
-            } catch (err) {
-              console.warn("[metrics]", err);
-            }
+            await safeRecordMetrics([
+              recordQualityCount("qa_model_error"),
+              recordQualityLatency("qa_latency_ms", durationMs),
+            ]);
+
             console.log("[api.qa]", {
-              requestId,
-              ip,
+              requestId: ctx.requestId,
+              ip: ctx.ip,
               status: 502,
               provider: meta.provider,
               model: meta.model,
               promptId,
               duration_ms: durationMs,
             });
+
             controller.enqueue(
               encoder.encode(serializeQaStreamEvent({ type: "error", message: "Modelo nao retornou texto valido" }))
             );
@@ -104,18 +85,14 @@ export async function POST(req: Request) {
             return;
           }
 
-          try {
-            await Promise.all([
-              recordQualityLatency("qa_latency_ms", durationMs),
-              attempt > 1 ? recordQualityCount("qa_retry") : Promise.resolve(),
-            ]);
-          } catch (err) {
-            console.warn("[metrics]", err);
-          }
+          await safeRecordMetrics([
+            recordQualityLatency("qa_latency_ms", durationMs),
+            attempt > 1 ? recordQualityCount("qa_retry") : Promise.resolve(),
+          ]);
 
           console.log("[api.qa]", {
-            requestId,
-            ip,
+            requestId: ctx.requestId,
+            ip: ctx.ip,
             status: 200,
             provider: meta.provider,
             model: meta.model,
@@ -145,24 +122,18 @@ export async function POST(req: Request) {
   } catch (err: unknown) {
     const code = err instanceof Error ? err.message : "";
 
-    if (code === "API_KEY_NOT_SET") {
-      return NextResponse.json({ ok: false, error: "Chave de API nao configurada" }, { status: 500 });
-    }
+    const apiKeyError = handleApiKeyError(code);
+    if (apiKeyError) return apiKeyError;
 
-    if (code === "MODEL_NO_TEXT") {
-      const durationMs = Date.now() - startedAt;
-      try {
-        await Promise.all([
-          recordQualityCount("qa_model_error"),
-          recordQualityLatency("qa_latency_ms", durationMs),
-        ]);
-      } catch (err) {
-        console.warn("[metrics]", err);
-      }
-      return NextResponse.json({ ok: false, error: "Modelo não retornou texto válido" }, { status: 502 });
-    }
+    const modelTextError = await handleModelTextError(code, {
+      ctx,
+      countMetric: "qa_model_error",
+      latencyMetric: "qa_latency_ms",
+      message: "Modelo nao retornou texto valido",
+    });
+    if (modelTextError) return modelTextError;
 
     console.error("[api.qa]", err);
-    return NextResponse.json({ ok: false, error: "Erro interno ao responder pergunta" }, { status: 500 });
+    return badRequest("Erro interno ao responder pergunta", 500);
   }
 }
