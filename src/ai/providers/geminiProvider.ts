@@ -111,7 +111,26 @@ export class GeminiProvider implements LlmProvider {
     };
   }
 
-  async answerStream(): Promise<AnswerStreamResponse> {
-    throw new Error("METHOD_NOT_IMPLEMENTED");
+  async answerStream(input: { model: string; prompt: Prompt }): Promise<AnswerStreamResponse> {
+    const model = this.client.getGenerativeModel({
+      model: input.model,
+      systemInstruction: input.prompt.system,
+    });
+
+    const result = await model.generateContentStream([{ text: input.prompt.user }]);
+
+    async function* iterator() {
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) {
+          yield text;
+        }
+      }
+    }
+
+    return {
+      stream: iterator(),
+      meta: { provider: "gemini", model: input.model },
+    };
   }
 }
