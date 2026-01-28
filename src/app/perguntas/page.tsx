@@ -467,44 +467,6 @@ export default function PerguntasPage() {
                   gap: 2,
                 }}
               >
-                <Stack spacing={1.5}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <TextField
-                      inputRef={inputRef}
-                      label="Sua pergunta"
-                      placeholder="Ex: Qual e o prazo?"
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION_CHARS))}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAsk();
-                        }
-                      }}
-                      size="small"
-                      fullWidth
-                      inputProps={{ maxLength: MAX_QUESTION_CHARS }}
-                    />
-                    <IconButton
-                      onClick={handleAsk}
-                      disabled={!canAsk}
-                      sx={{
-                        height: 40,
-                        width: 40,
-                        borderRadius: "50%",
-                        bgcolor: canAsk ? "primary.main" : "action.disabledBackground",
-                        color: canAsk ? "primary.contrastText" : "text.disabled",
-                        "&:hover": { bgcolor: canAsk ? "primary.dark" : "action.disabledBackground" },
-                      }}
-                    >
-                      <SendRoundedIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                    Este aplicativo e informativo e pode cometer erros. Consulte um profissional para orientacoes.
-                  </Typography>
-                </Stack>
-
                 <Stack spacing={1} alignItems="flex-start">
                   {commonQuestions.map((q) => {
                     const iconColor =
@@ -633,61 +595,59 @@ export default function PerguntasPage() {
         </Stack>
       </PageLayout>
 
-      {!isEmptyState && (
-        <Box
-          ref={inputBarRef}
-          sx={(theme) => ({
-            position: "fixed",
-            left: 0,
-            right: 0,
-            bottom: inputBarBottom,
-            zIndex: theme.zIndex.appBar,
-            px: 2,
-            bgcolor: theme.palette.background.default,
-            transition: "bottom 160ms ease-out",
-          })}
-        >
-          <Box sx={{ maxWidth: 600, mx: "auto" }}>
-            <Stack spacing={1}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <TextField
-                  inputRef={inputRef}
-                  label="Sua pergunta"
-                  placeholder="Ex: Qual e o prazo?"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION_CHARS))}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAsk();
-                    }
-                  }}
-                  size="small"
-                  fullWidth
-                  inputProps={{ maxLength: MAX_QUESTION_CHARS }}
-                />
-                <IconButton
-                  onClick={handleAsk}
-                  disabled={!canAsk}
-                  sx={{
-                    height: 40,
-                    width: 40,
-                    borderRadius: "50%",
-                    bgcolor: canAsk ? "primary.main" : "action.disabledBackground",
-                    color: canAsk ? "primary.contrastText" : "text.disabled",
-                    "&:hover": { bgcolor: canAsk ? "primary.dark" : "action.disabledBackground" },
-                  }}
-                >
-                  <SendRoundedIcon fontSize="small" />
-                </IconButton>
-              </Stack>
-              <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                Este aplicativo e informativo e pode cometer erros. Consulte um profissional para orientacoes.
-              </Typography>
+      <Box
+        ref={inputBarRef}
+        sx={(theme) => ({
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: inputBarBottom,
+          zIndex: theme.zIndex.appBar,
+          px: 2,
+          bgcolor: theme.palette.background.default,
+          transition: "bottom 160ms ease-out",
+        })}
+      >
+        <Box sx={{ maxWidth: 600, mx: "auto" }}>
+          <Stack spacing={1}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                inputRef={inputRef}
+                label="Sua pergunta"
+                placeholder="Ex: Qual e o prazo?"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION_CHARS))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAsk();
+                  }
+                }}
+                size="small"
+                fullWidth
+                inputProps={{ maxLength: MAX_QUESTION_CHARS }}
+              />
+              <IconButton
+                onClick={handleAsk}
+                disabled={!canAsk}
+                sx={{
+                  height: 40,
+                  width: 40,
+                  borderRadius: "50%",
+                  bgcolor: canAsk ? "primary.main" : "action.disabledBackground",
+                  color: canAsk ? "primary.contrastText" : "text.disabled",
+                  "&:hover": { bgcolor: canAsk ? "primary.dark" : "action.disabledBackground" },
+                }}
+              >
+                <SendRoundedIcon fontSize="small" />
+              </IconButton>
             </Stack>
-          </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+              Este aplicativo e informativo e pode cometer erros. Consulte um profissional para orientacoes.
+            </Typography>
+          </Stack>
         </Box>
-      )}
+      </Box>
 
       {showJump && (
         <Fab
