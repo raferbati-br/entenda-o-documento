@@ -23,6 +23,7 @@ import {
   DialogTitle,
   Fab,
   IconButton,
+  Tooltip,
   Stack,
   TextField,
   Typography,
@@ -40,6 +41,9 @@ import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
+import ThumbUpRoundedIcon from "@mui/icons-material/ThumbUpRounded";
+import ThumbDownRoundedIcon from "@mui/icons-material/ThumbDownRounded";
+import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import FooterActions from "../_components/FooterActions";
 import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
@@ -233,6 +237,26 @@ export default function PerguntasPage() {
   function startSpeaking() {
     if (!ttsSupported || !lastAnswer) return;
     speak(lastAnswer);
+  }
+
+  function speakAnswer(text: string) {
+    if (!ttsSupported || !text) return;
+    stop({ withMessage: false });
+    speak(text);
+  }
+
+  async function copyAnswer(text: string) {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      telemetryCapture("qa_answer_copy");
+    } catch (err) {
+      console.warn("[qa] copy failed", err);
+    }
+  }
+
+  function sendFeedback(helpful: boolean) {
+    telemetryCapture(helpful ? "qa_answer_positive" : "qa_answer_negative");
   }
 
   function newDoc() {
@@ -472,22 +496,66 @@ export default function PerguntasPage() {
                       )}
 
                       {item.answer && (
-                        <Box
-                          sx={{
-                            alignSelf: "flex-start",
-                            px: 2,
-                            py: 1,
-                            borderRadius: 2,
-                            border: "1px solid",
-                            borderColor: "divider",
-                            bgcolor: "background.paper",
-                            maxWidth: "85%",
-                          }}
-                        >
-                          <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                            {item.answer}
-                          </Typography>
-                        </Box>
+                        <Stack spacing={0.5} sx={{ alignSelf: "flex-start", maxWidth: "85%" }}>
+                          <Box
+                            sx={{
+                              px: 2,
+                              py: 1,
+                              borderRadius: 2,
+                              border: "1px solid",
+                              borderColor: "divider",
+                              bgcolor: "background.paper",
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                              {item.answer}
+                            </Typography>
+                          </Box>
+                          <Stack direction="row" spacing={0.5} alignItems="center">
+                            <Tooltip title="Marcar como positivo">
+                              <IconButton
+                                size="small"
+                                onClick={() => sendFeedback(true)}
+                                aria-label="Marcar como positivo"
+                              >
+                                <ThumbUpRoundedIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Marcar como negativo">
+                              <IconButton
+                                size="small"
+                                onClick={() => sendFeedback(false)}
+                                aria-label="Marcar como negativo"
+                              >
+                                <ThumbDownRoundedIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Copiar resposta">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => copyAnswer(item.answer ?? "")}
+                                  disabled={!item.answer}
+                                  aria-label="Copiar resposta"
+                                >
+                                  <ContentCopyRoundedIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            <Tooltip title="Ler em voz alta">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => speakAnswer(item.answer ?? "")}
+                                  disabled={!ttsSupported || !item.answer}
+                                  aria-label="Ler em voz alta"
+                                >
+                                  <VolumeUpRoundedIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </Stack>
+                        </Stack>
                       )}
 
                       {item.error && (
