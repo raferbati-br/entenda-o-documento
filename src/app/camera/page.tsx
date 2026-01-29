@@ -1,77 +1,50 @@
 "use client";
 
-import { useEffect, useRef, Suspense } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { saveCapture } from "@/lib/captureStore";
 import { telemetryCapture } from "@/lib/telemetry";
+import { useCaptureInput } from "@/lib/hooks/useCaptureInput";
 
-import { Box, IconButton, Stack, Typography, CircularProgress } from "@mui/material";
+import { Box, Stack, Typography, CircularProgress } from "@mui/material";
 
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import CropFreeRoundedIcon from "@mui/icons-material/CropFreeRounded";
 import TextFieldsRoundedIcon from "@mui/icons-material/TextFieldsRounded";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import IconTextRow from "../_components/IconTextRow";
 import FooterActions from "../_components/FooterActions";
-import PageHeader from "../_components/PageHeader";
+import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
 
 function CameraContent() {
   const router = useRouter();
-  const cameraRef = useRef<HTMLInputElement | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  const { cameraInputRef, galleryInputRef, openCamera, openGallery, onFileChange } = useCaptureInput({
+    onSaved: () => router.push("/confirm"),
+    telemetry: {
+      openCamera: { name: "camera_open_capture" },
+      openGallery: { name: "gallery_open", data: { source: "camera" } },
+      selected: { name: "gallery_selected", data: { source: "camera" } },
+    },
+  });
 
   useEffect(() => {
     telemetryCapture("camera_open");
   }, []);
 
-  function openCamera() {
-    telemetryCapture("camera_open_capture");
-    cameraRef.current?.click();
-  }
-
-  function openFiles() {
-    telemetryCapture("gallery_open", { source: "camera" });
-    fileRef.current?.click();
-  }
-
-  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    e.currentTarget.value = "";
-
-    await saveCapture({
-      blob: file,
-      createdAt: new Date().toISOString(),
-    });
-
-    telemetryCapture("gallery_selected", { source: "camera" });
-    router.push("/confirm");
-  }
-
   return (
     <>
       <PageLayout
         header={
-          <PageHeader>
-            <IconButton edge="start" onClick={() => router.back()} sx={{ mr: 1 }}>
-              <ArrowBackRoundedIcon />
-            </IconButton>
-            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
-              Nova Foto
-            </Typography>
-          </PageHeader>
+          <BackHeader onBack={() => router.back()} title="Nova Foto" />
         }
         footer={
           <FooterActions
             secondary={{
               label: "Galeria",
               startIcon: <PhotoLibraryRoundedIcon />,
-              onClick: openFiles,
+              onClick: openGallery,
             }}
             primary={{
               label: "Tirar foto",
@@ -119,8 +92,8 @@ function CameraContent() {
       </PageLayout>
 
       {/* Inputs Escondidos */}
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={onFileChange} />
-      <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFileChange} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" hidden onChange={onFileChange} />
+      <input ref={galleryInputRef} type="file" accept="image/*" hidden onChange={onFileChange} />
 
     </>
   );

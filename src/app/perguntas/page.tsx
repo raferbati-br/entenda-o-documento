@@ -2,14 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { clearCaptureId } from "@/lib/captureIdStore";
-import { loadCapture } from "@/lib/captureStore";
-import { clearQaContext, loadQaContext } from "@/lib/qaContextStore";
-import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
-import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
+import { loadQaContext } from "@/lib/qaContextStore";
+import { loadResult, AnalysisResult } from "@/lib/resultStore";
 import { telemetryCapture } from "@/lib/telemetry";
 import { mapNetworkError, mapQaError } from "@/lib/errorMesages";
 import { readQaStream } from "@/lib/qaStream";
+import { postJsonWithSessionResponse } from "@/lib/apiClient";
+import { resetAnalysisSession } from "@/lib/analysisSession";
+import { useCaptureObjectUrl } from "@/lib/hooks/useCaptureObjectUrl";
+import { useJumpToEnd } from "@/lib/hooks/useJumpToEnd";
+import { useSpeechSynthesis } from "@/lib/hooks/useSpeechSynthesis";
+import { MAX_CONTEXT_CHARS, MAX_QUESTION_CHARS, MIN_QUESTION_CHARS } from "@/lib/qaLimits";
 
 import {
   Box,
@@ -35,20 +38,16 @@ import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
 import ZoomOutRoundedIcon from "@mui/icons-material/ZoomOutRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
 import FooterActions from "../_components/FooterActions";
-import PageHeader from "../_components/PageHeader";
+import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
 
 type CardT = { id: string; title: string; text: string };
 type QaItem = { id: string; question: string; answer?: string; error?: string; pending?: boolean };
 
-const MAX_QUESTION_CHARS = 240;
-const MIN_QUESTION_CHARS = 4;
-const MAX_CONTEXT_CHARS = 3500;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.25;
@@ -57,32 +56,35 @@ const INPUT_BAR_GAP = 8;
 const SCROLL_PAD_FALLBACK = ACTION_BAR_HEIGHT + INPUT_BAR_GAP + 96;
 const KEYBOARD_OPEN_THRESHOLD = 120;
 
-function isSpeechSupported() {
-  return typeof window !== "undefined" && "speechSynthesis" in window;
-}
-
 export default function PerguntasPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const endRef = useRef<HTMLDivElement | null>(null);
   const inputBarRef = useRef<HTMLDivElement | null>(null);
   const autoScrollRef = useRef(true);
   const prevLoadingRef = useRef(false);
   const initialViewportRef = useRef<number | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const { url: imageUrl, error: imageError } = useCaptureObjectUrl({
+    missingMessage: "Documento indisponivel para visualizacao.",
+  });
+  const { endRef, showJump, updateJumpState, handleScroll, jumpToEnd } = useJumpToEnd({
+    scrollRef,
+    onAtBottomChange: (atBottom) => {
+      autoScrollRef.current = atBottom;
+    },
+  });
+  const { supported: ttsSupported, isSpeaking, speak, stop } = useSpeechSynthesis({
+    lang: "pt-BR",
+    rate: 0.95,
+  });
 
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageError, setImageError] = useState<string | null>(null);
   const [docOpen, setDocOpen] = useState(false);
   const [docZoom, setDocZoom] = useState(1);
 
   const [question, setQuestion] = useState("");
-  const [ttsSupported, setTtsSupported] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [qaLoading, setQaLoading] = useState(false);
   const [qaHistory, setQaHistory] = useState<QaItem[]>([]);
-  const [showJump, setShowJump] = useState(false);
   const [scrollPad, setScrollPad] = useState(SCROLL_PAD_FALLBACK);
   const [inputBarHeight, setInputBarHeight] = useState(0);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
@@ -119,36 +121,9 @@ export default function PerguntasPage() {
   }, [router]);
 
   useEffect(() => {
-    setTtsSupported(isSpeechSupported());
-    return () => {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {}
-    };
-  }, []);
-
-  useEffect(() => {
     if (!result) return;
     telemetryCapture("qa_view", { contextSource: hasOcrContext ? "ocr" : "cards" });
   }, [result, hasOcrContext]);
-
-  useEffect(() => {
-    let objectUrl: string | null = null;
-
-    (async () => {
-      const payload = await loadCapture();
-      if (!payload?.blob) {
-        setImageError("Documento indisponivel para visualizacao.");
-        return;
-      }
-      objectUrl = URL.createObjectURL(payload.blob);
-      setImageUrl(objectUrl);
-    })();
-
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, []);
 
   const qaContext = useMemo(() => {
     const cached = (loadQaContext() || "").trim();
@@ -179,19 +154,19 @@ export default function PerguntasPage() {
     if (!autoScrollRef.current) return;
     requestAnimationFrame(() => {
       endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-      setShowJump(false);
+      updateJumpState();
     });
-  }, [qaHistory]);
+  }, [qaHistory, updateJumpState, endRef]);
 
   useEffect(() => {
     if (prevLoadingRef.current && !qaLoading && qaHistory.length) {
       requestAnimationFrame(() => {
         endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-        setShowJump(false);
+        updateJumpState();
       });
     }
     prevLoadingRef.current = qaLoading;
-  }, [qaLoading, qaHistory.length]);
+  }, [qaLoading, qaHistory.length, updateJumpState, endRef]);
 
   useEffect(() => {
     if (!inputBarRef.current) return;
@@ -225,36 +200,10 @@ export default function PerguntasPage() {
     return () => resizeTarget.removeEventListener("resize", updateOffset);
   }, []);
 
-  function updateJumpState() {
-    const node = scrollRef.current;
-    const target =
-      node && node.scrollHeight > node.clientHeight
-        ? node
-        : typeof document !== "undefined"
-        ? document.documentElement
-        : null;
-    if (!target) return;
-    const threshold = 24;
-    const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - threshold;
-    autoScrollRef.current = atBottom;
-    setShowJump(!atBottom);
-  }
-
   useEffect(() => {
     if (isEmptyState) return;
     requestAnimationFrame(updateJumpState);
-  }, [qaHistory.length, scrollPad, keyboardOffset, isEmptyState]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleWindowScroll = () => updateJumpState();
-    window.addEventListener("scroll", handleWindowScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleWindowScroll);
-  }, []);
-
-  function handleScroll() {
-    updateJumpState();
-  }
+  }, [qaHistory.length, scrollPad, keyboardOffset, isEmptyState, updateJumpState]);
 
   function zoomIn() {
     setDocZoom((z) => Math.min(MAX_ZOOM, Number((z + ZOOM_STEP).toFixed(2))));
@@ -278,39 +227,17 @@ export default function PerguntasPage() {
   }
 
   function stopSpeaking() {
-    try {
-      window.speechSynthesis.cancel();
-    } catch {}
-    setIsSpeaking(false);
+    stop({ withMessage: false });
   }
 
   function startSpeaking() {
     if (!ttsSupported || !lastAnswer) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(lastAnswer);
-      utterance.lang = "pt-BR";
-      utterance.rate = 0.95;
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-      };
-      utterance.onend = () => {
-        setIsSpeaking(false);
-      };
-      utterance.onerror = () => {
-        setIsSpeaking(false);
-      };
-      window.speechSynthesis.speak(utterance);
-    } catch {
-      setIsSpeaking(false);
-    }
+    speak(lastAnswer);
   }
 
   function newDoc() {
-    stopSpeaking();
-    clearResult();
-    clearQaContext();
-    clearCaptureId();
+    stop({ withMessage: false });
+    resetAnalysisSession();
     router.push("/camera");
   }
 
@@ -354,18 +281,10 @@ export default function PerguntasPage() {
     });
 
     try {
-      const token = await ensureSessionToken();
-      const res = await fetch("/api/qa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-        body: JSON.stringify({ question: q, context: qaContext, attempt }),
-      });
+      const res = await postJsonWithSessionResponse("/api/qa", { question: q, context: qaContext, attempt });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        if (res.status === 401) {
-          await clearSessionToken();
-        }
         const apiError = typeof data?.error === "string" ? data.error : "";
         throw new Error(mapQaError(res.status, apiError));
       }
@@ -399,11 +318,6 @@ export default function PerguntasPage() {
     }
   }
 
-  function handleJumpToEnd() {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    setShowJump(false);
-  }
-
   if (!result) return null;
 
   return (
@@ -413,33 +327,31 @@ export default function PerguntasPage() {
         contentRef={scrollRef}
         onContentScroll={handleScroll}
         header={
-          <PageHeader>
-            <IconButton edge="start" onClick={() => router.push("/result")} sx={{ mr: 1 }}>
-              <ArrowBackRoundedIcon />
-            </IconButton>
-
-            <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center" }}>
+          <BackHeader
+            onBack={() => router.push("/result")}
+            title={
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
                 Tire suas duvidas
               </Typography>
-            </Box>
-
-            <Stack direction="row" spacing={1} alignItems="center">
-              {ttsSupported && (
-                <IconButton
-                  onClick={isSpeaking ? stopSpeaking : startSpeaking}
-                  color="primary"
-                  disabled={!lastAnswer}
-                  aria-label={isSpeaking ? "Parar leitura" : "Ouvir resposta"}
-                >
-                  {isSpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
+            }
+            endContent={
+              <Stack direction="row" spacing={1} alignItems="center">
+                {ttsSupported && (
+                  <IconButton
+                    onClick={isSpeaking ? stopSpeaking : startSpeaking}
+                    color="primary"
+                    disabled={!lastAnswer}
+                    aria-label={isSpeaking ? "Parar leitura" : "Ouvir resposta"}
+                  >
+                    {isSpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
+                  </IconButton>
+                )}
+                <IconButton onClick={openDocument} color="primary" disabled={!imageUrl} aria-label="Ver documento">
+                  <DescriptionRoundedIcon />
                 </IconButton>
-              )}
-              <IconButton onClick={openDocument} color="primary" disabled={!imageUrl} aria-label="Ver documento">
-                <DescriptionRoundedIcon />
-              </IconButton>
-            </Stack>
-          </PageHeader>
+              </Stack>
+            }
+          />
         }
         footer={
           <FooterActions
@@ -654,7 +566,7 @@ export default function PerguntasPage() {
           size="small"
           color="primary"
           aria-label="Ir para o fim"
-          onClick={handleJumpToEnd}
+          onClick={jumpToEnd}
           sx={(theme) => ({
             position: "fixed",
             right: 16,

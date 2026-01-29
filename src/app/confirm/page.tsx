@@ -1,34 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { saveCaptureId } from "@/lib/captureIdStore";
 import { loadCapture, clearCapture } from "@/lib/captureStore";
 import { compressBlobToDataUrl } from "@/lib/imageCompression";
-import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
+import { postJsonWithSession } from "@/lib/apiClient";
 import { recordLatencyStep, startLatencyTrace } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 import { mapCaptureError, mapNetworkError } from "@/lib/errorMesages";
+import { useCaptureObjectUrl } from "@/lib/hooks/useCaptureObjectUrl";
 
-import { Box, CircularProgress, Typography, IconButton, Backdrop } from "@mui/material";
+import { Box, CircularProgress, Typography, Backdrop } from "@mui/material";
 
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import FooterActions from "../_components/FooterActions";
-import PageHeader from "../_components/PageHeader";
+import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
 
 export default function ConfirmPage() {
   const router = useRouter();
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const pinchStartDistanceRef = useRef<number | null>(null);
   const pinchStartScaleRef = useRef(1);
+  const handleMissingCapture = useCallback(() => {
+    router.replace("/camera");
+  }, [router]);
+  const { url: previewUrl } = useCaptureObjectUrl({ onMissing: handleMissingCapture });
 
   const MIN_ZOOM = 1;
   const MAX_ZOOM = 3;
@@ -44,26 +47,9 @@ export default function ConfirmPage() {
   }
 
 
-  // Carrega a imagem do IndexedDB/Store
   useEffect(() => {
-    let objectUrl: string | null = null;
-
-    (async () => {
-      const payload = await loadCapture();
-      if (!payload?.blob) {
-        router.replace("/camera");
-        return;
-      }
-      objectUrl = URL.createObjectURL(payload.blob);
-      setPreviewUrl(objectUrl);
-    })();
-
     telemetryCapture("confirm_open");
-
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [router]);
+  }, []);
 
   async function retake() {
     await clearCapture();
@@ -115,22 +101,23 @@ export default function ConfirmPage() {
       }
 
       // 2) Envio para API
-      const token = await ensureSessionToken();
       const captureStart = performance.now();
-      const res = await fetch("/api/capture", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-        body: JSON.stringify({ imageBase64: mainImage.dataUrl, ...(ocrDataUrl ? { ocrImageBase64: ocrDataUrl } : {}) }),
+      const { res, data } = await postJsonWithSession<{
+        ok?: boolean;
+        captureId?: string;
+        error?: string;
+      }>("/api/capture", {
+        imageBase64: mainImage.dataUrl,
+        ...(ocrDataUrl ? { ocrImageBase64: ocrDataUrl } : {}),
       });
-
-      const data = await res.json().catch(() => ({}));
       recordLatencyStep("capture_ms", performance.now() - captureStart);
-      if (res.status === 401) {
-        await clearSessionToken();
-      }
       if (!res.ok || !data?.ok) {
         const apiError = typeof data?.error === "string" ? data.error : "";
         throw new Error(mapCaptureError(res.status, apiError));
+      }
+
+      if (typeof data.captureId !== "string" || !data.captureId) {
+        throw new Error("Resposta invalida.");
       }
 
       saveCaptureId(data.captureId);
@@ -154,14 +141,16 @@ export default function ConfirmPage() {
       contentPaddingX={0}
       disableContainer
       header={
-        <PageHeader sx={{ borderBottom: "none", bgcolor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <IconButton onClick={retake} sx={{ color: "white" }}>
-            <ArrowBackRoundedIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ color: "white", ml: 1, fontWeight: 600 }}>
-            Confira a imagem
-          </Typography>
-        </PageHeader>
+        <BackHeader
+          onBack={retake}
+          headerSx={{ borderBottom: "none", bgcolor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          iconButtonSx={{ color: "white" }}
+          title={
+            <Typography variant="h6" sx={{ color: "white", fontWeight: 600 }}>
+              Confira a imagem
+            </Typography>
+          }
+        />
       }
       footer={
         <FooterActions

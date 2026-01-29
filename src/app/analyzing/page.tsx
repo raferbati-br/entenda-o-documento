@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { loadCaptureId, clearCaptureId } from "@/lib/captureIdStore";
+import type { AnalysisResult } from "@/lib/resultStore";
 import { saveResult } from "@/lib/resultStore";
 import { motion, AnimatePresence } from "framer-motion"; // Instale: npm install framer-motion
-import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
+import { postJsonWithSession } from "@/lib/apiClient";
 import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
 import { markLatencyTrace, recordLatencyStep } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
@@ -69,16 +70,12 @@ export default function AnalyzingPage() {
 
       try {
         telemetryCapture("analyze_start");
-        const token = await ensureSessionToken();
         const ocrStart = performance.now();
-        const ocrRes = await fetch("/api/ocr", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-          body: JSON.stringify({ captureId, attempt }),
-          signal: controller.signal,
-        });
-
-        const ocrData = await ocrRes.json().catch(() => ({}));
+        const { res: ocrRes, data: ocrData } = await postJsonWithSession<{
+          ok?: boolean;
+          documentText?: string;
+          error?: string;
+        }>("/api/ocr", { captureId, attempt }, { signal: controller.signal });
         const ocrDurationMs = performance.now() - ocrStart;
         recordLatencyStep("ocr_ms", ocrDurationMs);
         telemetryCapture("openai_ocr_latency", {
@@ -94,14 +91,11 @@ export default function AnalyzingPage() {
 
         const analyzeStart = performance.now();
         const analyzePayload = { captureId, attempt, ...(ocrText ? { ocrText } : {}) };
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-          body: JSON.stringify(analyzePayload),
-          signal: controller.signal,
-        });
-
-        const data = await res.json().catch(() => ({}));
+        const { res, data } = await postJsonWithSession<{
+          ok?: boolean;
+          result?: AnalysisResult;
+          error?: string;
+        }>("/api/analyze", analyzePayload, { signal: controller.signal });
         const analyzeDurationMs = performance.now() - analyzeStart;
         recordLatencyStep("analyze_ms", analyzeDurationMs);
         telemetryCapture("openai_cards_latency", {
@@ -111,7 +105,7 @@ export default function AnalyzingPage() {
         });
         if (!res.ok || !data?.ok) throw { res, data };
 
-        saveResult(data.result);
+        saveResult(data.result as AnalysisResult);
         markLatencyTrace("analyze_done");
         telemetryCapture("analyze_success");
         router.replace("/result");
@@ -125,9 +119,6 @@ export default function AnalyzingPage() {
           status: res?.status ?? 0,
           error: isRecord(data) && typeof data.error === "string" ? data.error : "unknown",
         });
-        if (res?.status === 401) {
-          clearSessionToken().catch(() => {});
-        }
         clearCaptureId();
         setFriendlyError(buildAnalyzeFriendlyError(res, data));
       }

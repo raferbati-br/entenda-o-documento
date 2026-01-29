@@ -2,17 +2,13 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { cleanupMemoryStore, isRedisConfigured, memoryStats, setCapture } from "@/lib/captureStoreServer";
 import { badRequest, createRouteContext, readJsonRecord, runCommonGuards } from "@/lib/apiRouteUtils";
+import { parseDataUrl } from "@/lib/dataUrl";
 
 export const runtime = "nodejs";
 
 const MAX_IMAGE_BYTES = 2.5 * 1024 * 1024;
 const MAX_CAPTURE_COUNT = 80;
 const MAX_TOTAL_BYTES = 120 * 1024 * 1024;
-
-type ParsedDataUrl = {
-  mimeType: string;
-  base64: string;
-};
 
 type ValidatedImage = {
   ok: true;
@@ -33,12 +29,6 @@ function detectMime(buf: Buffer): string | null {
   if (buf.slice(0, 4).toString("ascii") === "RIFF" && buf.slice(8, 12).toString("ascii") === "WEBP")
     return "image/webp";
   return null;
-}
-
-function parseDataUrl(value: string): ParsedDataUrl | null {
-  const match = value.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-  if (!match) return null;
-  return { mimeType: match[1], base64: match[2] };
 }
 
 function validateImageBase64(base64: string, declaredMime: string): ValidatedImage | ValidationError {
@@ -86,7 +76,7 @@ export async function POST(req: Request) {
     let declaredMime = "";
 
     if (typeof body.imageBase64 === "string") {
-      const parsed = parseDataUrl(body.imageBase64);
+      const parsed = parseDataUrl(body.imageBase64, { requireImage: true });
       if (!parsed) return badRequest("Imagem invalida.");
       declaredMime = parsed.mimeType;
       rawBase64 = parsed.base64;
@@ -109,7 +99,7 @@ export async function POST(req: Request) {
     let ocrImageBase64 = "";
     let ocrBytes = 0;
     if (typeof body.ocrImageBase64 === "string") {
-      const parsed = parseDataUrl(body.ocrImageBase64);
+      const parsed = parseDataUrl(body.ocrImageBase64, { requireImage: true });
       if (!parsed) {
         console.warn("[api.capture] OCR data URL invalida.");
       } else {

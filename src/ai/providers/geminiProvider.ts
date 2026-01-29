@@ -1,54 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { AnalyzeInput, AnswerResponse, AnswerStreamResponse, LlmProvider, ProviderResponse, Prompt } from "../types";
-
-type ParsedDataUrl = {
-  mimeType: string;
-  base64: string;
-};
-
-type ModelParseError = Error & { raw?: string };
-
-function parseDataUrl(value: string): ParsedDataUrl | null {
-  const match = value.match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) return null;
-  return { mimeType: match[1], base64: match[2] };
-}
-
-function extractFirstJsonObject(text: string): string | null {
-  const start = text.indexOf("{");
-  if (start === -1) return null;
-
-  let depth = 0;
-  for (let i = start; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === "{") depth++;
-    if (ch === "}") {
-      depth--;
-      if (depth === 0) return text.slice(start, i + 1);
-    }
-  }
-  return null;
-}
-
-function parseJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    const extracted = extractFirstJsonObject(text);
-    if (!extracted) {
-      const err: ModelParseError = new Error("MODEL_NO_JSON");
-      err.raw = text;
-      throw err;
-    }
-    try {
-      return JSON.parse(extracted);
-    } catch {
-      const err: ModelParseError = new Error("MODEL_INVALID_JSON");
-      err.raw = text;
-      throw err;
-    }
-  }
-}
+import { parseDataUrl } from "@/lib/dataUrl";
+import { parseModelJson } from "./providerUtils";
 
 export class GeminiProvider implements LlmProvider {
   private client: GoogleGenerativeAI;
@@ -78,7 +31,7 @@ export class GeminiProvider implements LlmProvider {
     }
 
     if (input.imageDataUrl) {
-      const parsed = parseDataUrl(input.imageDataUrl);
+      const parsed = parseDataUrl(input.imageDataUrl, { requireImage: true });
       if (!parsed) {
         throw new Error("ANALYZE_INPUT_MISSING");
       }
@@ -87,7 +40,7 @@ export class GeminiProvider implements LlmProvider {
 
     const response = await model.generateContent(parts);
     const text = response.response.text() ?? "";
-    const raw = parseJson(text);
+    const raw = parseModelJson(text);
 
     return {
       raw,

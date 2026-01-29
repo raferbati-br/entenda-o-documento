@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { answerQuestionStream } from "@/ai/answerQuestion";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
 import { serializeQaStreamEvent } from "@/lib/qaStream";
+import { MAX_ANSWER_CHARS, MAX_CONTEXT_CHARS, MAX_QUESTION_CHARS } from "@/lib/qaLimits";
 import {
   badRequest,
   createRouteContext,
@@ -13,10 +14,6 @@ import {
 } from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
-
-const MAX_QUESTION_CHARS = 240;
-const MAX_CONTEXT_CHARS = 3500;
-const MAX_ANSWER_CHARS = 420;
 
 export async function POST(req: Request) {
   const ctx = createRouteContext(req);

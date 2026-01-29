@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { saveCapture } from "@/lib/captureStore";
 import { telemetryCapture } from "@/lib/telemetry";
+import { useCaptureInput } from "@/lib/hooks/useCaptureInput";
 
 import { Box, Divider, Stack, Typography } from "@mui/material";
 
@@ -19,34 +19,22 @@ import PageLayout from "./_components/PageLayout";
 
 export default function HomePage() {
   const router = useRouter();
-  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const { galleryInputRef, openGallery, onFileChange } = useCaptureInput({
+    onSaved: () => router.push("/confirm"),
+    telemetry: {
+      openGallery: { name: "gallery_open", data: { source: "home" } },
+      selected: { name: "gallery_selected", data: { source: "home" } },
+    },
+  });
 
   useEffect(() => {
     telemetryCapture("home_open");
   }, []);
 
-  // Função que abre a galeria nativa direto na Home
   const handleOpenGallery = () => {
-    telemetryCapture("gallery_open", { source: "home" });
-    galleryInputRef.current?.click();
+    openGallery();
   };
 
-  // Quando o usuário escolhe a foto, salvamos e vamos direto para o Confirm
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Limpa o valor para permitir selecionar o mesmo arquivo se quiser
-    e.currentTarget.value = "";
-
-    await saveCapture({
-      blob: file,
-      createdAt: new Date().toISOString(),
-    });
-
-    telemetryCapture("gallery_selected", { source: "home" });
-    router.push("/confirm");
-  };
 
   return (
     <>

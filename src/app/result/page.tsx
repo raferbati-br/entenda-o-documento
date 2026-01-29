@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { clearCaptureId } from "@/lib/captureIdStore";
-import { clearResult, loadResult, AnalysisResult } from "@/lib/resultStore";
-import { clearQaContext, loadQaContext } from "@/lib/qaContextStore";
-import { clearSessionToken, ensureSessionToken } from "@/lib/sessionToken";
+import { loadResult, AnalysisResult } from "@/lib/resultStore";
+import { loadQaContext } from "@/lib/qaContextStore";
 import { clearLatencyTrace, getLatencyTraceSnapshot } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 import { mapFeedbackError, mapNetworkError } from "@/lib/errorMesages";
+import { postJsonWithSession } from "@/lib/apiClient";
+import { resetAnalysisSession } from "@/lib/analysisSession";
+import { useJumpToEnd } from "@/lib/hooks/useJumpToEnd";
+import { useSpeechSynthesis } from "@/lib/hooks/useSpeechSynthesis";
 import SectionBlock from "../_components/SectionBlock";
 
 import {
@@ -31,7 +33,6 @@ import EventRoundedIcon from "@mui/icons-material/EventRounded";
 import ListAltRoundedIcon from "@mui/icons-material/ListAltRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import ThumbUpAltRoundedIcon from "@mui/icons-material/ThumbUpAltRounded";
@@ -40,7 +41,7 @@ import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import Disclaimer from "../_components/Disclaimer";
 import FooterActions from "../_components/FooterActions";
-import PageHeader from "../_components/PageHeader";
+import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
 
@@ -55,23 +56,28 @@ function confidenceToInfo(confidence: number) {
   return { label: "Alta", color: "success.main", bg: "success.lighter", text: "Leitura clara" };
 }
 
-function isSpeechSupported() {
-  return typeof window !== "undefined" && "speechSynthesis" in window;
-}
-
-
 export default function ResultPage() {
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const endRef = useRef<HTMLDivElement | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [showJump, setShowJump] = useState(false);
+  const { endRef, showJump, updateJumpState, handleScroll: handleContentScroll, jumpToEnd: handleJumpToEnd } =
+    useJumpToEnd({ scrollRef });
 
   // TTS State
-  const [ttsSupported, setTtsSupported] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [ttsError, setTtsError] = useState<string | null>(null);
-  const stopRequestedRef = useRef(false);
+  const {
+    supported: ttsSupported,
+    isSpeaking,
+    error: ttsError,
+    setError: setTtsError,
+    speak,
+    stop,
+  } = useSpeechSynthesis({
+    lang: "pt-BR",
+    rate: 0.95,
+    unsupportedMessage: "Seu navegador nÃ£o suporta leitura em voz alta.",
+    errorMessage: "Erro na leitura.",
+    interruptedMessage: "Leitura interrompida.",
+  });
 
   // Share State
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -103,51 +109,15 @@ export default function ResultPage() {
   }, [router]);
 
   useEffect(() => {
-    setTtsSupported(isSpeechSupported());
-    return () => {
-      try { window.speechSynthesis.cancel(); } catch { }
-    };
-  }, []);
-
-  useEffect(() => {
     if (ttsError !== "Leitura interrompida.") return;
     const timeoutId = window.setTimeout(() => setTtsError(null), 3000);
     return () => window.clearTimeout(timeoutId);
-  }, [ttsError]);
-
-  function updateJumpState() {
-    const node = scrollRef.current;
-    const target =
-      node && node.scrollHeight > node.clientHeight
-        ? node
-        : typeof document !== "undefined"
-        ? document.documentElement
-        : null;
-    if (!target) return;
-    const threshold = 24;
-    const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - threshold;
-    setShowJump(!atBottom);
-  }
-
-  function handleContentScroll() {
-    updateJumpState();
-  }
-
-  function handleJumpToEnd() {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }
+  }, [ttsError, setTtsError]);
 
   useEffect(() => {
     if (!result) return;
     requestAnimationFrame(updateJumpState);
-  }, [result]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleWindowScroll = () => updateJumpState();
-    window.addEventListener("scroll", handleWindowScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleWindowScroll);
-  }, []);
+  }, [result, updateJumpState]);
 
   const cardsArr = useMemo<CardT[]>(() => (result?.cards as CardT[]) || [], [result]);
   const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
@@ -208,22 +178,12 @@ export default function ResultPage() {
     setFeedbackError(null);
 
     try {
-      const token = await ensureSessionToken();
-      const res = await fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { "x-session-token": token } : {}) },
-        body: JSON.stringify({
-          helpful,
-          reason,
-          confidenceBucket,
-          contextSource: hasOcrContext ? "ocr" : "cards",
-        }),
+      const { res, data } = await postJsonWithSession<{ ok?: boolean; error?: string }>("/api/feedback", {
+        helpful,
+        reason,
+        confidenceBucket,
+        contextSource: hasOcrContext ? "ocr" : "cards",
       });
-
-      const data = await res.json().catch(() => ({}));
-      if (res.status === 401) {
-        await clearSessionToken();
-      }
       if (!res.ok || !data?.ok) {
         const apiError = typeof data?.error === "string" ? data.error : "";
         throw new Error(mapFeedbackError(res.status, apiError));
@@ -285,53 +245,16 @@ export default function ResultPage() {
   const speakText = useMemo(() => fullText.replace(/\*/g, ""), [fullText]);
 
   function stopSpeaking() {
-    stopRequestedRef.current = true;
-    setTtsError("Leitura interrompida.");
-    try { window.speechSynthesis.cancel(); } catch { }
-    setIsSpeaking(false);
+    stop();
   }
 
   function startSpeaking() {
-    stopRequestedRef.current = false;
-    setTtsError(null);
-    if (!ttsSupported) {
-      setTtsError("Seu navegador não suporta leitura em voz alta.");
-      return;
-    }
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(speakText);
-      u.lang = "pt-BR";
-      u.rate = 0.95;
-      u.onstart = () => {
-        setIsSpeaking(true);
-        setTtsError(null);
-      };
-      u.onend = () => {
-        setIsSpeaking(false);
-        stopRequestedRef.current = false;
-      };
-      u.onerror = () => {
-        setIsSpeaking(false);
-        if (stopRequestedRef.current) {
-          setTtsError("Leitura interrompida.");
-          stopRequestedRef.current = false;
-          return;
-        }
-        setTtsError("Erro na leitura.");
-      };
-      window.speechSynthesis.speak(u);
-    } catch {
-      setIsSpeaking(false);
-      setTtsError("Erro ao iniciar áudio.");
-    }
+    speak(speakText);
   }
 
   function newDoc() {
-    stopSpeaking();
-    clearResult();
-    clearQaContext();
-    clearCaptureId();
+    stop();
+    resetAnalysisSession();
     router.push("/camera");
   }
 
@@ -344,39 +267,39 @@ export default function ResultPage() {
         contentRef={scrollRef}
         onContentScroll={handleContentScroll}
         header={
-          <PageHeader>
-            <IconButton edge="start" onClick={() => router.push("/")} sx={{ mr: 1 }}>
-              <ArrowBackRoundedIcon />
-            </IconButton>
-
-            <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
-                Explicação
-              </Typography>
-              <Chip
-                label={confInfo.text}
-                size="small"
-                sx={{
-                  height: 20,
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                  bgcolor: confInfo.bg || "action.hover",
-                  color: confInfo.color || "text.primary",
-                }}
-              />
-            </Box>
-
-            <Stack direction="row" spacing={1} alignItems="center">
-              {ttsSupported && (
-                <IconButton onClick={isSpeaking ? stopSpeaking : startSpeaking} color="primary">
-                  {isSpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
+          <BackHeader
+            onBack={() => router.push("/")}
+            title={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+                  Explicação
+                </Typography>
+                <Chip
+                  label={confInfo.text}
+                  size="small"
+                  sx={{
+                    height: 20,
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    bgcolor: confInfo.bg || "action.hover",
+                    color: confInfo.color || "text.primary",
+                  }}
+                />
+              </Box>
+            }
+            endContent={
+              <Stack direction="row" spacing={1} alignItems="center">
+                {ttsSupported && (
+                  <IconButton onClick={isSpeaking ? stopSpeaking : startSpeaking} color="primary">
+                    {isSpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
+                  </IconButton>
+                )}
+                <IconButton onClick={handleShare} color="primary">
+                  <IosShareRoundedIcon />
                 </IconButton>
-              )}
-              <IconButton onClick={handleShare} color="primary">
-                <IosShareRoundedIcon />
-              </IconButton>
-            </Stack>
-</PageHeader>
+              </Stack>
+            }
+          />
         }
         footer={
           <FooterActions
