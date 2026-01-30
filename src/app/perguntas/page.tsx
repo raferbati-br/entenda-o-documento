@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { loadQaContext } from "@/lib/qaContextStore";
 import { loadResult, AnalysisResult } from "@/lib/resultStore";
 import { telemetryCapture } from "@/lib/telemetry";
-import { mapNetworkError, mapQaError } from "@/lib/errorMesages";
+import { mapFeedbackError, mapNetworkError, mapQaError } from "@/lib/errorMesages";
 import { readQaStream } from "@/lib/qaStream";
-import { postJsonWithSessionResponse } from "@/lib/apiClient";
+import { postJsonWithSession, postJsonWithSessionResponse } from "@/lib/apiClient";
 import { resetAnalysisSession } from "@/lib/analysisSession";
 import { useCaptureObjectUrl } from "@/lib/hooks/useCaptureObjectUrl";
 import { useJumpToEnd } from "@/lib/hooks/useJumpToEnd";
@@ -16,14 +16,15 @@ import { MAX_CONTEXT_CHARS, MAX_QUESTION_CHARS, MIN_QUESTION_CHARS } from "@/lib
 
 import {
   Box,
-  Chip,
+  ButtonBase,
   CircularProgress,
+  Container,
+  Divider,
   Dialog,
   DialogContent,
   DialogTitle,
   Fab,
   IconButton,
-  Tooltip,
   Stack,
   TextField,
   Typography,
@@ -39,18 +40,26 @@ import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
 import ZoomOutRoundedIcon from "@mui/icons-material/ZoomOutRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
-import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
-import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
-import ThumbUpRoundedIcon from "@mui/icons-material/ThumbUpRounded";
-import ThumbDownRoundedIcon from "@mui/icons-material/ThumbDownRounded";
-import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import FooterActions from "../_components/FooterActions";
 import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
+import FeedbackActions from "../_components/FeedbackActions";
+import IconTextRow from "../_components/IconTextRow";
 
 type CardT = { id: string; title: string; text: string };
-type QaItem = { id: string; question: string; answer?: string; error?: string; pending?: boolean };
+type QaItem = {
+  id: string;
+  question: string;
+  answer?: string;
+  error?: string;
+  pending?: boolean;
+  feedbackChoice?: "up" | "down";
+  feedbackReason?: string | null;
+  feedback?: "up" | "down";
+  feedbackLoading?: boolean;
+  feedbackError?: string;
+};
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
@@ -92,6 +101,7 @@ export default function PerguntasPage() {
   const [scrollPad, setScrollPad] = useState(SCROLL_PAD_FALLBACK);
   const [inputBarHeight, setInputBarHeight] = useState(0);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [speakingItemId, setSpeakingItemId] = useState<string | null>(null);
 
   const commonQuestions = useMemo(
     () => [
@@ -107,13 +117,8 @@ export default function PerguntasPage() {
   const cardsArr = useMemo<CardT[]>(() => (result?.cards as CardT[]) || [], [result]);
   const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
   const documentTitle = useMemo(() => cardMap["whatIs"]?.title || "Documento", [cardMap]);
-  const lastAnswer = useMemo(() => {
-    for (let i = qaHistory.length - 1; i >= 0; i -= 1) {
-      const answer = qaHistory[i]?.answer?.trim();
-      if (answer) return answer;
-    }
-    return "";
-  }, [qaHistory]);
+  const confidence = result?.confidence ?? 0;
+  const confidenceBucket = confidence < 0.45 ? "low" : confidence < 0.75 ? "medium" : "high";
 
   useEffect(() => {
     const res = loadResult();
@@ -209,6 +214,7 @@ export default function PerguntasPage() {
     requestAnimationFrame(updateJumpState);
   }, [qaHistory.length, scrollPad, keyboardOffset, isEmptyState, updateJumpState]);
 
+
   function zoomIn() {
     setDocZoom((z) => Math.min(MAX_ZOOM, Number((z + ZOOM_STEP).toFixed(2))));
   }
@@ -232,16 +238,19 @@ export default function PerguntasPage() {
 
   function stopSpeaking() {
     stop({ withMessage: false });
+    setSpeakingItemId(null);
   }
 
-  function startSpeaking() {
-    if (!ttsSupported || !lastAnswer) return;
-    speak(lastAnswer);
-  }
-
-  function speakAnswer(text: string) {
+  function speakAnswer(itemId: string, text: string) {
     if (!ttsSupported || !text) return;
-    stop({ withMessage: false });
+    if (isSpeaking && speakingItemId === itemId) {
+      stopSpeaking();
+      return;
+    }
+    if (isSpeaking) {
+      stop({ withMessage: false });
+    }
+    setSpeakingItemId(itemId);
     speak(text);
   }
 
@@ -255,12 +264,56 @@ export default function PerguntasPage() {
     }
   }
 
-  function sendFeedback(helpful: boolean) {
-    telemetryCapture(helpful ? "qa_answer_positive" : "qa_answer_negative");
+  async function sendFeedback(itemId: string, helpful: boolean, reason?: string) {
+    const item = qaHistory.find((entry) => entry.id === itemId);
+    if (!item || item.feedback || item.feedbackLoading) return;
+    if (!helpful && !reason) return;
+
+    updateQaItem(itemId, {
+      feedbackLoading: true,
+      feedbackError: undefined,
+      feedbackReason: helpful ? null : reason || null,
+    });
+
+    try {
+      const { res, data } = await postJsonWithSession<{ ok?: boolean; error?: string }>("/api/feedback", {
+        helpful,
+        reason: helpful ? "" : reason || "",
+        confidenceBucket,
+        contextSource: hasOcrContext ? "ocr" : "cards",
+      });
+      if (!res.ok || !data?.ok) {
+        const apiError = typeof data?.error === "string" ? data.error : "";
+        throw new Error(mapFeedbackError(res.status, apiError));
+      }
+
+      updateQaItem(itemId, {
+        feedback: helpful ? "up" : "down",
+        feedbackChoice: helpful ? "up" : "down",
+        feedbackLoading: false,
+      });
+      telemetryCapture(helpful ? "qa_answer_positive" : "qa_answer_negative");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      updateQaItem(itemId, { feedbackError: mapNetworkError(msg), feedbackLoading: false });
+    }
+  }
+
+  function handleFeedbackUp(itemId: string) {
+    const item = qaHistory.find((entry) => entry.id === itemId);
+    if (!item || item.feedback || item.feedbackLoading) return;
+    updateQaItem(itemId, { feedbackChoice: "up", feedbackReason: null, feedbackError: undefined });
+    sendFeedback(itemId, true);
+  }
+
+  function handleFeedbackDown(itemId: string) {
+    const item = qaHistory.find((entry) => entry.id === itemId);
+    if (!item || item.feedback || item.feedbackLoading) return;
+    updateQaItem(itemId, { feedbackChoice: "down", feedbackReason: null, feedbackError: undefined });
   }
 
   function newDoc() {
-    stop({ withMessage: false });
+    stopSpeaking();
     resetAnalysisSession();
     router.push("/camera");
   }
@@ -358,23 +411,6 @@ export default function PerguntasPage() {
                 Tire suas duvidas
               </Typography>
             }
-            endContent={
-              <Stack direction="row" spacing={1} alignItems="center">
-                {ttsSupported && (
-                  <IconButton
-                    onClick={isSpeaking ? stopSpeaking : startSpeaking}
-                    color="primary"
-                    disabled={!lastAnswer}
-                    aria-label={isSpeaking ? "Parar leitura" : "Ouvir resposta"}
-                  >
-                    {isSpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
-                  </IconButton>
-                )}
-                <IconButton onClick={openDocument} color="primary" disabled={!imageUrl} aria-label="Ver documento">
-                  <DescriptionRoundedIcon />
-                </IconButton>
-              </Stack>
-            }
           />
         }
         footer={
@@ -383,8 +419,14 @@ export default function PerguntasPage() {
               bottom: actionBarOffset,
               transition: "bottom 160ms ease-out",
             }}
+            secondary={{
+              label: "Ver documento",
+              startIcon: <DescriptionRoundedIcon />,
+              onClick: openDocument,
+              disabled: !imageUrl,
+            }}
             primary={{
-              label: "Analisar Outro",
+              label: "Analisar outro",
               startIcon: <CameraAltRoundedIcon />,
               onClick: newDoc,
             }}
@@ -399,11 +441,22 @@ export default function PerguntasPage() {
                   flexGrow: 1,
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "center",
-                  gap: 2,
+                  justifyContent: "flex-start",
+                  pt: 1,
                 }}
               >
-                <Stack spacing={1} alignItems="flex-start">
+                <Stack spacing={1} sx={{ mb: 1 }}>
+                  <Typography variant="h4" gutterBottom fontWeight={800} sx={{ letterSpacing: "-0.02em" }}>
+                    Tire suas duvidas sobre o documento
+                  </Typography>
+                  <Typography color="text.secondary" variant="body1" sx={{ lineHeight: 1.6 }}>
+                    Escolha uma pergunta pronta ou escreva a sua.
+                  </Typography>
+                </Stack>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Stack spacing={1}>
                   {commonQuestions.map((q) => {
                     const iconColor =
                       q === "Qual e o prazo?"
@@ -415,33 +468,47 @@ export default function PerguntasPage() {
                         : "secondary.main";
                     const icon =
                       q === "Qual e o prazo?"
-                        ? <ScheduleRoundedIcon fontSize="small" />
+                        ? <ScheduleRoundedIcon fontSize="inherit" />
                         : q === "Qual e o valor?"
-                        ? <PaidRoundedIcon fontSize="small" />
+                        ? <PaidRoundedIcon fontSize="inherit" />
                         : q === "O que este documento pede?"
-                        ? <DescriptionRoundedIcon fontSize="small" />
-                        : <HelpOutlineRoundedIcon fontSize="small" />;
+                        ? <DescriptionRoundedIcon fontSize="inherit" />
+                        : <HelpOutlineRoundedIcon fontSize="inherit" />;
+                    const description =
+                      q === "Qual e o prazo?"
+                        ? "Datas, prazos e o que vence primeiro."
+                        : q === "Qual e o valor?"
+                        ? "Valores, custos e possiveis multas."
+                        : q === "O que este documento pede?"
+                        ? "O pedido principal em poucas palavras."
+                        : "Escreva sua propria pergunta.";
                     return (
-                      <Chip
+                      <ButtonBase
                         key={q}
-                        icon={icon}
-                        label={q}
-                        size="medium"
-                        variant="outlined"
-                        sx={{
-                          bgcolor: "background.paper",
-                          borderColor: "divider",
-                          fontSize: "0.85rem",
-                          justifyContent: "flex-start",
-                          borderRadius: 999,
-                          px: 2,
-                          py: 0.75,
-                          height: "auto",
-                          "& .MuiChip-label": { py: 0.25 },
-                          "& .MuiChip-icon": { color: iconColor },
-                        }}
                         onClick={() => handleQuickQuestion(q)}
-                      />
+                        sx={{
+                          textAlign: "left",
+                          borderRadius: 2,
+                          width: "fit-content",
+                          alignSelf: "flex-start",
+                          pl: 0.5,
+                          pr: 2,
+                          py: 0.5,
+                          border: "1px solid",
+                          borderColor: "divider",
+                          "&:hover": { bgcolor: "action.hover" },
+                        }}
+                      >
+                        <Box>
+                          <IconTextRow
+                            icon={icon}
+                            iconColor={iconColor}
+                            title={q}
+                            description={description}
+                            compact
+                          />
+                        </Box>
+                      </ButtonBase>
                     );
                   })}
                 </Stack>
@@ -457,7 +524,9 @@ export default function PerguntasPage() {
                 }}
               >
                 <Stack spacing={1.5}>
-                  {qaHistory.map((item) => (
+                  {qaHistory.map((item) => {
+                    const isItemSpeaking = isSpeaking && speakingItemId === item.id;
+                    return (
                     <Stack key={item.id} spacing={1}>
                       <Box
                         sx={{
@@ -511,50 +580,22 @@ export default function PerguntasPage() {
                               {item.answer}
                             </Typography>
                           </Box>
-                          <Stack direction="row" spacing={0.5} alignItems="center">
-                            <Tooltip title="Marcar como positivo">
-                              <IconButton
-                                size="small"
-                                onClick={() => sendFeedback(true)}
-                                aria-label="Marcar como positivo"
-                              >
-                                <ThumbUpRoundedIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Marcar como negativo">
-                              <IconButton
-                                size="small"
-                                onClick={() => sendFeedback(false)}
-                                aria-label="Marcar como negativo"
-                              >
-                                <ThumbDownRoundedIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Copiar resposta">
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => copyAnswer(item.answer ?? "")}
-                                  disabled={!item.answer}
-                                  aria-label="Copiar resposta"
-                                >
-                                  <ContentCopyRoundedIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                            <Tooltip title="Ler em voz alta">
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => speakAnswer(item.answer ?? "")}
-                                  disabled={!ttsSupported || !item.answer}
-                                  aria-label="Ler em voz alta"
-                                >
-                                  <VolumeUpRoundedIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          </Stack>
+                          <FeedbackActions
+                            canCopy={Boolean(item.answer)}
+                            canSpeak={ttsSupported && Boolean(item.answer)}
+                            isSpeaking={isItemSpeaking}
+                            onToggleSpeak={() => speakAnswer(item.id, item.answer ?? "")}
+                            onCopy={() => copyAnswer(item.answer ?? "")}
+                            feedbackChoice={item.feedbackChoice ?? null}
+                            feedbackValue={item.feedback ?? null}
+                            feedbackReason={item.feedbackReason ?? null}
+                            feedbackSent={Boolean(item.feedback)}
+                            feedbackLoading={Boolean(item.feedbackLoading)}
+                            feedbackError={item.feedbackError ?? null}
+                            onFeedbackUp={() => handleFeedbackUp(item.id)}
+                            onFeedbackDown={() => handleFeedbackDown(item.id)}
+                            onFeedbackReason={(reason) => sendFeedback(item.id, false, reason)}
+                          />
                         </Stack>
                       )}
 
@@ -564,7 +605,8 @@ export default function PerguntasPage() {
                         </Box>
                       )}
                     </Stack>
-                  ))}
+                  );
+                  })}
 
                   <Box ref={endRef} sx={{ height: `${scrollPad}px`, scrollMarginBottom: `${scrollPad}px` }} />
                 </Stack>
@@ -583,12 +625,11 @@ export default function PerguntasPage() {
           right: 0,
           bottom: inputBarBottom,
           zIndex: theme.zIndex.appBar,
-          px: 2,
           bgcolor: theme.palette.background.default,
           transition: "bottom 160ms ease-out",
         })}
       >
-        <Box sx={{ maxWidth: 600, mx: "auto" }}>
+        <Container maxWidth="sm" disableGutters sx={{ px: 3 }}>
           <Stack spacing={1}>
             <Stack direction="row" spacing={1} alignItems="center">
               <TextField
@@ -626,7 +667,7 @@ export default function PerguntasPage() {
               Este aplicativo e informativo e pode cometer erros. Consulte um profissional para orientacoes.
             </Typography>
           </Stack>
-        </Box>
+        </Container>
       </Box>
 
       {showJump && (

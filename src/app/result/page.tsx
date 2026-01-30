@@ -23,7 +23,6 @@ import {
   Stack,
   Typography,
   Snackbar,
-  CircularProgress,
 } from "@mui/material";
 
 import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
@@ -35,15 +34,13 @@ import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
-import ThumbUpAltRoundedIcon from "@mui/icons-material/ThumbUpAltRounded";
-import ThumbDownAltRoundedIcon from "@mui/icons-material/ThumbDownAltRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
-import Disclaimer from "../_components/Disclaimer";
 import FooterActions from "../_components/FooterActions";
 import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
+import FeedbackActions from "../_components/FeedbackActions";
 
 // === Tipos e Helpers ===
 type CardT = { id: string; title: string; text: string };
@@ -99,17 +96,7 @@ export default function ResultPage() {
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
-  const [ttsMode, setTtsMode] = useState<"full" | "summary" | null>(null);
-
-  const feedbackReasons = useMemo(
-    () => [
-      "Incompleta",
-      "Confusa",
-      "Errada",
-      "Outro",
-    ],
-    []
-  );
+  const [ttsMode, setTtsMode] = useState<"summary" | null>(null);
 
   useEffect(() => {
     const res = loadResult();
@@ -215,7 +202,6 @@ export default function ResultPage() {
         confidenceBucket,
         contextSource: hasOcrContext ? "ocr" : "cards",
       });
-      setToastMsg("Obrigado pelo feedback!");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
       setFeedbackError(mapNetworkError(msg));
@@ -236,6 +222,12 @@ export default function ResultPage() {
     setFeedbackChoice("down");
     setFeedbackReason(null);
     setFeedbackError(null);
+  }
+
+  function handleFeedbackReason(reason: string) {
+    if (feedbackSent || feedbackLoading) return;
+    setFeedbackReason(reason);
+    sendFeedback(false, reason);
   }
 
   // Função de Compartilhar
@@ -261,9 +253,17 @@ export default function ResultPage() {
     }
   };
 
+  async function copyResultText() {
+    if (!speakText.trim()) return;
+    try {
+      await navigator.clipboard.writeText(speakText);
+    } catch (err) {
+      console.warn("[result] copy failed", err);
+    }
+  }
+
   // Funções de Áudio
   const speakText = useMemo(() => fullText.replace(/\*/g, ""), [fullText]);
-  const isFullSpeaking = isSpeaking && ttsMode === "full";
   const isSummarySpeaking = isSpeaking && ttsMode === "summary";
 
   function stopSpeaking() {
@@ -273,7 +273,7 @@ export default function ResultPage() {
 
   function startSpeaking() {
     stop({ withMessage: false });
-    setTtsMode("full");
+    setTtsMode(null);
     speak(speakText);
   }
 
@@ -296,7 +296,7 @@ export default function ResultPage() {
   return (
     <>
       <PageLayout
-        contentPaddingBottom={20}
+        contentPaddingBottom={12}
         contentRef={scrollRef}
         onContentScroll={handleContentScroll}
         header={
@@ -322,11 +322,6 @@ export default function ResultPage() {
             }
             endContent={
               <Stack direction="row" spacing={1} alignItems="center">
-                {ttsSupported && (
-                  <IconButton onClick={isFullSpeaking ? stopSpeaking : startSpeaking} color="primary">
-                    {isFullSpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
-                  </IconButton>
-                )}
                 <IconButton onClick={handleShare} color="primary">
                   <IosShareRoundedIcon />
                 </IconButton>
@@ -421,7 +416,7 @@ export default function ResultPage() {
 
           {/* 1. Aviso Dinâmico da IA (Só aparece se tiver observação importante) */}
         {result.notice && (
-          <Box sx={{ mt: 3, mb: 1.5 }}>
+          <Box sx={{ mt: 3, mb: 0 }}>
             <Divider sx={{ my: 1 }} />
             <SectionBlock
               icon={<WarningRoundedIcon fontSize="inherit" />}
@@ -432,67 +427,33 @@ export default function ResultPage() {
           </Box>
         )}
 
-                {/* 2. Aviso Legal Padrão (Igual Home) */}
-        <Disclaimer variant="beforeFooter" withNotice={Boolean(result.notice)} />
-
-        <Box sx={{ mt: result.notice ? 2 : 3, mb: 1.5 }}>
-          <Divider sx={{ my: 1 }} />
+        <Box sx={{ mt: result.notice ? 0.5 : 3 }}>
           <Stack spacing={1}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="body2" fontWeight={600} color="text.secondary">
-                Esta explicação foi útil?
-              </Typography>
-              <Button
-                variant={feedbackChoice === "up" ? "contained" : "text"}
-                onClick={handleFeedbackUp}
-                disabled={feedbackLoading || feedbackSent}
-                size="small"
-                aria-label="Feedback positivo"
-                sx={{ minWidth: 0, px: 1 }}
-              >
-                <ThumbUpAltRoundedIcon fontSize="small" />
-              </Button>
-              <Button
-                variant={feedbackChoice === "down" ? "contained" : "text"}
-                onClick={handleFeedbackDown}
-                disabled={feedbackLoading || feedbackSent}
-                size="small"
-                aria-label="Feedback negativo"
-                sx={{ minWidth: 0, px: 1 }}
-              >
-                <ThumbDownAltRoundedIcon fontSize="small" />
-              </Button>
-              {feedbackLoading && <CircularProgress size={16} />}
-            </Stack>
-  {feedbackChoice === "down" && !feedbackSent && (
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
-                {feedbackReasons.map((r) => (
-                  <Chip
-                    key={r}
-                    label={r}
-                    size="small"
-                    variant={feedbackReason === r ? "filled" : "outlined"}
-                    onClick={() => {
-                      if (feedbackSent || feedbackLoading) return;
-                      setFeedbackReason(r);
-                      sendFeedback(false, r);
-                    }}
-                    disabled={feedbackLoading}
-                  />
-                ))}
-              </Box>
-            )}
-            {feedbackSent && (
-              <Typography variant="caption" color="text.secondary">
-                Obrigado pelo feedback.
-              </Typography>
-            )}
-            {feedbackError && <Notice severity="warning">{feedbackError}</Notice>}
+            <FeedbackActions
+              canCopy={Boolean(speakText.trim())}
+              canSpeak={ttsSupported && Boolean(speakText.trim())}
+              isSpeaking={isSpeaking}
+              onToggleSpeak={isSpeaking ? stopSpeaking : startSpeaking}
+              onCopy={copyResultText}
+              feedbackChoice={feedbackChoice}
+              feedbackValue={feedbackSent ? feedbackChoice : null}
+              feedbackReason={feedbackReason}
+              feedbackSent={feedbackSent}
+              feedbackLoading={feedbackLoading}
+              feedbackError={feedbackError}
+              onFeedbackUp={handleFeedbackUp}
+              onFeedbackDown={handleFeedbackDown}
+              onFeedbackReason={handleFeedbackReason}
+            />
+            <Divider />
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+              Este aplicativo e informativo e pode cometer erros. Consulte um profissional para orientacoes.
+            </Typography>
           </Stack>
         </Box>
 
 
-        <Box ref={endRef} sx={{ height: 20 }} />
+        <Box ref={endRef} sx={{ height: 8 }} />
       </PageLayout>
 
       {showJump && (

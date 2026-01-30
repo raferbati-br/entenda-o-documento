@@ -11,6 +11,7 @@ type IconTextRowProps = {
   iconBackground?: string;
   iconSize?: number;
   iconContainerSize?: number;
+  compact?: boolean;
 };
 
 export default function IconTextRow({
@@ -21,6 +22,7 @@ export default function IconTextRow({
   iconBackground = "action.hover",
   iconSize = 24,
   iconContainerSize = 48,
+  compact = false,
 }: IconTextRowProps) {
   return (
     <Stack direction="row" spacing={2} alignItems="center">
@@ -39,7 +41,7 @@ export default function IconTextRow({
       >
         {icon}
       </Box>
-      <Box sx={{ flex: 1 }}>
+      <Box sx={{ flex: compact ? "0 1 auto" : 1 }}>
         <Typography variant="body1" sx={SECTION_TITLE_STYLE}>
           {title}
         </Typography>
