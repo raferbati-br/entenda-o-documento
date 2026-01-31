@@ -51,9 +51,9 @@ yarn-error.log*
 next-env.d.ts
 
 # sonar
+/.scannerwork/
 *sonar*
 !sonar-project.properties
 !run-sonar-local.ps1
 !export_sonar_issues.ps1
 !.env.sonar.local.example
-/.scannerwork/
