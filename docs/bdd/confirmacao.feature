@@ -18,7 +18,7 @@ Feature: Confirmacao da imagem
     Then a captura deve ser descartada
     And o usuario deve voltar para a camera
 
-  @e2e @id(E2E-11)
+  @e2e @id(E2E-11) @load(LOAD-5)
   Scenario: Enviar a imagem para analise
     Given que o usuario esta na tela de confirmacao
     When ele clica em "Usar esta"

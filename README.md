@@ -108,6 +108,7 @@ npm run test:unit
 npm run test:e2e
 npm run test:e2e:coverage
 npm run test:coverage
+npm run load:coverage
 ```
 
 ---
@@ -120,6 +121,7 @@ Destaque:
 
 Rastreabilidade BDD x E2E:
 - `docs/bdd/README.md`
+- `docs/bdd/coverage-matrix.md`
 
 ---
 
@@ -127,6 +129,7 @@ Rastreabilidade BDD x E2E:
 - `npm run bdd:coverage`: cobertura de requisitos (rastreabilidade BDD → E2E). Não mede execução de código.
 - `npm run test:e2e:coverage`: cobertura de código exercitada pelos testes E2E.
 - `npm run test:unit:coverage`: cobertura de código exercitada pelos testes unitários.
+- `npm run load:coverage`: cobertura de cenarios de carga (matriz vs tags @load no BDD).
 
 Interpretação combinada:
 - BDD alto + E2E baixo → requisitos rastreados, mas testes podem ser superficiais.

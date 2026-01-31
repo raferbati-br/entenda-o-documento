@@ -1,5 +1,6 @@
 import http from "node:http";
 import { spawn } from "node:child_process";
+import readline from "node:readline";
 
 const DEFAULT_PORT = 3100;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${DEFAULT_PORT}`;
@@ -53,17 +54,41 @@ async function stopProcessTree(pid) {
 async function main() {
   const alreadyRunning = await checkServerReady();
   let devProcess = null;
+  let devLogCleanup = null;
 
   if (!alreadyRunning) {
     devProcess = spawn("npm", ["run", "dev", "--", "-p", String(devPort)], {
-      stdio: "inherit",
+      stdio: ["ignore", "pipe", "pipe"],
       shell: true,
       env: {
         ...process.env,
         LLM_PROVIDER: "mock",
+        ANALYZE_LLM_PROVIDER: "mock",
+        API_LOGS: "0",
         APP_ORIGIN: BASE_URL,
       },
     });
+    const stdoutRl = readline.createInterface({ input: devProcess.stdout });
+    const stderrRl = readline.createInterface({ input: devProcess.stderr });
+    const shouldSuppressDevLog = (line) => {
+      const cleaned = line.replace(/\x1B\[[0-9;]*m/g, "");
+      const trimmed = cleaned.trimStart();
+      return /^(GET|POST|PUT|DELETE|PATCH)\s/.test(trimmed);
+    };
+    stdoutRl.on("line", (line) => {
+      if (!shouldSuppressDevLog(line)) {
+        process.stdout.write(`${line}\n`);
+      }
+    });
+    stderrRl.on("line", (line) => {
+      if (!shouldSuppressDevLog(line)) {
+        process.stderr.write(`${line}\n`);
+      }
+    });
+    devLogCleanup = () => {
+      stdoutRl.close();
+      stderrRl.close();
+    };
     const ready = await waitForServer();
     if (!ready) {
       await stopProcessTree(devProcess.pid);
@@ -71,12 +96,21 @@ async function main() {
     }
   }
 
-  const exitCode = await runCommand("k6", ["run", "tests/load/k6/capture-analyze.js"], {
+  const scriptPath = "tests/load/k6/capture-analyze.js";
+  const scenarioName = "LOAD-1 - Captura + analise basica";
+  const bannerLine = "=".repeat(72);
+  console.log(`\n${bannerLine}`);
+  console.log("LOAD TEST");
+  console.log(`Scenario: ${scenarioName}`);
+  console.log(`Script: ${scriptPath}`);
+  console.log(`${bannerLine}\n`);
+  const exitCode = await runCommand("k6", ["run", scriptPath], {
     env: { ...process.env, BASE_URL },
   });
 
   if (devProcess) {
     await stopProcessTree(devProcess.pid);
+    if (devLogCleanup) devLogCleanup();
   }
 
   if (exitCode !== 0) {

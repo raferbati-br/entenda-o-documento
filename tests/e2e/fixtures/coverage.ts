@@ -3,9 +3,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const test = base.extend({
-  page: async ({ page }, use, testInfo) => {
+  page: async ({ page }, runFixture, testInfo) => {
     if (!process.env.E2E_COVERAGE) {
-      await use(page);
+      await runFixture(page);
       return;
     }
 
@@ -14,7 +14,7 @@ const test = base.extend({
     });
 
     try {
-      await use(page);
+      await runFixture(page);
     } finally {
       const coverage = await page.coverage.stopJSCoverage();
       const outputDir = path.join(testInfo.project.outputDir, "coverage");

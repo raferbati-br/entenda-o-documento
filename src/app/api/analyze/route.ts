@@ -17,6 +17,7 @@ import {
 export const runtime = "nodejs";
 
 const TEXT_ONLY_VALUES = new Set(["1", "true", "yes", "on"]);
+const SHOULD_LOG_API = process.env.API_LOGS !== "0";
 
 function isTextOnlyEnabled() {
   const value = String(process.env.ANALYZE_TEXT_ONLY || "").toLowerCase();
@@ -94,18 +95,20 @@ async function handleAnalyzeRequest(req: Request, ctx: ApiRouteContext) {
 
   await recordAnalyzeMetrics({ attempt, useTextOnly, analysisMode, stats, durationMs });
 
-  console.log("[api.analyze]", {
-    requestId: ctx.requestId,
-    ip: ctx.ip,
-    status: 200,
-    provider: meta.provider,
-    model: meta.model,
-    promptId,
-    analysisMode,
-    ocr_chars: ocrQuality?.length ?? 0,
-    ocr_alpha_ratio: ocrQuality ? Number(ocrQuality.alphaRatio.toFixed(2)) : 0,
-    duration_ms: durationMs,
-  });
+  if (SHOULD_LOG_API) {
+    console.log("[api.analyze]", {
+      requestId: ctx.requestId,
+      ip: ctx.ip,
+      status: 200,
+      provider: meta.provider,
+      model: meta.model,
+      promptId,
+      analysisMode,
+      ocr_chars: ocrQuality?.length ?? 0,
+      ocr_alpha_ratio: ocrQuality ? Number(ocrQuality.alphaRatio.toFixed(2)) : 0,
+      duration_ms: durationMs,
+    });
+  }
 
   return NextResponse.json({ ok: true, result });
 }

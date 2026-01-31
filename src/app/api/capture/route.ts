@@ -9,6 +9,7 @@ export const runtime = "nodejs";
 const MAX_IMAGE_BYTES = 2.5 * 1024 * 1024;
 const MAX_CAPTURE_COUNT = 80;
 const MAX_TOTAL_BYTES = 120 * 1024 * 1024;
+const SHOULD_LOG_API = process.env.API_LOGS !== "0";
 
 type ValidatedImage = {
   ok: true;
@@ -155,14 +156,16 @@ export async function POST(req: Request) {
       ...(ocrImageBase64 ? { ocrImageBase64, ocrBytes } : {}),
     });
 
-    console.log("[api.capture]", {
-      requestId: ctx.requestId,
-      ip: ctx.ip,
-      status: 200,
-      bytes: buf.byteLength,
-      ocr_bytes: ocrBytes || 0,
-      duration_ms: ctx.durationMs(),
-    });
+    if (SHOULD_LOG_API) {
+      console.log("[api.capture]", {
+        requestId: ctx.requestId,
+        ip: ctx.ip,
+        status: 200,
+        bytes: buf.byteLength,
+        ocr_bytes: ocrBytes || 0,
+        duration_ms: ctx.durationMs(),
+      });
+    }
 
     return NextResponse.json({ ok: true, captureId });
   } catch (err) {

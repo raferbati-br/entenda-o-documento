@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
-const fs = require("node:fs");
-const path = require("node:path");
-const { spawnSync } = require("node:child_process");
+import fs from "node:fs";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const ROOT = process.cwd();
 const SUMMARY_DIR = path.join(ROOT, "coverage", "unit");

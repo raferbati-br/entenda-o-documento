@@ -4,7 +4,7 @@ Feature: Resultado da analise
   Quero ler a explicacao do documento
   Para entender o conteudo com clareza
 
-  @e2e @id(E2E-17)
+  @e2e @id(E2E-17) @load(LOAD-10)
   Scenario: Exibir cards principais do resultado
     Given que a analise terminou com sucesso
     When o usuario acessa a tela de resultado
@@ -39,13 +39,13 @@ Feature: Resultado da analise
     When ele usa a acao de compartilhar
     Then o sistema deve abrir o compartilhamento nativo ou copiar o texto
 
-  @e2e @id(E2E-22) @manual
+  @e2e @id(E2E-22) @manual @load(LOAD-4)
   Scenario: Enviar feedback positivo
     Given que o usuario esta na tela de resultado
     When ele marca o resultado como util
     Then o feedback deve ser enviado
 
-  @e2e @id(E2E-23) @manual
+  @e2e @id(E2E-23) @manual @load(LOAD-4)
   Scenario: Enviar feedback negativo com motivo
     Given que o usuario esta na tela de resultado
     When ele marca o resultado como nao util e escolhe um motivo

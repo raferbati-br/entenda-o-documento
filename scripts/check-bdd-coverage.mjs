@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
-const fs = require("node:fs");
-const path = require("node:path");
+import fs from "node:fs";
+import path from "node:path";
 
 const ROOT = process.cwd();
 const BDD_DIR = path.join(ROOT, "docs", "bdd");

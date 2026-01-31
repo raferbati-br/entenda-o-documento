@@ -4,7 +4,7 @@ Feature: Analise do documento
   Quero acompanhar o processamento
   Para saber que a analise esta em andamento
 
-  @e2e @id(E2E-13)
+  @e2e @id(E2E-13) @load(LOAD-2) @load(LOAD-6) @load(LOAD-9)
   Scenario: Processamento com sucesso
     Given que o usuario enviou uma imagem valida
     When a analise e concluida com sucesso

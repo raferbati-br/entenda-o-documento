@@ -142,7 +142,7 @@ function useFeedbackState(options: { confidenceBucket: string; hasOcrContext: bo
 export default function ResultPage() {
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [result] = useState<AnalysisResult | null>(() => loadResult());
   const { endRef, showJump, updateJumpState, handleScroll: handleContentScroll, jumpToEnd: handleJumpToEnd } =
     useJumpToEnd({ scrollRef });
 
@@ -169,13 +169,10 @@ export default function ResultPage() {
   const [ttsMode, setTtsMode] = useState<"summary" | null>(null);
 
   useEffect(() => {
-    const res = loadResult();
-    if (!res) {
+    if (!result) {
       router.replace("/");
-      return;
     }
-    setResult(res);
-  }, [router]);
+  }, [result, router]);
 
   useEffect(() => {
     if (ttsError !== "Leitura interrompida.") return;
@@ -183,10 +180,7 @@ export default function ResultPage() {
     return () => globalThis.clearTimeout(timeoutId);
   }, [ttsError, setTtsError]);
 
-  useEffect(() => {
-    if (isSpeaking) return;
-    if (ttsMode) setTtsMode(null);
-  }, [isSpeaking, ttsMode]);
+  const activeTtsMode = isSpeaking ? ttsMode : null;
 
   useEffect(() => {
     if (!result) return;
@@ -292,8 +286,8 @@ export default function ResultPage() {
   }
 
   // Funções de Áudio
-  const speakText = useMemo(() => fullText.replaceAll("*", ""), [fullText]);
-  const isSummarySpeaking = isSpeaking && ttsMode === "summary";
+  const speakText = fullText.replaceAll("*", "");
+  const isSummarySpeaking = isSpeaking && activeTtsMode === "summary";
 
   function stopSpeaking() {
     stop();

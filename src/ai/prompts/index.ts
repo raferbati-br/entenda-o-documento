@@ -13,10 +13,12 @@ export function getPrompt(promptId: string | undefined | null): Prompt {
   return entendaDocumento_v1; // fallback seguro
 }
 
-export function getQaPrompt(_promptId: string | undefined | null): Prompt {
+export function getQaPrompt(promptId: string | undefined | null): Prompt {
+  void promptId;
   return entendaDocumento_qa_v1;
 }
 
-export function getOcrPrompt(_promptId: string | undefined | null): Prompt {
+export function getOcrPrompt(promptId: string | undefined | null): Prompt {
+  void promptId;
   return entendaDocumento_ocr_v1;
 }

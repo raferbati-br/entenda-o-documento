@@ -19,9 +19,10 @@ class MockUtterance {
 type HookState = ReturnType<typeof useSpeechSynthesis> | null;
 
 function renderHook(options?: Parameters<typeof useSpeechSynthesis>[0]) {
-  let state: HookState = null;
+  const stateRef: { current: HookState } = { current: null };
   function Test() {
-    state = useSpeechSynthesis(options);
+    // eslint-disable-next-line react-hooks/immutability
+    stateRef.current = useSpeechSynthesis(options);
     return null;
   }
   const container = document.createElement("div");
@@ -30,7 +31,7 @@ function renderHook(options?: Parameters<typeof useSpeechSynthesis>[0]) {
   act(() => {
     root.render(<Test />);
   });
-  return { root, getState: () => state! };
+  return { root, getState: () => stateRef.current! };
 }
 
 describe("useSpeechSynthesis", () => {

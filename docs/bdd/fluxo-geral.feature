@@ -4,7 +4,7 @@ Feature: Fluxo geral end-to-end
   Quero entender o documento do inicio ao fim
   Para obter uma explicacao clara e tirar duvidas
 
-  @e2e @id(E2E-1)
+  @e2e @id(E2E-1) @load(LOAD-1) @load(LOAD-8)
   Scenario: Caminho feliz completo
     Given que o usuario acessa a pagina inicial
     When ele inicia a captura pela camera ou galeria
@@ -14,7 +14,7 @@ Feature: Fluxo geral end-to-end
     And deve poder compartilhar ou copiar o resultado
     And deve poder iniciar um novo fluxo de analise
 
-  @e2e @id(E2E-2)
+  @e2e @id(E2E-2) @load(LOAD-1) @load(LOAD-7)
   Scenario: Falha na analise e recuperacao
     Given que o usuario enviou uma imagem
     When ocorre um erro na OCR ou na analise

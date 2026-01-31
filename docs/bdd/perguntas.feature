@@ -18,7 +18,7 @@ Feature: Perguntas e respostas (Q&A)
     When ele seleciona uma pergunta sugerida
     Then a pergunta deve preencher o campo de texto
 
-  @e2e @id(E2E-28) @manual
+  @e2e @id(E2E-28) @manual @load(LOAD-3)
   Scenario: Enviar uma pergunta valida
     Given que o usuario esta na tela de perguntas
     And ele digitou uma pergunta valida
