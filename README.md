@@ -111,6 +111,17 @@ npm run test:e2e:coverage
 
 ---
 
+## 🧾 BDD (requisitos em Gherkin)
+Os fluxos end-to-end estão documentados em `docs/bdd/`, separados por módulo/feature.
+
+Destaque:
+- `docs/bdd/fluxo-geral.feature` (visão macro do fluxo completo)
+
+Rastreabilidade BDD x E2E:
+- `docs/bdd/README.md`
+
+---
+
 ## Deploy (Vercel)
 1) Crie um projeto no Vercel e conecte o repositório.
 2) Configure as variáveis de ambiente (veja `.env.example`).

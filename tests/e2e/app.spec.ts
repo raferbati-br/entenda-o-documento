@@ -3,7 +3,7 @@ import { test, expect } from "./fixtures/coverage";
 const tinyPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
-test("happy path: analyze document and show result", async ({ page }) => {
+test("happy path: analyze document and show result @id(E2E-1) @id(E2E-3) @id(E2E-5) @id(E2E-9) @id(E2E-11) @id(E2E-13) @id(E2E-17) @id(E2E-25) @id(E2E-26)", async ({ page }) => {
   // Mock capture to avoid backend dependency.
   await page.route("**/api/capture", async (route) => {
     await route.fulfill({
@@ -38,6 +38,10 @@ test("happy path: analyze document and show result", async ({ page }) => {
   // Upload a tiny PNG and follow the main flow.
   await page.goto("/");
 
+  await expect(page.getByRole("heading", { name: "Entenda qualquer documento num piscar de olhos" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Galeria" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tirar foto" })).toBeVisible();
+
   const fileInput = page.locator('input[type="file"]');
   await fileInput.setInputFiles({
     name: "doc.png",
@@ -46,6 +50,7 @@ test("happy path: analyze document and show result", async ({ page }) => {
   });
 
   await page.waitForURL("**/confirm");
+  await expect(page.getByAltText("Captura")).toBeVisible();
   await page.getByRole("button", { name: "Usar esta" }).click();
   await page.waitForURL("**/result");
 
@@ -58,7 +63,7 @@ test("happy path: analyze document and show result", async ({ page }) => {
   await expect(page.getByLabel("Sua pergunta")).toBeVisible();
 });
 
-test("error path: analyze returns error", async ({ page }) => {
+test("error path: analyze returns error @id(E2E-2) @id(E2E-14)", async ({ page }) => {
   // Mock capture to move past the confirm screen.
   await page.route("**/api/capture", async (route) => {
     await route.fulfill({
