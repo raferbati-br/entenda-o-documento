@@ -12,7 +12,8 @@
     "test:unit": "vitest run --config vitest.config.unit.ts",
     "test:load": "node scripts/run-load-test.mjs",
     "test:unit:report": "vitest run --config vitest.config.unit.ts --coverage && powershell -NoProfile -Command \"Start-Process 'test-results/vitest/coverage-all/index.html'\"",
-    "test:unit:watch": "vitest --config vitest.config.unit.ts"
+    "test:unit:watch": "vitest --config vitest.config.unit.ts",
+    "test:unit:coverage": "vitest run --config vitest.config.unit.ts --coverage --coverage.reporter=text"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -38,6 +39,7 @@
     "@vitest/coverage-v8": "^4.0.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "jsdom": "^27.4.0",
     "typescript": "^5",
     "vitest": "^4.0.17"
   }
