@@ -20,7 +20,9 @@ function writeSummary(linesPct) {
 }
 
 function parseLinesCoverage(output) {
-  const cleanOutput = output.replace(/\u001b\[[0-9;]*m/g, "");
+  const ESC = String.fromCharCode(27);
+  const ansiRegex = new RegExp(`${ESC}\\[[0-9;]*m`, "g");
+  const cleanOutput = output.replaceAll(ansiRegex, "");
   const line = cleanOutput
     .split(/\r?\n/)
     .find((entry) => entry.includes("All files"));
@@ -71,10 +73,10 @@ function main() {
   fs.mkdirSync(SUMMARY_DIR, { recursive: true });
   fs.writeFileSync(path.join(SUMMARY_DIR, "coverage-output.txt"), combined);
   const linesPct = parseLinesCoverage(combined);
-  if (linesPct !== null) {
-    writeSummary(linesPct);
-  } else {
+  if (linesPct === null) {
     console.warn("Nao foi possivel extrair cobertura de linhas do resumo do Vitest.");
+  } else {
+    writeSummary(linesPct);
   }
 
   process.exit(result.status ?? 1);

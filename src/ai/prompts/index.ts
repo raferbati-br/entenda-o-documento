@@ -14,11 +14,17 @@ export function getPrompt(promptId: string | undefined | null): Prompt {
 }
 
 export function getQaPrompt(promptId: string | undefined | null): Prompt {
-  void promptId;
+  const id = (promptId ?? "").trim();
+  if (id) {
+    return entendaDocumento_qa_v1;
+  }
   return entendaDocumento_qa_v1;
 }
 
 export function getOcrPrompt(promptId: string | undefined | null): Prompt {
-  void promptId;
+  const id = (promptId ?? "").trim();
+  if (id) {
+    return entendaDocumento_ocr_v1;
+  }
   return entendaDocumento_ocr_v1;
 }
