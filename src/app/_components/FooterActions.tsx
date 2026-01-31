@@ -14,6 +14,8 @@ type FooterAction = {
   href?: ButtonProps["href"];
   component?: ButtonProps["component"];
   disabled?: boolean;
+  disableRipple?: boolean;
+  disableFocusRipple?: boolean;
   variant?: "contained" | "outlined";
   sx?: SxProps<Theme>;
 };
@@ -66,6 +68,8 @@ export default function FooterActions({ primary, secondary, leadingContent, acti
               onClick={secondary.onClick}
               href={secondary.href}
               disabled={secondary.disabled}
+              disableRipple={secondary.disableRipple}
+              disableFocusRipple={secondary.disableFocusRipple}
               sx={buildButtonSx(secondaryVariant, secondary.sx)}
               {...secondaryComponentProps}
             >
@@ -79,6 +83,8 @@ export default function FooterActions({ primary, secondary, leadingContent, acti
             onClick={primary.onClick}
             href={primary.href}
             disabled={primary.disabled}
+            disableRipple={primary.disableRipple}
+            disableFocusRipple={primary.disableFocusRipple}
             sx={buildButtonSx(primaryVariant, primary.sx)}
             {...primaryComponentProps}
           >

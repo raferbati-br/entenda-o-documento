@@ -21,31 +21,28 @@ import {
   Container,
   Divider,
   Dialog,
-  DialogContent,
-  DialogTitle,
   Fab,
   IconButton,
   Stack,
+  SvgIcon,
   TextField,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import PaidRoundedIcon from "@mui/icons-material/PaidRounded";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
-import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
-import ZoomInRoundedIcon from "@mui/icons-material/ZoomInRounded";
-import ZoomOutRoundedIcon from "@mui/icons-material/ZoomOutRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import FooterActions from "../_components/FooterActions";
 import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
 import FeedbackActions from "../_components/FeedbackActions";
 import IconTextRow from "../_components/IconTextRow";
+import PinchZoomImage from "../_components/PinchZoomImage";
 
 type CardT = { id: string; title: string; text: string };
 type QaItem = {
@@ -61,9 +58,6 @@ type QaItem = {
   feedbackError?: string;
 };
 
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 3;
-const ZOOM_STEP = 0.25;
 const ACTION_BAR_HEIGHT = 88;
 const INPUT_BAR_GAP = 8;
 const SCROLL_PAD_FALLBACK = ACTION_BAR_HEIGHT + INPUT_BAR_GAP + 96;
@@ -93,7 +87,6 @@ export default function PerguntasPage() {
   });
 
   const [docOpen, setDocOpen] = useState(false);
-  const [docZoom, setDocZoom] = useState(1);
 
   const [question, setQuestion] = useState("");
   const [qaLoading, setQaLoading] = useState(false);
@@ -150,8 +143,6 @@ export default function PerguntasPage() {
   }, [cardsArr]);
 
   const canAsk = question.trim().length >= MIN_QUESTION_CHARS && !qaLoading;
-  const canZoomIn = docZoom < MAX_ZOOM;
-  const canZoomOut = docZoom > MIN_ZOOM;
   const isEmptyState = qaHistory.length === 0;
   const isKeyboardOpen = keyboardOffset > KEYBOARD_OPEN_THRESHOLD;
   const actionBarOffset = isKeyboardOpen ? -keyboardOffset : 0;
@@ -215,20 +206,7 @@ export default function PerguntasPage() {
   }, [qaHistory.length, scrollPad, keyboardOffset, isEmptyState, updateJumpState]);
 
 
-  function zoomIn() {
-    setDocZoom((z) => Math.min(MAX_ZOOM, Number((z + ZOOM_STEP).toFixed(2))));
-  }
-
-  function zoomOut() {
-    setDocZoom((z) => Math.max(MIN_ZOOM, Number((z - ZOOM_STEP).toFixed(2))));
-  }
-
-  function resetZoom() {
-    setDocZoom(1);
-  }
-
   function openDocument() {
-    setDocZoom(1);
     setDocOpen(true);
   }
 
@@ -261,6 +239,20 @@ export default function PerguntasPage() {
       telemetryCapture("qa_answer_copy");
     } catch (err) {
       console.warn("[qa] copy failed", err);
+    }
+  }
+
+  async function shareAnswer(text: string) {
+    if (!text) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+      } else {
+        await navigator.clipboard.writeText(text);
+      }
+      telemetryCapture("qa_answer_share");
+    } catch (err) {
+      console.warn("[qa] share failed", err);
     }
   }
 
@@ -424,6 +416,12 @@ export default function PerguntasPage() {
               startIcon: <DescriptionRoundedIcon />,
               onClick: openDocument,
               disabled: !imageUrl,
+              disableRipple: true,
+              disableFocusRipple: true,
+              sx: {
+                "&.Mui-focusVisible": { bgcolor: "transparent" },
+                "&:focus-visible": { bgcolor: "transparent" },
+              },
             }}
             primary={{
               label: "Analisar outro",
@@ -586,6 +584,7 @@ export default function PerguntasPage() {
                             isSpeaking={isItemSpeaking}
                             onToggleSpeak={() => speakAnswer(item.id, item.answer ?? "")}
                             onCopy={() => copyAnswer(item.answer ?? "")}
+                            onShare={() => shareAnswer(item.answer ?? "")}
                             feedbackChoice={item.feedbackChoice ?? null}
                             feedbackValue={item.feedback ?? null}
                             feedbackReason={item.feedbackReason ?? null}
@@ -673,59 +672,76 @@ export default function PerguntasPage() {
       {showJump && (
         <Fab
           size="small"
-          color="primary"
           aria-label="Ir para o fim"
           onClick={jumpToEnd}
           sx={(theme) => ({
             position: "fixed",
-            right: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
             bottom: jumpButtonBottom,
             zIndex: theme.zIndex.appBar + 2,
-            boxShadow: 3,
+            width: 28,
+            height: 28,
+            minWidth: 28,
+            minHeight: 28,
+            padding: 0,
+            borderRadius: "50%",
+            bgcolor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+            border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
+            boxShadow: "none",
+            "&:hover": {
+              bgcolor: theme.palette.background.paper,
+              borderColor: alpha(theme.palette.text.primary, 0.18),
+            },
           })}
         >
-          <KeyboardArrowDownRoundedIcon />
+          <SvgIcon viewBox="0 0 24 24" sx={{ fontSize: 22, opacity: 0.9 }} fill="none">
+            <path d="M12 3.5v10.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+            <path
+              d="M5.5 12.5L12 19l6.5-6.5"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </SvgIcon>
         </Fab>
       )}
 
-      <Dialog open={docOpen} onClose={closeDocument} fullWidth maxWidth="sm">
-        <DialogTitle>Documento</DialogTitle>
-        <DialogContent>
-          <Stack spacing={1.5}>
-            <Typography variant="caption" color="text.secondary">
-              Toque no texto para ampliar
-            </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="caption" color="text.secondary">
-                {Math.round(docZoom * 100)}%
-              </Typography>
-              <IconButton onClick={zoomOut} disabled={!imageUrl || !canZoomOut}>
-                <ZoomOutRoundedIcon />
-              </IconButton>
-              <IconButton onClick={zoomIn} disabled={!imageUrl || !canZoomIn}>
-                <ZoomInRoundedIcon />
-              </IconButton>
-              <IconButton onClick={resetZoom} disabled={!imageUrl || docZoom === 1}>
-                <RestartAltRoundedIcon />
-              </IconButton>
-            </Stack>
-            <Box sx={{ bgcolor: "#000", borderRadius: 2, overflow: "auto", maxHeight: "60vh" }}>
-              {imageUrl ? (
-                <Box sx={{ width: `${docZoom * 100}%`, transformOrigin: "top center" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imageUrl} alt={documentTitle} style={{ width: "100%", display: "block" }} />
-                </Box>
-              ) : (
-                <Box sx={{ p: 3, textAlign: "center" }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {imageError || "Documento indisponivel."}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Stack>
-        </DialogContent>
+      <Dialog open={docOpen} onClose={closeDocument} fullScreen>
+        <PageLayout
+          background="#000"
+          contentPaddingTop={0}
+          contentPaddingBottom={0}
+          contentPaddingX={0}
+          disableContainer
+          contentSx={{ overflow: "hidden" }}
+          header={
+            <BackHeader
+              onBack={closeDocument}
+              headerSx={{ borderBottom: "none", bgcolor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+              iconButtonSx={{ color: "white" }}
+              title={
+                <Typography variant="h6" sx={{ color: "white", fontWeight: 600 }}>
+                  Documento
+                </Typography>
+              }
+            />
+          }
+        >
+          <PinchZoomImage
+            key={imageUrl ?? "empty"}
+            src={imageUrl}
+            alt={documentTitle}
+            errorMessage={imageError || "Documento indisponivel."}
+            minZoom={1}
+            maxZoom={3}
+          />
+        </PageLayout>
       </Dialog>
     </>
   );
 }
+

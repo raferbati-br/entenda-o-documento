@@ -19,11 +19,12 @@ import {
   Chip,
   Divider,
   Fab,
-  IconButton,
   Stack,
+  SvgIcon,
   Typography,
   Snackbar,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
@@ -33,9 +34,7 @@ import ListAltRoundedIcon from "@mui/icons-material/ListAltRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
-import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
-import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import FooterActions from "../_components/FooterActions";
 import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
@@ -320,13 +319,6 @@ export default function ResultPage() {
                 />
               </Box>
             }
-            endContent={
-              <Stack direction="row" spacing={1} alignItems="center">
-                <IconButton onClick={handleShare} color="primary">
-                  <IosShareRoundedIcon />
-                </IconButton>
-              </Stack>
-            }
           />
         }
         footer={
@@ -435,6 +427,7 @@ export default function ResultPage() {
               isSpeaking={isSpeaking}
               onToggleSpeak={isSpeaking ? stopSpeaking : startSpeaking}
               onCopy={copyResultText}
+              onShare={handleShare}
               feedbackChoice={feedbackChoice}
               feedbackValue={feedbackSent ? feedbackChoice : null}
               feedbackReason={feedbackReason}
@@ -459,18 +452,41 @@ export default function ResultPage() {
       {showJump && (
         <Fab
           size="small"
-          color="primary"
           aria-label="Ir para o fim"
           onClick={handleJumpToEnd}
           sx={(theme) => ({
             position: "fixed",
-            right: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
             bottom: JUMP_BUTTON_OFFSET,
             zIndex: theme.zIndex.appBar + 2,
-            boxShadow: 3,
+            width: 28,
+            height: 28,
+            minWidth: 28,
+            minHeight: 28,
+            padding: 0,
+            borderRadius: "50%",
+            bgcolor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+            border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
+            boxShadow: "none",
+            "&:hover": {
+              bgcolor: theme.palette.background.paper,
+              borderColor: alpha(theme.palette.text.primary, 0.18),
+            },
           })}
         >
-          <KeyboardArrowDownRoundedIcon />
+          <SvgIcon viewBox="0 0 24 24" sx={{ fontSize: 22, opacity: 0.9 }} fill="none">
+            <path d="M12 3.5v10.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+            <path
+              d="M5.5 12.5L12 19l6.5-6.5"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </SvgIcon>
         </Fab>
       )}
 

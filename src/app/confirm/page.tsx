@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { saveCaptureId } from "@/lib/captureIdStore";
@@ -12,7 +12,7 @@ import { telemetryCapture } from "@/lib/telemetry";
 import { mapCaptureError, mapNetworkError } from "@/lib/errorMesages";
 import { useCaptureObjectUrl } from "@/lib/hooks/useCaptureObjectUrl";
 
-import { Box, CircularProgress, Typography, Backdrop } from "@mui/material";
+import { CircularProgress, Typography, Backdrop } from "@mui/material";
 
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
@@ -20,31 +20,16 @@ import FooterActions from "../_components/FooterActions";
 import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
+import PinchZoomImage from "../_components/PinchZoomImage";
 
 export default function ConfirmPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
-  const pinchStartDistanceRef = useRef<number | null>(null);
-  const pinchStartScaleRef = useRef(1);
   const handleMissingCapture = useCallback(() => {
     router.replace("/camera");
   }, [router]);
   const { url: previewUrl } = useCaptureObjectUrl({ onMissing: handleMissingCapture });
-
-  const MIN_ZOOM = 1;
-  const MAX_ZOOM = 3;
-
-  function getPinchDistance(touches: TouchList) {
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.hypot(dx, dy);
-  }
-
-  function clampZoom(nextZoom: number) {
-    return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom));
-  }
 
 
   useEffect(() => {
@@ -176,58 +161,7 @@ export default function ConfirmPage() {
         />
       }
     >
-      <Box sx={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
-        {/* Área da Imagem (Centralizada) */}
-        <Box
-          onTouchStart={(e) => {
-            if (e.touches.length !== 2) return;
-            pinchStartDistanceRef.current = getPinchDistance(e.touches as unknown as TouchList);
-            pinchStartScaleRef.current = zoom;
-          }}
-          onTouchMove={(e) => {
-            if (e.touches.length !== 2 || !pinchStartDistanceRef.current) return;
-            e.preventDefault();
-            const distance = getPinchDistance(e.touches as unknown as TouchList);
-            const nextZoom = clampZoom(pinchStartScaleRef.current * (distance / pinchStartDistanceRef.current));
-            setZoom(Number(nextZoom.toFixed(2)));
-          }}
-          onTouchEnd={(e) => {
-            if (e.touches.length < 2) {
-              pinchStartDistanceRef.current = null;
-            }
-          }}
-          onTouchCancel={() => {
-            pinchStartDistanceRef.current = null;
-          }}
-          sx={{
-            flexGrow: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            pt: 7,
-            pb: 12,
-            bgcolor: "#000",
-            position: "relative",
-            touchAction: "none",
-          }}
-        >
-          {/* Imagem ajustada na tela (contain) */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt="Captura"
-            style={{
-              maxWidth: "100%",
-              maxHeight: "100%",
-              objectFit: "contain",
-              transform: `scale(${zoom})`,
-              transformOrigin: "center center",
-            }}
-          />
-        </Box>
-      </Box>
-
+      <PinchZoomImage key={previewUrl ?? "empty"} src={previewUrl} alt="Captura" minZoom={1} maxZoom={3} />
       {/* Loading Overlay */}
       <Backdrop
         sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1, flexDirection: "column", gap: 2 }}
@@ -239,3 +173,4 @@ export default function ConfirmPage() {
     </PageLayout>
   );
 }
+

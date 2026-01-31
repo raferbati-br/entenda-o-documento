@@ -16,6 +16,7 @@ import ThumbDownAltRoundedIcon from "@mui/icons-material/ThumbDownAltRounded";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
+import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import Notice from "./Notice";
 
 type FeedbackActionsProps = {
@@ -25,6 +26,7 @@ type FeedbackActionsProps = {
   isSpeaking: boolean;
   onToggleSpeak: () => void;
   onCopy: () => void;
+  onShare?: () => void;
   feedbackChoice: "up" | "down" | null;
   feedbackValue: "up" | "down" | null;
   feedbackReason?: string | null;
@@ -46,6 +48,7 @@ export default function FeedbackActions({
   isSpeaking,
   onToggleSpeak,
   onCopy,
+  onShare,
   feedbackChoice,
   feedbackValue,
   feedbackReason,
@@ -113,6 +116,15 @@ export default function FeedbackActions({
             </IconButton>
           </span>
         </Tooltip>
+        {onShare && (
+          <Tooltip title="Compartilhar">
+            <span>
+              <IconButton size="small" onClick={onShare} aria-label="Compartilhar">
+                <IosShareRoundedIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
         <Tooltip title={speakLabel}>
           <span>
             <IconButton
