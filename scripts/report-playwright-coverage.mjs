@@ -182,7 +182,9 @@ async function main() {
   console.log(`Playwright coverage report generated at ${REPORT_DIR}`);
 }
 
-main().catch((err) => {
+try {
+  await main();
+} catch (err) {
   console.error(err);
   process.exit(1);
-});
+}

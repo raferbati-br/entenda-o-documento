@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const ROOT = process.cwd();
 const BDD_DIR = path.join(ROOT, "docs", "bdd");
@@ -24,34 +24,38 @@ function readAllFiles(dir, predicate) {
 
 function collectBddScenarios() {
   const files = readAllFiles(BDD_DIR, (p) => p.endsWith(".feature"));
+  return files.flatMap((file) => parseFeatureFile(file));
+}
+
+function parseFeatureFile(file) {
   const idRegex = /@id\(([^)]+)\)/g;
   const manualRegex = /@manual\b/;
   const scenarioRegex = /^\s*Scenario:\s*(.+)\s*$/i;
+  const rel = path.relative(ROOT, file).replaceAll("\\", "/");
+  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
   const results = [];
+  let pendingIds = [];
+  let pendingManual = false;
 
-  for (const file of files) {
-    const rel = path.relative(ROOT, file).replace(/\\/g, "/");
-    const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
-    let pendingIds = [];
-    let pendingManual = false;
+  for (const line of lines) {
+    let match;
+    while ((match = idRegex.exec(line)) !== null) {
+      pendingIds.push(match[1].trim());
+    }
+    if (manualRegex.test(line)) {
+      pendingManual = true;
+    }
 
-    for (const line of lines) {
-      let match;
-      while ((match = idRegex.exec(line)) !== null) {
-        pendingIds.push(match[1].trim());
-      }
-      if (manualRegex.test(line)) {
-        pendingManual = true;
-      }
-
-      const scenarioMatch = scenarioRegex.exec(line);
-      if (scenarioMatch) {
-        const name = scenarioMatch[1].trim();
-        const ids = pendingIds.length ? pendingIds : [];
-        results.push({ feature: rel, scenario: name, ids, manual: pendingManual });
-        pendingIds = [];
-        pendingManual = false;
-      }
+    const scenarioMatch = scenarioRegex.exec(line);
+    if (scenarioMatch) {
+      results.push({
+        feature: rel,
+        scenario: scenarioMatch[1].trim(),
+        ids: pendingIds.length ? pendingIds : [],
+        manual: pendingManual,
+      });
+      pendingIds = [];
+      pendingManual = false;
     }
   }
 
@@ -60,34 +64,31 @@ function collectBddScenarios() {
 
 function collectE2ETestContent() {
   const files = readAllFiles(E2E_DIR, (p) => p.endsWith(".spec.ts") || p.endsWith(".spec.tsx"));
-  let content = "";
-  for (const file of files) {
-    content += fs.readFileSync(file, "utf8");
-    content += "\n";
-  }
-  return content;
+  return files.map((file) => fs.readFileSync(file, "utf8")).join("\n");
 }
 
-function main() {
-  const scenarios = collectBddScenarios();
-  const testContent = collectE2ETestContent();
-
+function getCoverageGaps(scenarios, testContent) {
   const missing = [];
   const withoutIds = [];
 
-  for (const scenario of scenarios) {
+  scenarios.forEach((scenario) => {
     if (!scenario.ids.length) {
       withoutIds.push(scenario);
-      continue;
+      return;
     }
-    for (const id of scenario.ids) {
-      if (scenario.manual) continue;
+    if (scenario.manual) return;
+    scenario.ids.forEach((id) => {
       if (!testContent.includes(id)) {
         missing.push({ ...scenario, id });
       }
-    }
-  }
+    });
+  });
 
+  return { missing, withoutIds };
+}
+
+function printCoverageReport(report) {
+  const { missing, withoutIds } = report;
   if (withoutIds.length) {
     console.log("Cenarios sem @id(...) encontrados:");
     for (const item of withoutIds) {
@@ -108,7 +109,14 @@ function main() {
     console.log("OK: todos os cenarios possuem @id e todos os IDs foram encontrados nos testes E2E.");
   }
 
-  const exitCode = withoutIds.length || missing.length ? 1 : 0;
+  return withoutIds.length || missing.length ? 1 : 0;
+}
+
+function main() {
+  const scenarios = collectBddScenarios();
+  const testContent = collectE2ETestContent();
+  const report = getCoverageGaps(scenarios, testContent);
+  const exitCode = printCoverageReport(report);
   process.exit(exitCode);
 }
 

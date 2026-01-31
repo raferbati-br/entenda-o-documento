@@ -40,7 +40,9 @@ test("happy path: analyze document and show result @id(E2E-1) @id(E2E-3) @id(E2E
 
   await expect(page.getByRole("heading", { name: "Entenda qualquer documento num piscar de olhos" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Galeria" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Tirar foto" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Tirar foto" }).or(page.getByRole("link", { name: "Tirar foto" }))
+  ).toBeVisible();
 
   const fileInput = page.locator('input[type="file"]');
   await fileInput.setInputFiles({

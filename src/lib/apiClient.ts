@@ -22,7 +22,7 @@ export async function postJsonWithSession<T>(
     headers: {
       "Content-Type": "application/json",
       ...(token ? { "x-session-token": token } : {}),
-      ...(extraHeaders ? extraHeaders : undefined),
+      ...(extraHeaders ?? {}),
     },
     body: JSON.stringify(body),
     signal: options?.signal ?? undefined,
@@ -48,7 +48,7 @@ export async function postJsonWithSessionResponse(
     headers: {
       "Content-Type": "application/json",
       ...(token ? { "x-session-token": token } : {}),
-      ...(extraHeaders ? extraHeaders : undefined),
+      ...(extraHeaders ?? {}),
     },
     body: JSON.stringify(body),
     signal: options?.signal ?? undefined,

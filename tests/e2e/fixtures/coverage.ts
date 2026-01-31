@@ -1,4 +1,4 @@
-import { test as base, expect } from "@playwright/test";
+import { test as base } from "@playwright/test";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -26,4 +26,5 @@ const test = base.extend({
   },
 });
 
-export { test, expect };
+export { test };
+export { expect } from "@playwright/test";
