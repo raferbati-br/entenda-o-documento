@@ -71,8 +71,8 @@ async function main() {
     });
     const stdoutRl = readline.createInterface({ input: devProcess.stdout });
     const stderrRl = readline.createInterface({ input: devProcess.stderr });
-    const ESC = String.fromCharCode(27);
-    const ansiRegex = new RegExp(`${ESC}\\[[0-9;]*m`, "g");
+    const ESC = String.fromCodePoint(27);
+    const ansiRegex = new RegExp(String.raw`${ESC}\[[0-9;]*m`, "g");
     const shouldSuppressDevLog = (line) => {
       const cleaned = line.replaceAll(ansiRegex, "");
       const trimmed = cleaned.trimStart();

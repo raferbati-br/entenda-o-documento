@@ -20,8 +20,8 @@ function writeSummary(linesPct) {
 }
 
 function parseLinesCoverage(output) {
-  const ESC = String.fromCharCode(27);
-  const ansiRegex = new RegExp(`${ESC}\\[[0-9;]*m`, "g");
+  const ESC = String.fromCodePoint(27);
+  const ansiRegex = new RegExp(String.raw`${ESC}\[[0-9;]*m`, "g");
   const cleanOutput = output.replaceAll(ansiRegex, "");
   const line = cleanOutput
     .split(/\r?\n/)

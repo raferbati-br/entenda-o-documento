@@ -68,6 +68,49 @@ function getConfidenceBucket(confidence: number) {
   return "high";
 }
 
+function renderTtsErrorNotice(ttsError: string | null) {
+  if (!ttsError) return null;
+  const severity = ttsError === "Leitura interrompida." ? "info" : "warning";
+  return (
+    <Notice severity={severity} sx={{ mb: 3 }}>
+      {ttsError}
+    </Notice>
+  );
+}
+
+function renderLowConfidenceNotice(show: boolean, onRetry: () => void) {
+  if (!show) return null;
+  return (
+    <Notice
+      severity="warning"
+      title="Foto difÃ­cil de ler"
+      actions={
+        <Button color="inherit" size="small" onClick={onRetry}>
+          Refazer
+        </Button>
+      }
+      sx={{ mb: 4 }}
+    >
+      O resultado pode ter erros.
+    </Notice>
+  );
+}
+
+function renderResultNotice(notice: string | null) {
+  if (!notice) return null;
+  return (
+    <Box sx={{ mt: 3, mb: 0 }}>
+      <Divider sx={{ my: 1 }} />
+      <SectionBlock
+        icon={<WarningRoundedIcon fontSize="inherit" />}
+        title="ObservaÃ§Ã£o importante"
+        text={notice}
+        iconColor="warning.main"
+      />
+    </Box>
+  );
+}
+
 function useFeedbackState(options: { confidenceBucket: string; hasOcrContext: boolean }) {
   const { confidenceBucket, hasOcrContext } = options;
   const [feedbackChoice, setFeedbackChoice] = useState<"up" | "down" | null>(null);
@@ -363,26 +406,9 @@ export default function ResultPage() {
           />
         }
       >
-        {ttsError && (
-          <Notice severity={ttsError === "Leitura interrompida." ? "info" : "warning"} sx={{ mb: 3 }}>
-            {ttsError}
-          </Notice>
-        )}
+        {renderTtsErrorNotice(ttsError)}
 
-        {showLowConfidenceHelp && (
-          <Notice
-            severity="warning"
-            title="Foto difícil de ler"
-            actions={
-              <Button color="inherit" size="small" onClick={newDoc}>
-                Refazer
-              </Button>
-            }
-            sx={{ mb: 4 }}
-          >
-            O resultado pode ter erros.
-          </Notice>
-        )}
+        {renderLowConfidenceNotice(showLowConfidenceHelp, newDoc)}
 
           {/* Conteúdo Principal */}
         <Stack spacing={0} divider={<Divider sx={{ my: 1 }} />}>
@@ -431,17 +457,7 @@ export default function ResultPage() {
           {/* --- AVISOS E RODAPÉ DO CONTEÚDO --- */}
 
           {/* 1. Aviso Dinâmico da IA (Só aparece se tiver observação importante) */}
-        {result.notice && (
-          <Box sx={{ mt: 3, mb: 0 }}>
-            <Divider sx={{ my: 1 }} />
-            <SectionBlock
-              icon={<WarningRoundedIcon fontSize="inherit" />}
-              title="Observação importante"
-              text={result.notice}
-              iconColor="warning.main"
-            />
-          </Box>
-        )}
+        {renderResultNotice(result.notice)}
 
         <Box sx={{ mt: result.notice ? 0.5 : 3 }}>
           <Stack spacing={1}>
@@ -525,3 +541,4 @@ export default function ResultPage() {
     </>
   );
 }
+
