@@ -18,6 +18,7 @@ export default defineConfig({
     env: {
       API_TOKEN_SECRET: "test-secret",
       APP_ORIGIN: "http://localhost:3000",
+      ...(process.env.NEXT_DISABLE_TURBOPACK ? { NEXT_DISABLE_TURBOPACK: process.env.NEXT_DISABLE_TURBOPACK } : {}),
     },
   },
   projects: [

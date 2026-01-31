@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "npm run test:unit && npm run test:e2e",
     "test:e2e": "playwright test",
+    "test:e2e:coverage": "set E2E_COVERAGE=1&& set NEXT_DISABLE_TURBOPACK=1&& playwright test && node scripts/report-playwright-coverage.mjs",
     "test:unit": "vitest run --config vitest.config.unit.ts",
     "test:load": "node scripts/run-load-test.mjs",
     "test:unit:report": "vitest run --config vitest.config.unit.ts --coverage && powershell -NoProfile -Command \"Start-Process 'test-results/vitest/coverage-all/index.html'\"",
@@ -39,8 +40,12 @@
     "@vitest/coverage-v8": "^4.0.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "istanbul-lib-coverage": "^3.2.2",
+    "istanbul-lib-report": "^3.0.1",
+    "istanbul-reports": "^3.2.0",
     "jsdom": "^27.4.0",
     "typescript": "^5",
+    "v8-to-istanbul": "^9.3.0",
     "vitest": "^4.0.17"
   }
 }
