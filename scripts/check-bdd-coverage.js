@@ -6,6 +6,8 @@ const path = require("node:path");
 const ROOT = process.cwd();
 const BDD_DIR = path.join(ROOT, "docs", "bdd");
 const E2E_DIR = path.join(ROOT, "tests", "e2e");
+const BDD_RESULTS_DIR = path.join(ROOT, "test-results", "bdd");
+const BDD_SUMMARY_PATH = path.join(BDD_RESULTS_DIR, "coverage-summary.json");
 
 function readAllFiles(dir, predicate) {
   if (!fs.existsSync(dir)) return [];
@@ -70,21 +72,30 @@ function collectE2ETestContent() {
 function getCoverageGaps(scenarios, testContent) {
   const missing = [];
   const withoutIds = [];
+  const allIds = new Set();
+  const manualIds = new Set();
+  const coveredIds = new Set();
 
   scenarios.forEach((scenario) => {
     if (!scenario.ids.length) {
       withoutIds.push(scenario);
       return;
     }
-    if (scenario.manual) return;
     scenario.ids.forEach((id) => {
-      if (!testContent.includes(id)) {
+      allIds.add(id);
+      if (scenario.manual) {
+        manualIds.add(id);
+        return;
+      }
+      if (testContent.includes(id)) {
+        coveredIds.add(id);
+      } else {
         missing.push({ ...scenario, id });
       }
     });
   });
 
-  return { missing, withoutIds };
+  return { missing, withoutIds, allIds, manualIds, coveredIds };
 }
 
 function printCoverageReport(report) {
@@ -112,10 +123,29 @@ function printCoverageReport(report) {
   return withoutIds.length || missing.length ? 1 : 0;
 }
 
+function writeSummary(report) {
+  const { allIds, manualIds, coveredIds } = report;
+  const eligibleIds = new Set([...allIds].filter((id) => !manualIds.has(id)));
+  const total = eligibleIds.size;
+  const covered = [...coveredIds].filter((id) => eligibleIds.has(id)).length;
+  const percent = total ? (covered / total) * 100 : 100;
+
+  const payload = {
+    total,
+    covered,
+    percent: Number(percent.toFixed(2)),
+    manual: manualIds.size,
+  };
+
+  fs.mkdirSync(BDD_RESULTS_DIR, { recursive: true });
+  fs.writeFileSync(BDD_SUMMARY_PATH, JSON.stringify(payload, null, 2));
+}
+
 function main() {
   const scenarios = collectBddScenarios();
   const testContent = collectE2ETestContent();
   const report = getCoverageGaps(scenarios, testContent);
+  writeSummary(report);
   const exitCode = printCoverageReport(report);
   process.exit(exitCode);
 }

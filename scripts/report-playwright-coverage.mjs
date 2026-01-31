@@ -176,7 +176,7 @@ async function main() {
     coverageMap: filteredMap,
   });
 
-  const reportList = ["text", "html", "lcov"];
+  const reportList = ["text", "html", "lcov", "json-summary"];
   reportList.forEach((name) => istanbulReports.create(name).execute(context));
 
   console.log(`Playwright coverage report generated at ${REPORT_DIR}`);
