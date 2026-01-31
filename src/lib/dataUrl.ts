@@ -7,8 +7,10 @@ type ParseOptions = {
   requireImage?: boolean;
 };
 
+const DATA_URL_REGEX = /^data:([^;]+);base64,(.+)$/;
+
 export function parseDataUrl(value: string, options: ParseOptions = {}): ParsedDataUrl | null {
-  const match = value.match(/^data:([^;]+);base64,(.+)$/);
+  const match = DATA_URL_REGEX.exec(value);
   if (!match) return null;
   const mimeType = match[1];
   if (options.requireImage && !mimeType.startsWith("image/")) return null;

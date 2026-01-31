@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     const entry = await getCapture(captureId);
     const imageDataUrl = entry?.ocrImageBase64 || entry?.imageBase64 || "";
-    if (!imageDataUrl || !imageDataUrl.startsWith("data:image/")) {
+    if (!imageDataUrl?.startsWith("data:image/")) {
       return badRequest("Imagem nao encontrada ou invalida (capture expirou)", 404);
     }
 

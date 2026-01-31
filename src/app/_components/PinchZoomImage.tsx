@@ -4,14 +4,25 @@ import { useRef, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 
-type PinchZoomImageProps = {
+type PinchZoomImageProps = Readonly<{
   src?: string | null;
   alt: string;
   errorMessage?: string;
   minZoom?: number;
   maxZoom?: number;
   containerSx?: SxProps<Theme>;
-};
+}>;
+
+function getPinchDistance(touches: TouchList) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+function normalizeContainerSx(containerSx?: SxProps<Theme>) {
+  if (!containerSx) return [];
+  return Array.isArray(containerSx) ? containerSx : [containerSx];
+}
 
 export default function PinchZoomImage({
   src,
@@ -24,13 +35,6 @@ export default function PinchZoomImage({
   const [zoom, setZoom] = useState(1);
   const pinchStartDistanceRef = useRef<number | null>(null);
   const pinchStartScaleRef = useRef(1);
-
-
-  function getPinchDistance(touches: TouchList) {
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.hypot(dx, dy);
-  }
 
   function clampZoom(nextZoom: number) {
     return Math.min(maxZoom, Math.max(minZoom, nextZoom));
@@ -72,7 +76,7 @@ export default function PinchZoomImage({
           position: "relative",
           touchAction: "none",
         },
-        ...(Array.isArray(containerSx) ? containerSx : containerSx ? [containerSx] : []),
+        ...normalizeContainerSx(containerSx),
       ]}
     >
       {src ? (

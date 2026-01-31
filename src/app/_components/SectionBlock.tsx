@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { SECTION_ICON_COLOR, SECTION_ICON_SIZE, SECTION_TITLE_STYLE } from "./iconStyles";
 
-type SectionBlockProps = {
+type SectionBlockProps = Readonly<{
   icon: ReactNode;
   title: string;
   text?: string;
@@ -12,7 +12,7 @@ type SectionBlockProps = {
   actions?: ReactNode;
   iconColor?: string;
   iconSize?: number;
-};
+}>;
 
 export default function SectionBlock({
   icon,

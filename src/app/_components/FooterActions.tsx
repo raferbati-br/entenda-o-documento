@@ -7,7 +7,7 @@ import { Button, Stack } from "@mui/material";
 
 import ActionBar from "./ActionBar";
 
-type FooterAction = {
+type FooterAction = Readonly<{
   label: string;
   startIcon?: ReactNode;
   onClick?: ButtonProps["onClick"];
@@ -18,14 +18,14 @@ type FooterAction = {
   disableFocusRipple?: boolean;
   variant?: "contained" | "outlined";
   sx?: SxProps<Theme>;
-};
+}>;
 
-type FooterActionsProps = {
+type FooterActionsProps = Readonly<{
   primary: FooterAction;
   secondary?: FooterAction;
   leadingContent?: ReactNode;
   actionBarSx?: SxProps<Theme>;
-};
+}>;
 
 const BASE_BUTTON_SX: SxProps<Theme> = {
   flex: 1,

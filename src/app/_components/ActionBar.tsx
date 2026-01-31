@@ -5,11 +5,16 @@ import { Box, Container } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import type { SxProps, Theme } from "@mui/material/styles";
 
-type ActionBarProps = {
+type ActionBarProps = Readonly<{
   children: ReactNode;
   variant?: "default" | "sheet";
   sx?: SxProps<Theme>;
-};
+}>;
+
+function mergeSx(base: SxProps<Theme>, extra?: SxProps<Theme>) {
+  if (!extra) return [base];
+  return Array.isArray(extra) ? [base, ...extra] : [base, extra];
+}
 
 export default function ActionBar({ children, variant = "default", sx }: ActionBarProps) {
   const baseSx: SxProps<Theme> = (theme) => ({
@@ -35,7 +40,7 @@ export default function ActionBar({ children, variant = "default", sx }: ActionB
     zIndex: theme.zIndex.appBar,
   });
 
-  const mergedSx = Array.isArray(sx) ? [baseSx, ...sx] : sx ? [baseSx, sx] : [baseSx];
+  const mergedSx = mergeSx(baseSx, sx);
   return (
     <Box sx={mergedSx}>
       <Container maxWidth="sm" disableGutters>

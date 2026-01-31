@@ -20,6 +20,67 @@ import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
 
+type AnalyzeError = Error & { res?: Response; data?: unknown };
+
+function createAnalyzeError(res: Response, data: unknown): AnalyzeError {
+  const err = new Error("ANALYZE_FAILED") as AnalyzeError;
+  err.res = res;
+  err.data = data;
+  return err;
+}
+
+async function runOcr(options: {
+  captureId: string;
+  attempt: number;
+  signal: AbortSignal;
+}) {
+  const { captureId, attempt, signal } = options;
+  const ocrStart = performance.now();
+  const { res: ocrRes, data: ocrData } = await postJsonWithSession<{
+    ok?: boolean;
+    documentText?: string;
+    error?: string;
+  }>("/api/ocr", { captureId, attempt }, { signal });
+  const ocrDurationMs = performance.now() - ocrStart;
+  recordLatencyStep("ocr_ms", ocrDurationMs);
+  telemetryCapture("openai_ocr_latency", {
+    ms: Math.round(ocrDurationMs),
+    attempt,
+    status: ocrRes.status,
+  });
+  let ocrText = "";
+  if (ocrRes.ok && ocrData?.ok && typeof ocrData?.documentText === "string" && ocrData.documentText.trim()) {
+    ocrText = ocrData.documentText.trim();
+    saveQaContext(ocrText);
+  }
+  return ocrText;
+}
+
+async function runAnalyze(options: {
+  captureId: string;
+  attempt: number;
+  ocrText: string;
+  signal: AbortSignal;
+}) {
+  const { captureId, attempt, ocrText, signal } = options;
+  const analyzeStart = performance.now();
+  const analyzePayload = { captureId, attempt, ...(ocrText ? { ocrText } : {}) };
+  const { res, data } = await postJsonWithSession<{
+    ok?: boolean;
+    result?: AnalysisResult;
+    error?: string;
+  }>("/api/analyze", analyzePayload, { signal });
+  const analyzeDurationMs = performance.now() - analyzeStart;
+  recordLatencyStep("analyze_ms", analyzeDurationMs);
+  telemetryCapture("openai_cards_latency", {
+    ms: Math.round(analyzeDurationMs),
+    attempt,
+    status: res.status,
+  });
+  if (!res.ok || !data?.ok) throw createAnalyzeError(res, data);
+  return data.result as AnalysisResult;
+}
+
 export default function AnalyzingPage() {
   const router = useRouter();
   const ran = useRef(false);
@@ -70,42 +131,9 @@ export default function AnalyzingPage() {
 
       try {
         telemetryCapture("analyze_start");
-        const ocrStart = performance.now();
-        const { res: ocrRes, data: ocrData } = await postJsonWithSession<{
-          ok?: boolean;
-          documentText?: string;
-          error?: string;
-        }>("/api/ocr", { captureId, attempt }, { signal: controller.signal });
-        const ocrDurationMs = performance.now() - ocrStart;
-        recordLatencyStep("ocr_ms", ocrDurationMs);
-        telemetryCapture("openai_ocr_latency", {
-          ms: Math.round(ocrDurationMs),
-          attempt,
-          status: ocrRes.status,
-        });
-        let ocrText = "";
-        if (ocrRes.ok && ocrData?.ok && typeof ocrData?.documentText === "string" && ocrData.documentText.trim()) {
-          ocrText = ocrData.documentText.trim();
-          saveQaContext(ocrText);
-        }
-
-        const analyzeStart = performance.now();
-        const analyzePayload = { captureId, attempt, ...(ocrText ? { ocrText } : {}) };
-        const { res, data } = await postJsonWithSession<{
-          ok?: boolean;
-          result?: AnalysisResult;
-          error?: string;
-        }>("/api/analyze", analyzePayload, { signal: controller.signal });
-        const analyzeDurationMs = performance.now() - analyzeStart;
-        recordLatencyStep("analyze_ms", analyzeDurationMs);
-        telemetryCapture("openai_cards_latency", {
-          ms: Math.round(analyzeDurationMs),
-          attempt,
-          status: res.status,
-        });
-        if (!res.ok || !data?.ok) throw { res, data };
-
-        saveResult(data.result as AnalysisResult);
+        const ocrText = await runOcr({ captureId, attempt, signal: controller.signal });
+        const result = await runAnalyze({ captureId, attempt, ocrText, signal: controller.signal });
+        saveResult(result);
         markLatencyTrace("analyze_done");
         telemetryCapture("analyze_success");
         router.replace("/result");

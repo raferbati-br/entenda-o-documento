@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rateLimit";
 import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";

@@ -12,7 +12,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 
 type NoticeSeverity = "info" | "warning" | "error" | "success";
 
-type NoticeProps = {
+type NoticeProps = Readonly<{
   severity?: NoticeSeverity;
   title?: string;
   children?: ReactNode;
@@ -21,7 +21,7 @@ type NoticeProps = {
   variant?: "inline" | "hero";
   density?: "default" | "compact";
   sx?: SxProps<Theme>;
-};
+}>;
 
 const ICONS: Record<NoticeSeverity, typeof InfoRoundedIcon> = {
   info: InfoRoundedIcon,
@@ -43,24 +43,45 @@ export default function Notice({
   const Icon = ICONS[severity];
   const isHero = variant === "hero";
   const isCompact = density === "compact" && !isHero;
-  const iconSize = isHero ? 56 : isCompact ? 18 : 20;
+  let iconSize = 20;
+  if (isHero) {
+    iconSize = 56;
+  } else if (isCompact) {
+    iconSize = 18;
+  }
+
+  let borderRadius = 2;
+  let padding = 1.25;
+  if (isHero) {
+    borderRadius = 3;
+    padding = 3;
+  } else if (isCompact) {
+    borderRadius = 1.5;
+    padding = 1;
+  }
 
   const baseSx: SxProps<Theme> = (theme) => ({
-    borderRadius: isHero ? 3 : isCompact ? 1.5 : 2,
-    p: isHero ? 3 : isCompact ? 1 : 1.25,
+    borderRadius,
+    p: padding,
     border: "0.5px solid",
     borderColor: alpha(theme.palette[severity].main, 0.35),
     bgcolor: alpha(theme.palette[severity].main, 0.08),
   });
 
   const mergedSx = Array.isArray(sx) ? [baseSx, ...sx] : sx ? [baseSx, sx] : [baseSx];
+  const showInlineTitle = Boolean(title && children && !isHero);
+  const showTitleOnly = Boolean(title && !showInlineTitle);
+  const showChildrenOnly = Boolean(children && (!title || isHero));
+  const titleVariant = isHero ? "h5" : "subtitle2";
+  const contentVariant = isHero ? "body1" : "body2";
+  const titleMargin = children ? 0.5 : 0;
 
   return (
     <Box sx={mergedSx}>
       <Stack
         direction={isHero ? "column" : "row"}
         spacing={isHero ? 1.5 : 1.25}
-        alignItems={isHero ? "center" : "center"}
+        alignItems="center"
       >
         <Box
           sx={{
@@ -74,25 +95,25 @@ export default function Notice({
           <Icon fontSize="inherit" />
         </Box>
         <Box sx={{ flex: 1, textAlign: isHero ? "center" : "left" }}>
-          {title && children && !isHero ? (
+          {showInlineTitle ? (
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
               <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
                 {title}:
               </Box>{" "}
               {children}
             </Typography>
-          ) : title ? (
-            <Typography variant={isHero ? "h5" : "subtitle2"} fontWeight={700} sx={{ mb: children ? 0.5 : 0 }}>
+          ) : showTitleOnly ? (
+            <Typography variant={titleVariant} fontWeight={700} sx={{ mb: titleMargin }}>
               {title}
             </Typography>
           ) : null}
-          {children && (!title || isHero) ? (
-            <Typography variant={isHero ? "body1" : "body2"} color="text.secondary">
+          {showChildrenOnly ? (
+            <Typography variant={contentVariant} color="text.secondary">
               {children}
             </Typography>
           ) : null}
         </Box>
-        {actions ? <Box sx={{ alignSelf: isHero ? "center" : "center" }}>{actions}</Box> : null}
+        {actions ? <Box sx={{ alignSelf: "center" }}>{actions}</Box> : null}
         {onClose ? (
           <IconButton size="small" aria-label="Fechar aviso" onClick={onClose}>
             <CloseRoundedIcon fontSize="small" />

@@ -10,7 +10,7 @@ export type FriendlyError = {
 
 function parseRetryAfterSeconds(res: Response) {
   const v = res.headers.get("Retry-After");
-  const n = v ? Number(v) : NaN;
+  const n = v ? Number(v) : Number.NaN;
   return Number.isFinite(n) ? Math.max(1, Math.floor(n)) : null;
 }
 

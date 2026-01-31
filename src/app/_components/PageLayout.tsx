@@ -5,7 +5,7 @@ import { Box, Container } from "@mui/material";
 import type { ContainerProps } from "@mui/material/Container";
 import type { SxProps, Theme } from "@mui/material/styles";
 
-type PageLayoutProps = {
+type PageLayoutProps = Readonly<{
   header?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
@@ -18,7 +18,12 @@ type PageLayoutProps = {
   contentRef?: Ref<HTMLDivElement>;
   onContentScroll?: UIEventHandler<HTMLDivElement>;
   contentSx?: SxProps<Theme>;
-};
+}>;
+
+function mergeSx(base: SxProps<Theme>, extra?: SxProps<Theme>) {
+  if (!extra) return [base];
+  return Array.isArray(extra) ? [base, ...extra] : [base, extra];
+}
 
 export default function PageLayout({
   header,
@@ -48,7 +53,7 @@ export default function PageLayout({
       <Box
         ref={contentRef}
         onScroll={onContentScroll}
-        sx={{ flexGrow: 1, overflowY: "auto", pb: contentPaddingBottom, ...(contentSx || {}) }}
+        sx={mergeSx({ flexGrow: 1, overflowY: "auto", pb: contentPaddingBottom }, contentSx)}
       >
         {content}
       </Box>

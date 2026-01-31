@@ -18,6 +18,10 @@ function mockOcrResponse(): { documentText: string } {
   return { documentText: "Texto simulado para OCR." };
 }
 
+async function* mockAnswerIterator() {
+  yield "Resposta simulada para perguntas.";
+}
+
 export class MockProvider implements LlmProvider {
   async analyze(input: AnalyzeInput): Promise<ProviderResponse> {
     const isOcr = input.prompt.id.includes(".ocr");
@@ -36,12 +40,8 @@ export class MockProvider implements LlmProvider {
   }
 
   async answerStream(input: { model: string; prompt: Prompt }): Promise<AnswerStreamResponse> {
-    async function* iterator() {
-      yield "Resposta simulada para perguntas.";
-    }
-
     return {
-      stream: iterator(),
+      stream: mockAnswerIterator(),
       meta: { provider: "mock", model: input.model },
     };
   }

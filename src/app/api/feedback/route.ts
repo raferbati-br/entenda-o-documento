@@ -31,8 +31,8 @@ function slugify(value: string) {
   return value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
+    .replaceAll(/[^a-z0-9]+/g, "_")
+    .replaceAll(/(?:^_+|_+$)/g, "")
     .slice(0, 32);
 }
 

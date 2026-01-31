@@ -8,7 +8,7 @@ import { ensureSessionToken } from "@/lib/sessionToken";
 import posthog from "posthog-js";
 import { usePathname, useSearchParams } from "next/navigation";
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children }: Readonly<{ children: React.ReactNode }>) {
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = React.useMemo(() => buildTheme(prefersDark ? "dark" : "light"), [prefersDark]);
   const pathname = usePathname();

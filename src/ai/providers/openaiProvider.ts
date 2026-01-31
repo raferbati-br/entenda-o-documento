@@ -3,7 +3,7 @@ import type { AnalyzeInput, LlmProvider, ProviderResponse, Prompt, AnswerRespons
 import { parseModelJson } from "./providerUtils";
 
 export class OpenAIProvider implements LlmProvider {
-  private client: OpenAI;
+  private readonly client: OpenAI;
 
   constructor() {
     const apiKey = process.env.OPENAI_API_KEY;

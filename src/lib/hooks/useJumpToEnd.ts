@@ -42,10 +42,10 @@ export function useJumpToEnd(options: Options = {}) {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof globalThis.window === "undefined") return;
     const handleWindowScroll = () => updateJumpState();
-    window.addEventListener("scroll", handleWindowScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleWindowScroll);
+    globalThis.window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    return () => globalThis.window.removeEventListener("scroll", handleWindowScroll);
   }, [updateJumpState]);
 
   return {

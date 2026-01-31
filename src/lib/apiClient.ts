@@ -13,7 +13,7 @@ type JsonRequestOptions = {
 export async function postJsonWithSession<T>(
   url: string,
   body: unknown,
-  options: JsonRequestOptions = {}
+  options?: JsonRequestOptions
 ): Promise<JsonResult<T>> {
   const token = await ensureSessionToken();
   const res = await fetch(url, {
@@ -21,10 +21,10 @@ export async function postJsonWithSession<T>(
     headers: {
       "Content-Type": "application/json",
       ...(token ? { "x-session-token": token } : {}),
-      ...(options.headers || {}),
+      ...(options?.headers || {}),
     },
     body: JSON.stringify(body),
-    signal: options.signal ?? undefined,
+    signal: options?.signal ?? undefined,
   });
 
   const data = (await res.json().catch(() => ({}))) as T;
@@ -38,7 +38,7 @@ export async function postJsonWithSession<T>(
 export async function postJsonWithSessionResponse(
   url: string,
   body: unknown,
-  options: JsonRequestOptions = {}
+  options?: JsonRequestOptions
 ): Promise<Response> {
   const token = await ensureSessionToken();
   const res = await fetch(url, {
@@ -46,10 +46,10 @@ export async function postJsonWithSessionResponse(
     headers: {
       "Content-Type": "application/json",
       ...(token ? { "x-session-token": token } : {}),
-      ...(options.headers || {}),
+      ...(options?.headers || {}),
     },
     body: JSON.stringify(body),
-    signal: options.signal ?? undefined,
+    signal: options?.signal ?? undefined,
   });
 
   if (res.status === 401) {

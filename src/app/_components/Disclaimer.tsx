@@ -3,11 +3,11 @@
 import { Box, Stack, Typography } from "@mui/material";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 
-type DisclaimerProps = {
+type DisclaimerProps = Readonly<{
   text?: string;
   variant?: "default" | "beforeFooter";
   withNotice?: boolean;
-};
+}>;
 
 const DEFAULT_TEXT =
   "Este aplicativo é informativo e pode cometer erros. Consulte um profissional para orientações.";

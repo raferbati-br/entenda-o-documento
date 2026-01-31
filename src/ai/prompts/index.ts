@@ -7,34 +7,18 @@ import { entendaDocumento_text_v1 } from "./entendaDocumento.text.v1";
 export function getPrompt(promptId: string | undefined | null): Prompt {
   const id = (promptId ?? "").trim();
 
-  switch (id) {
-    case entendaDocumento_v1.id:
-      return entendaDocumento_v1;
-    case entendaDocumento_text_v1.id:
-      return entendaDocumento_text_v1;
-    default:
-      return entendaDocumento_v1; // fallback seguro
+  if (id === entendaDocumento_text_v1.id) {
+    return entendaDocumento_text_v1;
   }
+  return entendaDocumento_v1; // fallback seguro
 }
 
 export function getQaPrompt(promptId: string | undefined | null): Prompt {
-  const id = (promptId ?? "").trim();
-
-  switch (id) {
-    case entendaDocumento_qa_v1.id:
-      return entendaDocumento_qa_v1;
-    default:
-      return entendaDocumento_qa_v1;
-  }
+  void promptId;
+  return entendaDocumento_qa_v1;
 }
 
 export function getOcrPrompt(promptId: string | undefined | null): Prompt {
-  const id = (promptId ?? "").trim();
-
-  switch (id) {
-    case entendaDocumento_ocr_v1.id:
-      return entendaDocumento_ocr_v1;
-    default:
-      return entendaDocumento_ocr_v1;
-  }
+  void promptId;
+  return entendaDocumento_ocr_v1;
 }

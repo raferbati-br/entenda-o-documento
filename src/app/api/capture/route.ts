@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { cleanupMemoryStore, isRedisConfigured, memoryStats, setCapture } from "@/lib/captureStoreServer";
 import { badRequest, createRouteContext, readJsonRecord, runCommonGuards } from "@/lib/apiRouteUtils";
 import { parseDataUrl } from "@/lib/dataUrl";
@@ -57,6 +57,62 @@ function validateImageBase64(base64: string, declaredMime: string): ValidatedIma
   return { ok: true, buffer: buf, bytes: buf.byteLength, mimeType: detected };
 }
 
+type ImageInputResult =
+  | { ok: true; rawBase64: string; declaredMime: string }
+  | { ok: false; error: string };
+
+function parseImageInput(body: Record<string, unknown>): ImageInputResult {
+  if (typeof body.imageBase64 === "string") {
+    const parsed = parseDataUrl(body.imageBase64, { requireImage: true });
+    if (!parsed) return { ok: false, error: "Imagem invalida." };
+    return { ok: true, rawBase64: parsed.base64, declaredMime: parsed.mimeType };
+  }
+
+  if (typeof body.imageBase64Raw === "string" && typeof body.mimeType === "string") {
+    return { ok: true, rawBase64: body.imageBase64Raw, declaredMime: body.mimeType };
+  }
+
+  return { ok: false, error: "Imagem nao informada." };
+}
+
+function extractOcrImageData(body: Record<string, unknown>, originalBytes: number) {
+  let ocrImageBase64 = "";
+  let ocrBytes = 0;
+  if (typeof body.ocrImageBase64 !== "string") return { ocrImageBase64, ocrBytes };
+
+  const parsed = parseDataUrl(body.ocrImageBase64, { requireImage: true });
+  if (!parsed) {
+    console.warn("[api.capture] OCR data URL invalida.");
+    return { ocrImageBase64, ocrBytes };
+  }
+
+  const ocrValidated = validateImageBase64(parsed.base64, parsed.mimeType);
+  if (!ocrValidated.ok) {
+    console.warn("[api.capture] OCR invalido.", ocrValidated.error);
+    return { ocrImageBase64, ocrBytes };
+  }
+
+  if (ocrValidated.bytes < originalBytes) {
+    ocrImageBase64 = `data:${ocrValidated.mimeType};base64,${parsed.base64}`;
+    ocrBytes = ocrValidated.bytes;
+  }
+
+  return { ocrImageBase64, ocrBytes };
+}
+
+function getMemoryCapacityError(totalBytes: number) {
+  if (isRedisConfigured()) return null;
+  const { count, totalBytes: currentTotal } = memoryStats();
+  if (count >= MAX_CAPTURE_COUNT) {
+    return "O sistema esta temporariamente ocupado. Tente novamente em alguns minutos.";
+  }
+  const projectedTotal = currentTotal + totalBytes;
+  if (projectedTotal > MAX_TOTAL_BYTES) {
+    return "O sistema esta temporariamente cheio. Tente novamente em instantes.";
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   const ctx = createRouteContext(req);
   try {
@@ -72,20 +128,9 @@ export async function POST(req: Request) {
     const body = await readJsonRecord(req);
     if (!body) return badRequest("Requisicao invalida.");
 
-    let rawBase64 = "";
-    let declaredMime = "";
-
-    if (typeof body.imageBase64 === "string") {
-      const parsed = parseDataUrl(body.imageBase64, { requireImage: true });
-      if (!parsed) return badRequest("Imagem invalida.");
-      declaredMime = parsed.mimeType;
-      rawBase64 = parsed.base64;
-    } else if (typeof body.imageBase64Raw === "string" && typeof body.mimeType === "string") {
-      rawBase64 = body.imageBase64Raw;
-      declaredMime = body.mimeType;
-    } else {
-      return badRequest("Imagem nao informada.");
-    }
+    const parsedInput = parseImageInput(body);
+    if (!parsedInput.ok) return badRequest(parsedInput.error);
+    const { rawBase64, declaredMime } = parsedInput;
 
     if (!rawBase64) return badRequest("Imagem invalida.");
 
@@ -96,33 +141,10 @@ export async function POST(req: Request) {
     const mimeType = validated.mimeType;
     const imageBase64 = `data:${mimeType};base64,${rawBase64}`;
 
-    let ocrImageBase64 = "";
-    let ocrBytes = 0;
-    if (typeof body.ocrImageBase64 === "string") {
-      const parsed = parseDataUrl(body.ocrImageBase64, { requireImage: true });
-      if (!parsed) {
-        console.warn("[api.capture] OCR data URL invalida.");
-      } else {
-        const ocrValidated = validateImageBase64(parsed.base64, parsed.mimeType);
-        if (!ocrValidated.ok) {
-          console.warn("[api.capture] OCR invalido.", ocrValidated.error);
-        } else if (ocrValidated.bytes < buf.byteLength) {
-          ocrImageBase64 = `data:${ocrValidated.mimeType};base64,${parsed.base64}`;
-          ocrBytes = ocrValidated.bytes;
-        }
-      }
-    }
+    const { ocrImageBase64, ocrBytes } = extractOcrImageData(body, buf.byteLength);
 
-    if (!isRedisConfigured()) {
-      const { count, totalBytes } = memoryStats();
-      if (count >= MAX_CAPTURE_COUNT) {
-        return badRequest("O sistema esta temporariamente ocupado. Tente novamente em alguns minutos.");
-      }
-      const projectedTotal = totalBytes + buf.byteLength + ocrBytes;
-      if (projectedTotal > MAX_TOTAL_BYTES) {
-        return badRequest("O sistema esta temporariamente cheio. Tente novamente em instantes.");
-      }
-    }
+    const memoryError = getMemoryCapacityError(buf.byteLength + ocrBytes);
+    if (memoryError) return badRequest(memoryError);
 
     const captureId = crypto.randomBytes(16).toString("hex");
     await setCapture(captureId, {

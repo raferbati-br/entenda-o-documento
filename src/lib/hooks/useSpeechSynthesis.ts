@@ -9,16 +9,18 @@ type Options = {
 };
 
 export function useSpeechSynthesis(options: Options = {}) {
-  const [supported] = useState(() => typeof window !== "undefined" && "speechSynthesis" in window);
+  const [supported] = useState(
+    () => typeof globalThis !== "undefined" && typeof globalThis.speechSynthesis !== "undefined"
+  );
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const stopRequestedRef = useRef(false);
-  const sequenceTimerRef = useRef<number | null>(null);
+  const sequenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sequenceIdRef = useRef(0);
 
   const clearSequenceTimer = () => {
     if (sequenceTimerRef.current !== null) {
-      window.clearTimeout(sequenceTimerRef.current);
+      globalThis.clearTimeout(sequenceTimerRef.current);
       sequenceTimerRef.current = null;
     }
   };
@@ -26,7 +28,7 @@ export function useSpeechSynthesis(options: Options = {}) {
   useEffect(() => {
     return () => {
       try {
-        window.speechSynthesis.cancel();
+        globalThis.speechSynthesis?.cancel();
       } catch {}
     };
   }, []);
@@ -40,7 +42,7 @@ export function useSpeechSynthesis(options: Options = {}) {
         setError(options.interruptedMessage);
       }
       try {
-        window.speechSynthesis.cancel();
+        globalThis.speechSynthesis?.cancel();
       } catch {}
       setIsSpeaking(false);
     },
@@ -59,7 +61,7 @@ export function useSpeechSynthesis(options: Options = {}) {
         stopRequestedRef.current = false;
         clearSequenceTimer();
         sequenceIdRef.current += 1;
-        window.speechSynthesis.cancel();
+        globalThis.speechSynthesis?.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = options.lang || "pt-BR";
         utterance.rate = options.rate ?? 0.95;
@@ -82,7 +84,7 @@ export function useSpeechSynthesis(options: Options = {}) {
           }
           setError(options.errorMessage || "Erro na leitura.");
         };
-        window.speechSynthesis.speak(utterance);
+        globalThis.speechSynthesis?.speak(utterance);
       } catch {
         setIsSpeaking(false);
         setError(options.errorMessage || "Erro na leitura.");
@@ -112,7 +114,7 @@ export function useSpeechSynthesis(options: Options = {}) {
       const sequenceId = sequenceIdRef.current;
 
       try {
-        window.speechSynthesis.cancel();
+        globalThis.speechSynthesis?.cancel();
       } catch {}
 
       setError(null);
@@ -152,7 +154,7 @@ export function useSpeechSynthesis(options: Options = {}) {
             setIsSpeaking(false);
             return;
           }
-          sequenceTimerRef.current = window.setTimeout(speakNext, pauseMs);
+          sequenceTimerRef.current = globalThis.setTimeout(speakNext, pauseMs);
         };
         utterance.onerror = () => {
           setIsSpeaking(false);
@@ -165,7 +167,7 @@ export function useSpeechSynthesis(options: Options = {}) {
           }
           setError(options.errorMessage || "Erro na leitura.");
         };
-        window.speechSynthesis.speak(utterance);
+        globalThis.speechSynthesis?.speak(utterance);
       };
 
       speakNext();

@@ -3,12 +3,11 @@
 import type { ReactNode } from "react";
 import type { IconButtonProps } from "@mui/material/IconButton";
 import type { SxProps, Theme } from "@mui/material/styles";
-import type { SystemStyleObject } from "@mui/system";
 import { Box, IconButton, Typography } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import PageHeader from "./PageHeader";
 
-type BackHeaderProps = {
+type BackHeaderProps = Readonly<{
   onBack: () => void;
   title: ReactNode;
   endContent?: ReactNode;
@@ -17,15 +16,7 @@ type BackHeaderProps = {
   titleSx?: SxProps<Theme>;
   iconButtonSx?: SxProps<Theme>;
   iconButtonProps?: Partial<IconButtonProps>;
-};
-
-type SxPrimitive = SystemStyleObject<Theme> | ((theme: Theme) => SystemStyleObject<Theme>);
-
-function mergeSx(base: SystemStyleObject<Theme>, extra?: SxProps<Theme>): SxProps<Theme> {
-  if (!extra) return base;
-  if (Array.isArray(extra)) return [base, ...extra];
-  return [base, extra as SxPrimitive];
-}
+}>;
 
 export default function BackHeader({
   onBack,
@@ -45,8 +36,14 @@ export default function BackHeader({
     ) : (
       title
     );
-  const iconSx = mergeSx({ mr: 1 }, iconButtonSx);
-  const titleBoxSx = mergeSx({ flexGrow: 1, display: "flex", alignItems: "center" }, titleSx);
+  const iconSx: SxProps<Theme> = [
+    { mr: 1 },
+    ...(Array.isArray(iconButtonSx) ? iconButtonSx : iconButtonSx ? [iconButtonSx] : []),
+  ];
+  const titleBoxSx: SxProps<Theme> = [
+    { flexGrow: 1, display: "flex", alignItems: "center" },
+    ...(Array.isArray(titleSx) ? titleSx : titleSx ? [titleSx] : []),
+  ];
 
   return (
     <PageHeader sx={headerSx}>

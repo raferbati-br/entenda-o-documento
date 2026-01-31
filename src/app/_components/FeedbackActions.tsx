@@ -19,7 +19,7 @@ import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import Notice from "./Notice";
 
-type FeedbackActionsProps = {
+type FeedbackActionsProps = Readonly<{
   label?: string;
   canCopy: boolean;
   canSpeak: boolean;
@@ -37,7 +37,7 @@ type FeedbackActionsProps = {
   onFeedbackDown: () => void;
   onFeedbackReason: (reason: string) => void;
   reasons?: string[];
-};
+}>;
 
 const DEFAULT_REASONS = ["Incompleta", "Confusa", "Errada", "Outro"];
 

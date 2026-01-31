@@ -3,9 +3,9 @@ import { getQualityMetrics } from "@/lib/qualityMetrics";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type MetricsPageProps = {
+type MetricsPageProps = Readonly<{
   searchParams?: { token?: string };
-};
+}>;
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);

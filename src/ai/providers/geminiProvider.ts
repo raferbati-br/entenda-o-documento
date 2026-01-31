@@ -4,7 +4,7 @@ import { parseDataUrl } from "@/lib/dataUrl";
 import { parseModelJson } from "./providerUtils";
 
 export class GeminiProvider implements LlmProvider {
-  private client: GoogleGenerativeAI;
+  private readonly client: GoogleGenerativeAI;
 
   constructor() {
     const apiKey = process.env.GOOGLE_API_KEY;

@@ -72,6 +72,69 @@ async function incrementRedis(redis: Redis, key: string, inc = 1) {
   }
 }
 
+function buildDateKeys(days: number) {
+  const now = new Date();
+  const dates: string[] = [];
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    dates.push(dayKey(d));
+  }
+  return dates;
+}
+
+function loadMemoryCounts(day: string) {
+  const counts: Record<string, number> = {};
+  for (const name of COUNT_METRICS) {
+    counts[name] = memoryStore.get(metricKey(day, name)) || 0;
+  }
+  return counts;
+}
+
+function loadMemoryLatency(day: string) {
+  const latency: Record<string, { avg: number; sum: number; count: number }> = {};
+  for (const name of LATENCY_METRICS) {
+    const sum = memoryStore.get(metricKey(day, `${name}:sum`)) || 0;
+    const count = memoryStore.get(metricKey(day, `${name}:count`)) || 0;
+    latency[name] = {
+      sum,
+      count,
+      avg: count ? Math.round(sum / count) : 0,
+    };
+  }
+  return latency;
+}
+
+async function loadRedisCounts(redis: Redis, day: string) {
+  const counts: Record<string, number> = {};
+  const countKeys = COUNT_METRICS.map((name) => metricKey(day, name));
+  const countValues = await Promise.all(countKeys.map((key) => redis.get<number>(key)));
+  COUNT_METRICS.forEach((name, idx) => {
+    counts[name] = Number(countValues[idx] || 0);
+  });
+  return counts;
+}
+
+async function loadRedisLatency(redis: Redis, day: string) {
+  const latency: Record<string, { avg: number; sum: number; count: number }> = {};
+  for (const name of LATENCY_METRICS) {
+    const sumKey = metricKey(day, `${name}:sum`);
+    const countKey = metricKey(day, `${name}:count`);
+    const [sumValue, countValue] = await Promise.all([
+      redis.get<number>(sumKey),
+      redis.get<number>(countKey),
+    ]);
+    const sum = Number(sumValue || 0);
+    const count = Number(countValue || 0);
+    latency[name] = {
+      sum,
+      count,
+      avg: count ? Math.round(sum / count) : 0,
+    };
+  }
+  return latency;
+}
+
 export async function recordQualityCount(name: MetricName, inc = 1, date = new Date()) {
   const day = dayKey(date);
   const key = metricKey(day, name);
@@ -97,59 +160,20 @@ export async function recordQualityLatency(name: LatencyMetricName, ms: number, 
 }
 
 export async function getQualityMetrics(days = 7) {
-  const now = new Date();
-  const dates: string[] = [];
-  for (let i = days - 1; i >= 0; i -= 1) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    dates.push(dayKey(d));
-  }
-
+  const dates = buildDateKeys(days);
   const redis = getRedis();
   const result = [];
 
   for (const day of dates) {
-    const counts: Record<string, number> = {};
-    const latency: Record<string, { avg: number; sum: number; count: number }> = {};
-
     if (!redis) {
-      for (const name of COUNT_METRICS) {
-        counts[name] = memoryStore.get(metricKey(day, name)) || 0;
-      }
-      for (const name of LATENCY_METRICS) {
-        const sum = memoryStore.get(metricKey(day, `${name}:sum`)) || 0;
-        const count = memoryStore.get(metricKey(day, `${name}:count`)) || 0;
-        latency[name] = {
-          sum,
-          count,
-          avg: count ? Math.round(sum / count) : 0,
-        };
-      }
+      const counts = loadMemoryCounts(day);
+      const latency = loadMemoryLatency(day);
       result.push({ day, counts, latency });
       continue;
     }
 
-    const countKeys = COUNT_METRICS.map((name) => metricKey(day, name));
-    const countValues = await Promise.all(countKeys.map((key) => redis.get<number>(key)));
-    COUNT_METRICS.forEach((name, idx) => {
-      counts[name] = Number(countValues[idx] || 0);
-    });
-
-    for (const name of LATENCY_METRICS) {
-      const sumKey = metricKey(day, `${name}:sum`);
-      const countKey = metricKey(day, `${name}:count`);
-      const [sumValue, countValue] = await Promise.all([
-        redis.get<number>(sumKey),
-        redis.get<number>(countKey),
-      ]);
-      const sum = Number(sumValue || 0);
-      const count = Number(countValue || 0);
-      latency[name] = {
-        sum,
-        count,
-        avg: count ? Math.round(sum / count) : 0,
-      };
-    }
+    const counts = await loadRedisCounts(redis, day);
+    const latency = await loadRedisLatency(redis, day);
 
     result.push({ day, counts, latency });
   }

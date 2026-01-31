@@ -46,7 +46,7 @@ test("happy path: analyze document and show result", async ({ page }) => {
   });
 
   await page.waitForURL("**/confirm");
-  await page.getByRole("button", { name: "Usar esta imagem" }).click();
+  await page.getByRole("button", { name: "Usar esta" }).click();
   await page.waitForURL("**/result");
 
   await expect(page.getByRole("heading", { name: "Explicação", exact: true })).toBeVisible();
@@ -88,7 +88,7 @@ test("error path: analyze returns error", async ({ page }) => {
   });
 
   await page.waitForURL("**/confirm");
-  await page.getByRole("button", { name: "Usar esta imagem" }).click();
+  await page.getByRole("button", { name: "Usar esta" }).click();
 
   await expect(page.getByText("Não entendi a foto")).toBeVisible();
 });

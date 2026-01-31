@@ -19,7 +19,7 @@ function parseMinAlphaRatio(value: string | undefined, fallback: number) {
 }
 
 function normalizeText(text: string) {
-  return (text || "").replace(/\s+/g, " ").trim();
+  return (text || "").replaceAll(/\s+/g, " ").trim();
 }
 
 export function evaluateOcrText(

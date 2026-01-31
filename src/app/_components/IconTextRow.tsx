@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { SECTION_TITLE_STYLE } from "./iconStyles";
-type IconTextRowProps = {
+type IconTextRowProps = Readonly<{
   icon: ReactNode;
   title: string;
   description: string;
@@ -12,7 +12,7 @@ type IconTextRowProps = {
   iconSize?: number;
   iconContainerSize?: number;
   compact?: boolean;
-};
+}>;
 
 export default function IconTextRow({
   icon,

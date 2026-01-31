@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { loadQaContext } from "@/lib/qaContextStore";
 import { loadResult, AnalysisResult } from "@/lib/resultStore";
@@ -63,6 +64,121 @@ const INPUT_BAR_GAP = 8;
 const SCROLL_PAD_FALLBACK = ACTION_BAR_HEIGHT + INPUT_BAR_GAP + 96;
 const KEYBOARD_OPEN_THRESHOLD = 120;
 
+type QuickQuestionMeta = {
+  iconColor: string;
+  icon: ReactNode;
+  description: string;
+};
+
+const QUICK_QUESTION_META: Record<string, QuickQuestionMeta> = {
+  "Qual e o prazo?": {
+    iconColor: "info.main",
+    icon: <ScheduleRoundedIcon fontSize="inherit" />,
+    description: "Datas, prazos e o que vence primeiro.",
+  },
+  "Qual e o valor?": {
+    iconColor: "success.main",
+    icon: <PaidRoundedIcon fontSize="inherit" />,
+    description: "Valores, custos e possiveis multas.",
+  },
+  "O que este documento pede?": {
+    iconColor: "warning.main",
+    icon: <DescriptionRoundedIcon fontSize="inherit" />,
+    description: "O pedido principal em poucas palavras.",
+  },
+};
+
+const DEFAULT_QUICK_QUESTION_META: QuickQuestionMeta = {
+  iconColor: "secondary.main",
+  icon: <HelpOutlineRoundedIcon fontSize="inherit" />,
+  description: "Escreva sua propria pergunta.",
+};
+
+function getQuickQuestionMeta(question: string): QuickQuestionMeta {
+  return QUICK_QUESTION_META[question] ?? DEFAULT_QUICK_QUESTION_META;
+}
+
+function getConfidenceBucket(confidence: number) {
+  if (confidence < 0.45) return "low";
+  if (confidence < 0.75) return "medium";
+  return "high";
+}
+
+function getQuestionValidationError(question: string, qaContext: string) {
+  if (!question || question.length < MIN_QUESTION_CHARS || question.length > MAX_QUESTION_CHARS) {
+    return "invalid";
+  }
+  if (!qaContext) return "missing_context";
+  return null;
+}
+
+function createQaAttempt(question: string) {
+  const attemptKey = `qa_attempt:${question.toLowerCase()}`;
+  const attempt = Number(sessionStorage.getItem(attemptKey) || "0") + 1;
+  sessionStorage.setItem(attemptKey, String(attempt));
+  return attempt;
+}
+
+function createQaItemId() {
+  return `qa-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+async function streamQaAnswer(
+  body: ReadableStream<Uint8Array>,
+  onDelta: (text: string) => void
+) {
+  let answerText = "";
+  for await (const event of readQaStream(body)) {
+    if (event.type === "delta") {
+      answerText += event.text;
+      onDelta(answerText);
+    }
+    if (event.type === "error") {
+      throw new Error(event.message || "Erro ao responder pergunta.");
+    }
+    if (event.type === "done") {
+      break;
+    }
+  }
+  return answerText;
+}
+
+async function getQaResponseBody(res: Response) {
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const apiError = typeof data?.error === "string" ? data.error : "";
+    throw new Error(mapQaError(res.status, apiError));
+  }
+  if (!res.body) {
+    throw new Error("Resposta vazia.");
+  }
+  return res.body;
+}
+
+async function copyAnswer(text: string) {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    telemetryCapture("qa_answer_copy");
+  } catch (err) {
+    console.warn("[qa] copy failed", err);
+  }
+}
+
+async function shareAnswer(text: string) {
+  if (!text) return;
+  try {
+    if (navigator.share) {
+      await navigator.share({ text });
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
+    telemetryCapture("qa_answer_share");
+  } catch (err) {
+    console.warn("[qa] share failed", err);
+  }
+}
+
 export default function PerguntasPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -111,7 +227,7 @@ export default function PerguntasPage() {
   const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
   const documentTitle = useMemo(() => cardMap["whatIs"]?.title || "Documento", [cardMap]);
   const confidence = result?.confidence ?? 0;
-  const confidenceBucket = confidence < 0.45 ? "low" : confidence < 0.75 ? "medium" : "high";
+  const confidenceBucket = getConfidenceBucket(confidence);
 
   useEffect(() => {
     const res = loadResult();
@@ -183,9 +299,10 @@ export default function PerguntasPage() {
   }, [isEmptyState]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const viewport = window.visualViewport;
-    const getHeight = () => viewport?.height ?? window.innerHeight;
+    const win = globalThis.window;
+    if (!win) return;
+    const viewport = win.visualViewport;
+    const getHeight = () => viewport?.height ?? win.innerHeight;
     if (!initialViewportRef.current) {
       initialViewportRef.current = getHeight();
     }
@@ -195,7 +312,7 @@ export default function PerguntasPage() {
       setKeyboardOffset(offset);
     };
     updateOffset();
-    const resizeTarget = viewport ?? window;
+    const resizeTarget = viewport ?? win;
     resizeTarget.addEventListener("resize", updateOffset);
     return () => resizeTarget.removeEventListener("resize", updateOffset);
   }, []);
@@ -230,30 +347,6 @@ export default function PerguntasPage() {
     }
     setSpeakingItemId(itemId);
     speak(text);
-  }
-
-  async function copyAnswer(text: string) {
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      telemetryCapture("qa_answer_copy");
-    } catch (err) {
-      console.warn("[qa] copy failed", err);
-    }
-  }
-
-  async function shareAnswer(text: string) {
-    if (!text) return;
-    try {
-      if (navigator.share) {
-        await navigator.share({ text });
-      } else {
-        await navigator.clipboard.writeText(text);
-      }
-      telemetryCapture("qa_answer_share");
-    } catch (err) {
-      console.warn("[qa] share failed", err);
-    }
   }
 
   async function sendFeedback(itemId: string, helpful: boolean, reason?: string) {
@@ -326,8 +419,9 @@ export default function PerguntasPage() {
 
   async function handleAsk() {
     const q = question.trim();
-    if (!q || q.length < MIN_QUESTION_CHARS || q.length > MAX_QUESTION_CHARS) return;
-    if (!qaContext) {
+    const validationError = getQuestionValidationError(q, qaContext);
+    if (validationError === "invalid") return;
+    if (validationError === "missing_context") {
       setQaHistory((prev) => [
         ...prev,
         { id: `${Date.now()}-error`, question: q, error: "Nao foi possivel montar o contexto do documento." },
@@ -335,11 +429,8 @@ export default function PerguntasPage() {
       return;
     }
 
-    const attemptKey = `qa_attempt:${q.toLowerCase()}`;
-    const attempt = Number(sessionStorage.getItem(attemptKey) || "0") + 1;
-    sessionStorage.setItem(attemptKey, String(attempt));
-
-    const itemId = `qa-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const attempt = createQaAttempt(q);
+    const itemId = createQaItemId();
     stopSpeaking();
     setQaHistory((prev) => [...prev, { id: itemId, question: q, pending: true, answer: "" }]);
     setQuestion("");
@@ -351,30 +442,11 @@ export default function PerguntasPage() {
 
     try {
       const res = await postJsonWithSessionResponse("/api/qa", { question: q, context: qaContext, attempt });
+      const body = await getQaResponseBody(res);
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const apiError = typeof data?.error === "string" ? data.error : "";
-        throw new Error(mapQaError(res.status, apiError));
-      }
-
-      if (!res.body) {
-        throw new Error("Resposta vazia.");
-      }
-
-      let answerText = "";
-      for await (const event of readQaStream(res.body)) {
-        if (event.type === "delta") {
-          answerText += event.text;
-          updateQaItem(itemId, { answer: answerText, pending: true });
-        }
-        if (event.type === "error") {
-          throw new Error(event.message || "Erro ao responder pergunta.");
-        }
-        if (event.type === "done") {
-          break;
-        }
-      }
+      await streamQaAnswer(body, (answerText) => {
+        updateQaItem(itemId, { answer: answerText, pending: true });
+      });
 
       updateQaItem(itemId, { pending: false });
       telemetryCapture("qa_answer_success");
@@ -456,30 +528,7 @@ export default function PerguntasPage() {
 
                 <Stack spacing={1}>
                   {commonQuestions.map((q) => {
-                    const iconColor =
-                      q === "Qual e o prazo?"
-                        ? "info.main"
-                        : q === "Qual e o valor?"
-                        ? "success.main"
-                        : q === "O que este documento pede?"
-                        ? "warning.main"
-                        : "secondary.main";
-                    const icon =
-                      q === "Qual e o prazo?"
-                        ? <ScheduleRoundedIcon fontSize="inherit" />
-                        : q === "Qual e o valor?"
-                        ? <PaidRoundedIcon fontSize="inherit" />
-                        : q === "O que este documento pede?"
-                        ? <DescriptionRoundedIcon fontSize="inherit" />
-                        : <HelpOutlineRoundedIcon fontSize="inherit" />;
-                    const description =
-                      q === "Qual e o prazo?"
-                        ? "Datas, prazos e o que vence primeiro."
-                        : q === "Qual e o valor?"
-                        ? "Valores, custos e possiveis multas."
-                        : q === "O que este documento pede?"
-                        ? "O pedido principal em poucas palavras."
-                        : "Escreva sua propria pergunta.";
+                    const { icon, iconColor, description } = getQuickQuestionMeta(q);
                     return (
                       <ButtonBase
                         key={q}

@@ -13,14 +13,14 @@ export type AnalysisResult = {
 };
 
 export function saveResult(payload: AnalysisResult) {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem(KEY, JSON.stringify(payload));
+  if (typeof globalThis.window === "undefined") return;
+  globalThis.sessionStorage.setItem(KEY, JSON.stringify(payload));
 }
 
 export function loadResult(): AnalysisResult | null {
-  if (typeof window === "undefined") return null;
+  if (typeof globalThis.window === "undefined") return null;
 
-  const raw = sessionStorage.getItem(KEY);
+  const raw = globalThis.sessionStorage.getItem(KEY);
   if (!raw) return null;
 
   try {
@@ -42,6 +42,6 @@ export function loadResult(): AnalysisResult | null {
 }
 
 export function clearResult() {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem(KEY);
+  if (typeof globalThis.window === "undefined") return;
+  globalThis.sessionStorage.removeItem(KEY);
 }

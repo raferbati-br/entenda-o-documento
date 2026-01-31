@@ -9,7 +9,7 @@ type LatencyTrace = {
 const KEY = "eod_latency_trace_v1";
 
 function isBrowser() {
-  return typeof window !== "undefined" && typeof sessionStorage !== "undefined";
+  return typeof globalThis.window !== "undefined" && typeof globalThis.sessionStorage !== "undefined";
 }
 
 function toNumberRecord(value: unknown): Record<string, number> {
@@ -33,7 +33,7 @@ function normalizeTrace(value: unknown): LatencyTrace {
 
 function loadTrace(): LatencyTrace {
   if (!isBrowser()) return { steps: {}, marks: {} };
-  const raw = sessionStorage.getItem(KEY);
+  const raw = globalThis.sessionStorage.getItem(KEY);
   if (!raw) return { steps: {}, marks: {} };
   try {
     return normalizeTrace(JSON.parse(raw));
@@ -44,7 +44,7 @@ function loadTrace(): LatencyTrace {
 
 function saveTrace(trace: LatencyTrace) {
   if (!isBrowser()) return;
-  sessionStorage.setItem(KEY, JSON.stringify(trace));
+  globalThis.sessionStorage.setItem(KEY, JSON.stringify(trace));
 }
 
 export function startLatencyTrace() {
@@ -79,5 +79,5 @@ export function getLatencyTraceSnapshot(nowMs = Date.now()) {
 
 export function clearLatencyTrace() {
   if (!isBrowser()) return;
-  sessionStorage.removeItem(KEY);
+  globalThis.sessionStorage.removeItem(KEY);
 }

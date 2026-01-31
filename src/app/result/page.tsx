@@ -48,7 +48,7 @@ const JUMP_BUTTON_OFFSET = ACTION_BAR_HEIGHT + 12;
 const SUMMARY_PAUSE_MS = 350;
 
 function splitSummary(text: string) {
-  const sentenceRegex = /[^.!?]+[.!?]+|[^.!?]+$/g;
+  const sentenceRegex = /[^.!?]+(?:[.!?]+|$)/g;
   return text
     .split(/\n+/)
     .flatMap((line) => line.match(sentenceRegex) || [])
@@ -62,121 +62,19 @@ function confidenceToInfo(confidence: number) {
   return { label: "Alta", color: "success.main", bg: "success.lighter", text: "Leitura clara" };
 }
 
-export default function ResultPage() {
-  const router = useRouter();
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
-  const { endRef, showJump, updateJumpState, handleScroll: handleContentScroll, jumpToEnd: handleJumpToEnd } =
-    useJumpToEnd({ scrollRef });
+function getConfidenceBucket(confidence: number) {
+  if (confidence < 0.45) return "low";
+  if (confidence < 0.75) return "medium";
+  return "high";
+}
 
-  // TTS State
-  const {
-    supported: ttsSupported,
-    isSpeaking,
-    error: ttsError,
-    setError: setTtsError,
-    speak,
-    speakSequence,
-    stop,
-  } = useSpeechSynthesis({
-    lang: "pt-BR",
-    rate: 0.95,
-    unsupportedMessage: "Seu navegador nÃ£o suporta leitura em voz alta.",
-    errorMessage: "Erro na leitura.",
-    interruptedMessage: "Leitura interrompida.",
-  });
-
-  // Share State
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-
-  // Feedback State
+function useFeedbackState(options: { confidenceBucket: string; hasOcrContext: boolean }) {
+  const { confidenceBucket, hasOcrContext } = options;
   const [feedbackChoice, setFeedbackChoice] = useState<"up" | "down" | null>(null);
   const [feedbackReason, setFeedbackReason] = useState<string | null>(null);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
-  const [ttsMode, setTtsMode] = useState<"summary" | null>(null);
-
-  useEffect(() => {
-    const res = loadResult();
-    if (!res) {
-      router.replace("/");
-      return;
-    }
-    setResult(res);
-  }, [router]);
-
-  useEffect(() => {
-    if (ttsError !== "Leitura interrompida.") return;
-    const timeoutId = window.setTimeout(() => setTtsError(null), 3000);
-    return () => window.clearTimeout(timeoutId);
-  }, [ttsError, setTtsError]);
-
-  useEffect(() => {
-    if (isSpeaking) return;
-    if (ttsMode) setTtsMode(null);
-  }, [isSpeaking, ttsMode]);
-
-  useEffect(() => {
-    if (!result) return;
-    requestAnimationFrame(updateJumpState);
-  }, [result, updateJumpState]);
-
-  const cardsArr = useMemo<CardT[]>(() => (result?.cards as CardT[]) || [], [result]);
-  const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
-
-  const confidence = result?.confidence ?? 0;
-  const confInfo = useMemo(() => confidenceToInfo(confidence), [confidence]);
-  const showLowConfidenceHelp = confidence < 0.45;
-
-  const confidenceBucket = confidence < 0.45 ? "low" : confidence < 0.75 ? "medium" : "high";
-  const hasOcrContext = useMemo(() => Boolean(loadQaContext()?.trim()), []);
-
-  useEffect(() => {
-    if (!result) return;
-    telemetryCapture("result_view", {
-      confidenceBucket,
-      contextSource: hasOcrContext ? "ocr" : "cards",
-    });
-  }, [result, confidenceBucket, hasOcrContext]);
-
-  useEffect(() => {
-    if (!result) return;
-    const nowMs = Date.now();
-    const trace = getLatencyTraceSnapshot(nowMs);
-    if (!trace) return;
-    const payload: Record<string, number> = {
-      total_ms: trace.totalMs,
-      ...trace.steps,
-    };
-    const analyzeDoneMs = trace.marks.analyze_done;
-    if (Number.isFinite(analyzeDoneMs)) {
-      payload.result_render_ms = Math.max(0, Math.round(nowMs - analyzeDoneMs));
-    }
-    telemetryCapture("latency_e2e", payload);
-    clearLatencyTrace();
-  }, [result]);
-
-  // Texto completo para Leitura e Compartilhamento
-  const fullText = useMemo(() => {
-    const notice = result?.notice || "";
-    const parts = [
-      "📋 *Explicação do Documento*",
-      "",
-      cardMap["whatIs"]?.title ? `*${cardMap["whatIs"]?.title}*\n${cardMap["whatIs"]?.text}` : "",
-      cardMap["whatSays"]?.title ? `*${cardMap["whatSays"]?.title}*\n${cardMap["whatSays"]?.text}` : "",
-      cardMap["dates"]?.title ? `*${cardMap["dates"]?.title}*\n${cardMap["dates"]?.text}` : "",
-      cardMap["terms"]?.title ? `*${cardMap["terms"]?.title}*\n${cardMap["terms"]?.text}` : "",
-      cardMap["whatUsuallyHappens"]?.title ? `*${cardMap["whatUsuallyHappens"]?.title}*\n${cardMap["whatUsuallyHappens"]?.text}` : "",
-      notice ? `⚠️ *Aviso*\n${notice}` : "",
-      "",
-      "Gerado por Entenda o Documento"
-    ].filter(Boolean).join("\n\n");
-    return parts;
-  }, [cardMap, result?.notice]);
-
-  const summaryText = useMemo(() => cardMap["whatSays"]?.text?.trim() || "", [cardMap]);
-  const summaryParts = useMemo(() => splitSummary(summaryText), [summaryText]);
 
   async function sendFeedback(helpful: boolean, reason?: string) {
     if (feedbackSent || feedbackLoading) return;
@@ -229,6 +127,138 @@ export default function ResultPage() {
     sendFeedback(false, reason);
   }
 
+  return {
+    feedbackChoice,
+    feedbackReason,
+    feedbackSent,
+    feedbackLoading,
+    feedbackError,
+    handleFeedbackUp,
+    handleFeedbackDown,
+    handleFeedbackReason,
+  };
+}
+
+export default function ResultPage() {
+  const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const { endRef, showJump, updateJumpState, handleScroll: handleContentScroll, jumpToEnd: handleJumpToEnd } =
+    useJumpToEnd({ scrollRef });
+
+  // TTS State
+  const {
+    supported: ttsSupported,
+    isSpeaking,
+    error: ttsError,
+    setError: setTtsError,
+    speak,
+    speakSequence,
+    stop,
+  } = useSpeechSynthesis({
+    lang: "pt-BR",
+    rate: 0.95,
+    unsupportedMessage: "Seu navegador nÃ£o suporta leitura em voz alta.",
+    errorMessage: "Erro na leitura.",
+    interruptedMessage: "Leitura interrompida.",
+  });
+
+  // Share State
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const [ttsMode, setTtsMode] = useState<"summary" | null>(null);
+
+  useEffect(() => {
+    const res = loadResult();
+    if (!res) {
+      router.replace("/");
+      return;
+    }
+    setResult(res);
+  }, [router]);
+
+  useEffect(() => {
+    if (ttsError !== "Leitura interrompida.") return;
+    const timeoutId = globalThis.setTimeout(() => setTtsError(null), 3000);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [ttsError, setTtsError]);
+
+  useEffect(() => {
+    if (isSpeaking) return;
+    if (ttsMode) setTtsMode(null);
+  }, [isSpeaking, ttsMode]);
+
+  useEffect(() => {
+    if (!result) return;
+    requestAnimationFrame(updateJumpState);
+  }, [result, updateJumpState]);
+
+  const cardsArr = useMemo<CardT[]>(() => (result?.cards as CardT[]) || [], [result]);
+  const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
+
+  const confidence = result?.confidence ?? 0;
+  const confInfo = useMemo(() => confidenceToInfo(confidence), [confidence]);
+  const showLowConfidenceHelp = confidence < 0.45;
+
+  const confidenceBucket = getConfidenceBucket(confidence);
+  const hasOcrContext = useMemo(() => Boolean(loadQaContext()?.trim()), []);
+  const {
+    feedbackChoice,
+    feedbackReason,
+    feedbackSent,
+    feedbackLoading,
+    feedbackError,
+    handleFeedbackUp,
+    handleFeedbackDown,
+    handleFeedbackReason,
+  } = useFeedbackState({ confidenceBucket, hasOcrContext });
+
+  useEffect(() => {
+    if (!result) return;
+    telemetryCapture("result_view", {
+      confidenceBucket,
+      contextSource: hasOcrContext ? "ocr" : "cards",
+    });
+  }, [result, confidenceBucket, hasOcrContext]);
+
+  useEffect(() => {
+    if (!result) return;
+    const nowMs = Date.now();
+    const trace = getLatencyTraceSnapshot(nowMs);
+    if (!trace) return;
+    const payload: Record<string, number> = {
+      total_ms: trace.totalMs,
+      ...trace.steps,
+    };
+    const analyzeDoneMs = trace.marks.analyze_done;
+    if (Number.isFinite(analyzeDoneMs)) {
+      payload.result_render_ms = Math.max(0, Math.round(nowMs - analyzeDoneMs));
+    }
+    telemetryCapture("latency_e2e", payload);
+    clearLatencyTrace();
+  }, [result]);
+
+  // Texto completo para Leitura e Compartilhamento
+  const fullText = useMemo(() => {
+    const notice = result?.notice || "";
+    const parts = [
+      "📋 *Explicação do Documento*",
+      "",
+      cardMap["whatIs"]?.title ? `*${cardMap["whatIs"]?.title}*\n${cardMap["whatIs"]?.text}` : "",
+      cardMap["whatSays"]?.title ? `*${cardMap["whatSays"]?.title}*\n${cardMap["whatSays"]?.text}` : "",
+      cardMap["dates"]?.title ? `*${cardMap["dates"]?.title}*\n${cardMap["dates"]?.text}` : "",
+      cardMap["terms"]?.title ? `*${cardMap["terms"]?.title}*\n${cardMap["terms"]?.text}` : "",
+      cardMap["whatUsuallyHappens"]?.title ? `*${cardMap["whatUsuallyHappens"]?.title}*\n${cardMap["whatUsuallyHappens"]?.text}` : "",
+      notice ? `⚠️ *Aviso*\n${notice}` : "",
+      "",
+      "Gerado por Entenda o Documento"
+    ].filter(Boolean).join("\n\n");
+    return parts;
+  }, [cardMap, result?.notice]);
+
+  const summaryText = useMemo(() => cardMap["whatSays"]?.text?.trim() || "", [cardMap]);
+  const summaryParts = useMemo(() => splitSummary(summaryText), [summaryText]);
+
   // Função de Compartilhar
   const handleShare = async () => {
     telemetryCapture("share_click");
@@ -262,7 +292,7 @@ export default function ResultPage() {
   }
 
   // Funções de Áudio
-  const speakText = useMemo(() => fullText.replace(/\*/g, ""), [fullText]);
+  const speakText = useMemo(() => fullText.replaceAll(/\*/g, ""), [fullText]);
   const isSummarySpeaking = isSpeaking && ttsMode === "summary";
 
   function stopSpeaking() {
@@ -394,7 +424,7 @@ export default function ResultPage() {
             <SectionBlock
               icon={<ListAltRoundedIcon fontSize="inherit" />}
               // Remove emojis duplicados do título se a IA mandar
-              title={cardMap["terms"]?.title?.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '') || "Termos importantes"}
+              title={cardMap["terms"]?.title?.replaceAll(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '') || "Termos importantes"}
               text={cardMap["terms"]?.text}
             />
             <SectionBlock
