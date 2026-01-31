@@ -392,7 +392,7 @@ export default function PerguntasPage() {
   return (
     <>
       <PageLayout
-        contentPaddingBottom={isEmptyState ? 14 : 22}
+        contentPaddingBottom={isEmptyState ? 14 : 0}
         contentRef={scrollRef}
         onContentScroll={handleScroll}
         header={

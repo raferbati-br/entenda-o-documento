@@ -153,7 +153,7 @@ export default function ConfirmPage() {
             disabled: loading,
           }}
           primary={{
-            label: "Usar esta imagem",
+            label: "Usar esta",
             startIcon: <CheckCircleRoundedIcon />,
             onClick: handleConfirm,
             disabled: loading,
