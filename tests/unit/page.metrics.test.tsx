@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import React from "react";
+import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 vi.mock("@/lib/qualityMetrics", () => ({
@@ -18,14 +18,14 @@ describe("MetricsPage", () => {
   it("renders table when token is valid", async () => {
     process.env.METRICS_DASHBOARD_TOKEN = "token";
     const node = await MetricsPage({ searchParams: { token: "token" } });
-    const html = renderToStaticMarkup(node as React.ReactElement);
+    const html = renderToStaticMarkup(node as ReactElement);
     expect(html).toContain("Quality Metrics");
   });
 
   it("renders error when token missing", async () => {
     process.env.METRICS_DASHBOARD_TOKEN = "token";
     const node = await MetricsPage({ searchParams: { token: "bad" } });
-    const html = renderToStaticMarkup(node as React.ReactElement);
+    const html = renderToStaticMarkup(node as ReactElement);
     expect(html).toContain("Missing or invalid token");
   });
 });

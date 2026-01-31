@@ -56,7 +56,7 @@ function fitInside(srcW: number, srcH: number, maxDim: number) {
 
 async function decodeImage(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
   // Tenta respeitar orientação EXIF quando suportado
-  if (typeof globalThis.window !== "undefined" && "createImageBitmap" in globalThis.window) {
+  if (globalThis.window !== undefined && "createImageBitmap" in globalThis.window) {
     try {
       const options = { imageOrientation: "from-image" } as ImageBitmapOptions;
       return await createImageBitmap(blob, options);

@@ -9,9 +9,7 @@ type Options = {
 };
 
 export function useSpeechSynthesis(options: Options = {}) {
-  const [supported] = useState(
-    () => typeof globalThis !== "undefined" && typeof globalThis.speechSynthesis !== "undefined"
-  );
+  const [supported] = useState(() => globalThis.speechSynthesis !== undefined);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const stopRequestedRef = useRef(false);

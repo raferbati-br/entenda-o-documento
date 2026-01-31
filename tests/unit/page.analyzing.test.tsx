@@ -1,30 +1,28 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import React from "react";
+import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 
 vi.mock("framer-motion", async () => {
-  const React = await import("react");
   return {
     motion: {
-      div: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+      div: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
     },
-    AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    AnimatePresence: ({ children }: { children?: ReactNode }) => <>{children}</>,
   };
 });
 
 vi.mock("@mui/material", async () => {
-  const React = await import("react");
-  const Wrap = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
+  const Wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
   return {
     Box: Wrap,
-    Button: ({ children, onClick }: { children?: React.ReactNode; onClick?: () => void }) => (
+    Button: ({ children, onClick }: { children?: ReactNode; onClick?: () => void }) => (
       <button onClick={onClick}>{children}</button>
     ),
     Container: Wrap,
     Stack: Wrap,
-    Typography: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+    Typography: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
     LinearProgress: () => <div>progress</div>,
   };
 });
@@ -54,12 +52,12 @@ vi.mock("@/lib/typeGuards", () => ({ isRecord: () => true }));
 vi.mock("@mui/icons-material/AutoAwesomeRounded", () => ({ default: () => null }));
 vi.mock("@mui/icons-material/CameraAltRounded", () => ({ default: () => null }));
 
-vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: React.ReactNode }) => <div>{children}</div> }));
-vi.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: React.ReactNode }) => <div>{children}</div> }));
+vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
+vi.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
 
 import AnalyzingPage from "@/app/analyzing/page";
 
-function render(ui: React.ReactElement) {
+function render(ui: ReactElement) {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);

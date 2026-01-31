@@ -63,6 +63,10 @@ async function readStream(stream: ReadableStream) {
   return chunks.join("");
 }
 
+async function* streamSingleChunk(value: string) {
+  yield value;
+}
+
 describe("api/qa", () => {
   beforeEach(() => {
     mockAnswerQuestionStream.mockReset();
@@ -88,12 +92,8 @@ describe("api/qa", () => {
     mockRunCommonGuards.mockResolvedValue(null);
     mockReadJsonRecord.mockResolvedValue({ question: "pergunta", context: "contexto" });
 
-    async function* stream() {
-      yield "ola";
-    }
-
     mockAnswerQuestionStream.mockResolvedValue({
-      stream: stream(),
+      stream: streamSingleChunk("ola"),
       meta: { provider: "p", model: "m" },
       promptId: "pid",
     });
@@ -110,12 +110,8 @@ describe("api/qa", () => {
     mockRunCommonGuards.mockResolvedValue(null);
     mockReadJsonRecord.mockResolvedValue({ question: "pergunta", context: "contexto" });
 
-    async function* stream() {
-      yield "";
-    }
-
     mockAnswerQuestionStream.mockResolvedValue({
-      stream: stream(),
+      stream: streamSingleChunk(""),
       meta: { provider: "p", model: "m" },
       promptId: "pid",
     });

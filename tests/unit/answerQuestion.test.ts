@@ -25,6 +25,12 @@ import { safeShorten } from "@/lib/text";
 const mockAnswer = vi.fn();
 const mockAnswerStream = vi.fn();
 
+async function* streamChunks(chunks: string[]) {
+  for (const chunk of chunks) {
+    yield chunk;
+  }
+}
+
 function setupProvider(withStream = true) {
   vi.mocked(buildLlmContext).mockReturnValue({
     model: "test-model",
@@ -88,12 +94,7 @@ describe("answerQuestionStream", () => {
       noticeDefault: "",
     });
 
-    async function* stream() {
-      yield "a";
-      yield "b";
-    }
-
-    mockAnswerStream.mockResolvedValue({ stream: stream(), meta: { provider: "p", model: "m" } });
+    mockAnswerStream.mockResolvedValue({ stream: streamChunks(["a", "b"]), meta: { provider: "p", model: "m" } });
 
     const out = await answerQuestionStream({ question: "q", context: "c" });
 

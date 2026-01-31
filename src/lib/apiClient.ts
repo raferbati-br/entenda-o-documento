@@ -16,12 +16,13 @@ export async function postJsonWithSession<T>(
   options?: JsonRequestOptions
 ): Promise<JsonResult<T>> {
   const token = await ensureSessionToken();
+  const extraHeaders = options?.headers;
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { "x-session-token": token } : {}),
-      ...(options?.headers || {}),
+      ...(extraHeaders ? extraHeaders : undefined),
     },
     body: JSON.stringify(body),
     signal: options?.signal ?? undefined,
@@ -41,12 +42,13 @@ export async function postJsonWithSessionResponse(
   options?: JsonRequestOptions
 ): Promise<Response> {
   const token = await ensureSessionToken();
+  const extraHeaders = options?.headers;
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { "x-session-token": token } : {}),
-      ...(options?.headers || {}),
+      ...(extraHeaders ? extraHeaders : undefined),
     },
     body: JSON.stringify(body),
     signal: options?.signal ?? undefined,

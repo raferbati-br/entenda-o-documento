@@ -13,7 +13,7 @@ vi.mock("@upstash/redis", () => {
       return "OK";
     }
     async get() {
-      return redisGetValue as unknown;
+      return redisGetValue;
     }
     async del(key: string) {
       redisDelCalls.push(key);

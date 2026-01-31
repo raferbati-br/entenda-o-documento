@@ -18,6 +18,11 @@ type BackHeaderProps = Readonly<{
   iconButtonProps?: Partial<IconButtonProps>;
 }>;
 
+function normalizeSx(extra?: SxProps<Theme>) {
+  if (!extra) return [];
+  return Array.isArray(extra) ? extra : [extra];
+}
+
 export default function BackHeader({
   onBack,
   title,
@@ -36,13 +41,10 @@ export default function BackHeader({
     ) : (
       title
     );
-  const iconSx: SxProps<Theme> = [
-    { mr: 1 },
-    ...(Array.isArray(iconButtonSx) ? iconButtonSx : iconButtonSx ? [iconButtonSx] : []),
-  ];
+  const iconSx: SxProps<Theme> = [{ mr: 1 }, ...normalizeSx(iconButtonSx)];
   const titleBoxSx: SxProps<Theme> = [
     { flexGrow: 1, display: "flex", alignItems: "center" },
-    ...(Array.isArray(titleSx) ? titleSx : titleSx ? [titleSx] : []),
+    ...normalizeSx(titleSx),
   ];
 
   return (

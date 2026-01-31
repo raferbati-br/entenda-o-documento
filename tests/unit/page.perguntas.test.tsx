@@ -1,25 +1,24 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it } from "vitest";
-import React from "react";
+import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 
 vi.mock("@mui/material", async () => {
-  const React = await import("react");
-  const Wrap = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
+  const Wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
   return {
     Box: Wrap,
-    ButtonBase: ({ children }: { children?: React.ReactNode }) => <button>{children}</button>,
+    ButtonBase: ({ children }: { children?: ReactNode }) => <button>{children}</button>,
     CircularProgress: () => <div>loading</div>,
     Container: Wrap,
     Divider: Wrap,
-    Dialog: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
-    Fab: ({ children }: { children?: React.ReactNode }) => <button>{children}</button>,
-    IconButton: ({ children }: { children?: React.ReactNode }) => <button>{children}</button>,
+    Dialog: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+    Fab: ({ children }: { children?: ReactNode }) => <button>{children}</button>,
+    IconButton: ({ children }: { children?: ReactNode }) => <button>{children}</button>,
     Stack: Wrap,
-    SvgIcon: ({ children }: { children?: React.ReactNode }) => <svg>{children}</svg>,
+    SvgIcon: ({ children }: { children?: ReactNode }) => <svg>{children}</svg>,
     TextField: () => <input />,
-    Typography: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+    Typography: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   };
 });
 
@@ -47,9 +46,9 @@ vi.mock("@/lib/hooks/useSpeechSynthesis", () => ({
 vi.mock("@/lib/qaLimits", () => ({ MAX_CONTEXT_CHARS: 1000, MAX_QUESTION_CHARS: 200, MIN_QUESTION_CHARS: 4 }));
 
 vi.mock("@/app/_components/FooterActions", () => ({ default: () => <div>footer-actions</div> }));
-vi.mock("@/app/_components/BackHeader", () => ({ default: ({ title }: { title?: React.ReactNode }) => <div>{title}</div> }));
-vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: React.ReactNode }) => <div>{children}</div> }));
-vi.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: React.ReactNode }) => <div>{children}</div> }));
+vi.mock("@/app/_components/BackHeader", () => ({ default: ({ title }: { title?: ReactNode }) => <div>{title}</div> }));
+vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
+vi.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
 vi.mock("@/app/_components/FeedbackActions", () => ({ default: () => <div>feedback</div> }));
 vi.mock("@/app/_components/IconTextRow", () => ({ default: () => <div>icon-row</div> }));
 vi.mock("@/app/_components/PinchZoomImage", () => ({ default: () => <div>image</div> }));
@@ -63,7 +62,7 @@ vi.mock("@mui/icons-material/SendRounded", () => ({ default: () => null }));
 
 import PerguntasPage from "@/app/perguntas/page";
 
-function render(ui: React.ReactElement) {
+function render(ui: ReactElement) {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);

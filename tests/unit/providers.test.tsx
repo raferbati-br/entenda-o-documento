@@ -1,23 +1,21 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import React from "react";
+import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 
 vi.mock("@mui/material", async () => {
-  const React = await import("react");
   return {
     CssBaseline: () => null,
-    ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    ThemeProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
     useMediaQuery: vi.fn(() => false),
-    Box: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    Box: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   };
 });
 
 vi.mock("@mui/material-nextjs/v15-appRouter", async () => {
-  const React = await import("react");
   return {
-    AppRouterCacheProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    AppRouterCacheProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   };
 });
 
@@ -49,7 +47,7 @@ vi.mock("next/navigation", () => ({
 
 import Providers from "@/app/providers";
 
-function render(ui: React.ReactElement) {
+function render(ui: ReactElement) {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);

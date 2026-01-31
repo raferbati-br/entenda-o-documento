@@ -9,6 +9,7 @@ import {
   handleApiKeyError,
   handleModelJsonError,
   readJsonRecord,
+  type RouteContext as ApiRouteContext,
   runCommonGuards,
   safeRecordMetrics,
 } from "@/lib/apiRouteUtils";
@@ -60,55 +61,59 @@ async function recordAnalyzeMetrics(options: {
   ]);
 }
 
+async function handleAnalyzeRequest(req: Request, ctx: ApiRouteContext) {
+  const guardError = await runCommonGuards(req, ctx, {
+    sessionMessage: "Sessao expirada. Tire outra foto para continuar.",
+    rateLimitPrefix: "analyze",
+    rateLimitTag: "api.analyze",
+  });
+  if (guardError) return guardError;
+
+  cleanupMemoryStore();
+
+  const body = await readJsonRecord(req);
+  if (!body) return badRequest("Requisicao invalida.");
+
+  const captureId = typeof body.captureId === "string" ? body.captureId : "";
+  const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
+  const ocrText = typeof body.ocrText === "string" ? body.ocrText : "";
+  const imageDataUrl = await readCaptureImage(captureId);
+
+  const textOnlyEnabled = isTextOnlyEnabled();
+  const ocrQuality = textOnlyEnabled && ocrText ? evaluateOcrText(ocrText) : null;
+  const { useTextOnly, analysisMode } = resolveAnalysisMode(textOnlyEnabled, ocrText, Boolean(ocrQuality?.ok));
+
+  if (!useTextOnly && !imageDataUrl?.startsWith("data:image/")) {
+    return badRequest("Imagem nao encontrada ou invalida (capture expirou)", 404);
+  }
+
+  const { result, meta, promptId, stats } = await analyzeDocument(
+    useTextOnly ? { documentText: ocrText } : { imageDataUrl }
+  );
+  const durationMs = ctx.durationMs();
+
+  await recordAnalyzeMetrics({ attempt, useTextOnly, analysisMode, stats, durationMs });
+
+  console.log("[api.analyze]", {
+    requestId: ctx.requestId,
+    ip: ctx.ip,
+    status: 200,
+    provider: meta.provider,
+    model: meta.model,
+    promptId,
+    analysisMode,
+    ocr_chars: ocrQuality?.length ?? 0,
+    ocr_alpha_ratio: ocrQuality ? Number(ocrQuality.alphaRatio.toFixed(2)) : 0,
+    duration_ms: durationMs,
+  });
+
+  return NextResponse.json({ ok: true, result });
+}
+
 export async function POST(req: Request) {
   const ctx = createRouteContext(req);
   try {
-    const guardError = await runCommonGuards(req, ctx, {
-      sessionMessage: "Sessao expirada. Tire outra foto para continuar.",
-      rateLimitPrefix: "analyze",
-      rateLimitTag: "api.analyze",
-    });
-    if (guardError) return guardError;
-
-    cleanupMemoryStore();
-
-    const body = await readJsonRecord(req);
-    if (!body) return badRequest("Requisicao invalida.");
-
-    const captureId = typeof body.captureId === "string" ? body.captureId : "";
-    const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
-    const ocrText = typeof body.ocrText === "string" ? body.ocrText : "";
-    const imageDataUrl = await readCaptureImage(captureId);
-
-    const textOnlyEnabled = isTextOnlyEnabled();
-    const ocrQuality = textOnlyEnabled && ocrText ? evaluateOcrText(ocrText) : null;
-    const { useTextOnly, analysisMode } = resolveAnalysisMode(textOnlyEnabled, ocrText, Boolean(ocrQuality?.ok));
-
-    if (!useTextOnly && !imageDataUrl?.startsWith("data:image/")) {
-      return badRequest("Imagem nao encontrada ou invalida (capture expirou)", 404);
-    }
-
-    const { result, meta, promptId, stats } = await analyzeDocument(
-      useTextOnly ? { documentText: ocrText } : { imageDataUrl }
-    );
-    const durationMs = ctx.durationMs();
-
-    await recordAnalyzeMetrics({ attempt, useTextOnly, analysisMode, stats, durationMs });
-
-    console.log("[api.analyze]", {
-      requestId: ctx.requestId,
-      ip: ctx.ip,
-      status: 200,
-      provider: meta.provider,
-      model: meta.model,
-      promptId,
-      analysisMode,
-      ocr_chars: ocrQuality?.length ?? 0,
-      ocr_alpha_ratio: ocrQuality ? Number(ocrQuality.alphaRatio.toFixed(2)) : 0,
-      duration_ms: durationMs,
-    });
-
-    return NextResponse.json({ ok: true, result });
+    return await handleAnalyzeRequest(req, ctx);
   } catch (err: unknown) {
     const code = err instanceof Error ? err.message : "";
 

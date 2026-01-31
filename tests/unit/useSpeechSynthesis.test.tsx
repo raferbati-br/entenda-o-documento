@@ -1,6 +1,5 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import React from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import { useSpeechSynthesis } from "@/lib/hooks/useSpeechSynthesis";

@@ -292,7 +292,7 @@ export default function ResultPage() {
   }
 
   // Funções de Áudio
-  const speakText = useMemo(() => fullText.replaceAll(/\*/g, ""), [fullText]);
+  const speakText = useMemo(() => fullText.replaceAll("*", ""), [fullText]);
   const isSummarySpeaking = isSpeaking && ttsMode === "summary";
 
   function stopSpeaking() {

@@ -30,6 +30,63 @@ const ICONS: Record<NoticeSeverity, typeof InfoRoundedIcon> = {
   success: CheckCircleRoundedIcon,
 };
 
+function normalizeSx(extra?: SxProps<Theme>) {
+  if (!extra) return [];
+  return Array.isArray(extra) ? extra : [extra];
+}
+
+function getIconSize(isHero: boolean, isCompact: boolean) {
+  if (isHero) return 56;
+  if (isCompact) return 18;
+  return 20;
+}
+
+function getNoticeSpacing(isHero: boolean, isCompact: boolean) {
+  if (isHero) return { borderRadius: 3, padding: 3 };
+  if (isCompact) return { borderRadius: 1.5, padding: 1 };
+  return { borderRadius: 2, padding: 1.25 };
+}
+
+function getNoticeContentFlags(options: { title?: string; children?: ReactNode; isHero: boolean }) {
+  const { title, children, isHero } = options;
+  const showInlineTitle = Boolean(title && children && !isHero);
+  const showTitleOnly = Boolean(title && !showInlineTitle);
+  const showChildrenOnly = Boolean(children && (!title || isHero));
+  return { showInlineTitle, showTitleOnly, showChildrenOnly };
+}
+
+function renderNoticeTitle(options: {
+  showInlineTitle: boolean;
+  showTitleOnly: boolean;
+  title?: string;
+  children?: ReactNode;
+  titleVariant: "h5" | "subtitle2";
+  titleMargin: number;
+}) {
+  const { showInlineTitle, showTitleOnly, title, children, titleVariant, titleMargin } = options;
+
+  if (showInlineTitle) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+        <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+          {title}:
+        </Box>{" "}
+        {children}
+      </Typography>
+    );
+  }
+
+  if (showTitleOnly) {
+    return (
+      <Typography variant={titleVariant} fontWeight={700} sx={{ mb: titleMargin }}>
+        {title}
+      </Typography>
+    );
+  }
+
+  return null;
+}
+
 export default function Notice({
   severity = "info",
   title,
@@ -43,22 +100,8 @@ export default function Notice({
   const Icon = ICONS[severity];
   const isHero = variant === "hero";
   const isCompact = density === "compact" && !isHero;
-  let iconSize = 20;
-  if (isHero) {
-    iconSize = 56;
-  } else if (isCompact) {
-    iconSize = 18;
-  }
-
-  let borderRadius = 2;
-  let padding = 1.25;
-  if (isHero) {
-    borderRadius = 3;
-    padding = 3;
-  } else if (isCompact) {
-    borderRadius = 1.5;
-    padding = 1;
-  }
+  const iconSize = getIconSize(isHero, isCompact);
+  const { borderRadius, padding } = getNoticeSpacing(isHero, isCompact);
 
   const baseSx: SxProps<Theme> = (theme) => ({
     borderRadius,
@@ -68,13 +111,23 @@ export default function Notice({
     bgcolor: alpha(theme.palette[severity].main, 0.08),
   });
 
-  const mergedSx = Array.isArray(sx) ? [baseSx, ...sx] : sx ? [baseSx, sx] : [baseSx];
-  const showInlineTitle = Boolean(title && children && !isHero);
-  const showTitleOnly = Boolean(title && !showInlineTitle);
-  const showChildrenOnly = Boolean(children && (!title || isHero));
+  const mergedSx = [baseSx, ...normalizeSx(sx)];
+  const { showInlineTitle, showTitleOnly, showChildrenOnly } = getNoticeContentFlags({
+    title,
+    children,
+    isHero,
+  });
   const titleVariant = isHero ? "h5" : "subtitle2";
   const contentVariant = isHero ? "body1" : "body2";
   const titleMargin = children ? 0.5 : 0;
+  const titleContent = renderNoticeTitle({
+    showInlineTitle,
+    showTitleOnly,
+    title,
+    children,
+    titleVariant,
+    titleMargin,
+  });
 
   return (
     <Box sx={mergedSx}>
@@ -95,18 +148,7 @@ export default function Notice({
           <Icon fontSize="inherit" />
         </Box>
         <Box sx={{ flex: 1, textAlign: isHero ? "center" : "left" }}>
-          {showInlineTitle ? (
-            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-              <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
-                {title}:
-              </Box>{" "}
-              {children}
-            </Typography>
-          ) : showTitleOnly ? (
-            <Typography variant={titleVariant} fontWeight={700} sx={{ mb: titleMargin }}>
-              {title}
-            </Typography>
-          ) : null}
+          {titleContent}
           {showChildrenOnly ? (
             <Typography variant={contentVariant} color="text.secondary">
               {children}

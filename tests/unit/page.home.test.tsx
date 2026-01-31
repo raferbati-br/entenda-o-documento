@@ -1,23 +1,23 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import React from "react";
+import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 
 vi.mock("@mui/material", async () => {
-  const React = await import("react");
-  const Wrap = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
+  const Wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
   return {
     Box: Wrap,
     Divider: Wrap,
     Stack: Wrap,
-    Typography: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+    Typography: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   };
 });
 
 vi.mock("next/link", async () => {
-  const React = await import("react");
-  return { default: ({ children }: { children?: React.ReactNode }) => <a>{children}</a> };
+  return {
+    default: ({ children, href }: { children?: ReactNode; href?: string }) => <a href={href ?? "#"}>{children}</a>,
+  };
 });
 
 const mockPush = vi.fn();
@@ -40,7 +40,7 @@ vi.mock("@/lib/hooks/useCaptureInput", () => ({
 
 vi.mock("@/app/_components/IconTextRow", () => ({ default: () => <div>icon-row</div> }));
 vi.mock("@/app/_components/FooterActions", () => ({ default: () => <div>footer-actions</div> }));
-vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: React.ReactNode }) => <div>{children}</div> }));
+vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
 
 vi.mock("@mui/icons-material/AutoAwesomeRounded", () => ({ default: () => null }));
 vi.mock("@mui/icons-material/LockRounded", () => ({ default: () => null }));
@@ -50,7 +50,7 @@ vi.mock("@mui/icons-material/PhotoLibraryRounded", () => ({ default: () => null 
 
 import HomePage from "@/app/page";
 
-function render(ui: React.ReactElement) {
+function render(ui: ReactElement) {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);

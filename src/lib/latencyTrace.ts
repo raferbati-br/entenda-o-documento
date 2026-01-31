@@ -9,7 +9,7 @@ type LatencyTrace = {
 const KEY = "eod_latency_trace_v1";
 
 function isBrowser() {
-  return typeof globalThis.window !== "undefined" && typeof globalThis.sessionStorage !== "undefined";
+  return globalThis.window !== undefined && globalThis.sessionStorage !== undefined;
 }
 
 function toNumberRecord(value: unknown): Record<string, number> {

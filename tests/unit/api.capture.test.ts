@@ -28,7 +28,7 @@ vi.mock("@/lib/apiRouteUtils", () => ({
 }));
 vi.mock("@/lib/dataUrl", () => ({
   parseDataUrl: (value: string) => {
-    const match = value.match(/^data:([^;]+);base64,(.+)$/);
+    const match = /^data:([^;]+);base64,(.+)$/.exec(value);
     if (!match) return null;
     return { mimeType: match[1], base64: match[2] };
   },

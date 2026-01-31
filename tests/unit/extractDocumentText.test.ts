@@ -13,7 +13,7 @@ vi.mock("@/ai/prompts", () => ({
 }));
 
 vi.mock("@/lib/text", () => ({
-  redactSensitiveData: vi.fn((text: string) => text.replace(/\d/g, "*")),
+  redactSensitiveData: vi.fn((text: string) => text.replaceAll(/\d/g, "*")),
   safeShorten: vi.fn((text: string) => text),
 }));
 
