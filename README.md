@@ -178,16 +178,7 @@ Onde ver:
 - Esta aplicação fornece apenas explicações informativas sobre documentos.
 - Ela não substitui orientação profissional (jurídica, financeira, médica ou administrativa).
 
-## 📌 Status do projeto
-- MVP funcional
-- Fluxo completo mobile
-- Integração multimodal estável
-- Próximo passo: robustez de MVP (rate limit, logs, UX de erro)
-
-## 🔭 Visão futura
-- Este projeto faz parte de uma iniciativa maior: Copilot do Cidadão, cujo objetivo é reduzir assimetrias de informação e tornar a burocracia mais compreensível para todos.
-
-Contribuições e discussões são bem-vindas.
-
 ## Encoding
 Este repositório usa UTF-8. Se você vir caracteres quebrados, configure seu editor para UTF-8.
+
+Contribuições e discussões são bem-vindas.
