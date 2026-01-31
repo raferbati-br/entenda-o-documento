@@ -4,7 +4,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const ROOT = process.cwd();
-const SUMMARY_DIR = path.join(ROOT, "coverage", "unit");
+const SUMMARY_DIR = path.join(ROOT, "test-results", "vitest", "coverage-all");
 const SUMMARY_PATH = path.join(SUMMARY_DIR, "coverage-summary.json");
 
 function writeSummary(linesPct) {

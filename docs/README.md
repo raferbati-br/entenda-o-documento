@@ -12,3 +12,4 @@
 
 ## Governanca
 - `docs/governance/privacy.md`
+- `docs/governance/security.md`

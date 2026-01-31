@@ -66,6 +66,10 @@ Visão geral e endpoints em `docs/architecture/README.md`.
 - Telemetria é opcional e não inclui conteúdo do documento.
 - Detalhes em `docs/governance/privacy.md`.
 
+## 🛡️ Segurança
+
+- Políticas e varredura automatizada em `docs/governance/security.md`.
+
 ## 🚀 Como rodar localmente
 **Pré-requisitos**
 - Node.js 18+
