@@ -3,8 +3,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const BDD_DIR = path.join(ROOT, "docs", "bdd");
+const BDD_DIR = path.join(ROOT, "docs", "bdd-load");
 const LOAD_MATRIX = path.join(ROOT, "docs", "bdd", "coverage-matrix.md");
+const LOAD_SCRIPTS_DIR = path.join(ROOT, "tests", "load");
+const LOAD_RUNNER = path.join(ROOT, "scripts", "run-load-test.mjs");
 const OUTPUT_DIR = path.join(ROOT, "test-results", "load");
 const SUMMARY_PATH = path.join(OUTPUT_DIR, "coverage-summary.json");
 
@@ -30,7 +32,7 @@ function collectLoadTagsFromBdd() {
     .filter((file) => file.endsWith(".feature"))
     .map((file) => path.join(BDD_DIR, file));
 
-  const tagRegex = /@load\(([^)]+)\)/g;
+  const tagRegex = /@id\((LOAD-\d+)\)/g;
   const ids = new Set();
   for (const file of files) {
     const content = fs.readFileSync(file, "utf8");
@@ -42,10 +44,42 @@ function collectLoadTagsFromBdd() {
   return ids;
 }
 
-function computeCoverage(matrixIds, bddIds) {
+function readAllFiles(dir, predicate) {
+  if (!fs.existsSync(dir)) return [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...readAllFiles(full, predicate));
+      continue;
+    }
+    if (!predicate || predicate(full)) files.push(full);
+  }
+  return files;
+}
+
+function collectLoadIdsFromScripts() {
+  const files = [
+    ...readAllFiles(LOAD_SCRIPTS_DIR, (p) => p.endsWith(".js") || p.endsWith(".mjs")),
+    ...(fs.existsSync(LOAD_RUNNER) ? [LOAD_RUNNER] : []),
+  ];
+  const idRegex = /LOAD-\d+/g;
+  const ids = new Set();
+  for (const file of files) {
+    const content = fs.readFileSync(file, "utf8");
+    let match;
+    while ((match = idRegex.exec(content)) !== null) {
+      ids.add(match[0]);
+    }
+  }
+  return ids;
+}
+
+function computeCoverage(matrixIds, bddIds, scriptIds) {
   const missing = [];
   matrixIds.forEach((id) => {
-    if (!bddIds.has(id)) missing.push(id);
+    if (!bddIds.has(id) || !scriptIds.has(id)) missing.push(id);
   });
   const total = matrixIds.size;
   const covered = total - missing.length;
@@ -61,15 +95,17 @@ function writeSummary(summary) {
 function main() {
   const matrixIds = collectLoadIdsFromMatrix();
   const bddIds = collectLoadTagsFromBdd();
-  const summary = computeCoverage(matrixIds, bddIds);
+  const scriptIds = collectLoadIdsFromScripts();
+  const summary = computeCoverage(matrixIds, bddIds, scriptIds);
   writeSummary(summary);
 
   if (summary.missing.length) {
-    console.log("Cenarios de carga sem tag @load no BDD:");
+    console.log("Cenarios de carga sem @id(LOAD-...) no BDD de carga ou sem script:");
     summary.missing.forEach((id) => console.log(`- ${id}`));
   } else {
-    console.log("OK: todos os cenarios da matriz de carga estao referenciados no BDD.");
+    console.log("OK: todos os cenarios da matriz de carga estao referenciados no BDD de carga e em scripts.");
   }
+  console.log(`Cenarios Nao Funcionais: ${summary.percent.toFixed(2)}%`);
 
   process.exit(0);
 }

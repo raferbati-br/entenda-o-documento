@@ -12,13 +12,16 @@
     "test": "npm run test:unit && npm run test:e2e",
     "test:e2e": "playwright test",
     "test:unit": "vitest run --config vitest.config.unit.ts",
+    
     "test:load": "node scripts/run-load-test.mjs",
 
-    "test:coverage": "npm run test:unit:coverage && npm run test:e2e:coverage && npm run bdd:coverage && npm run test:load:coverage && node scripts/report-coverage-summary.mjs",
+    "test:coverage": "npm run test:unit:coverage && npm run test:e2e:coverage && node scripts/report-coverage-summary.mjs",
     "test:e2e:coverage": "set E2E_COVERAGE=1&& set NEXT_DISABLE_TURBOPACK=1&& playwright test && node scripts/report-playwright-coverage.mjs",
     "test:unit:coverage": "node scripts/run-unit-coverage.mjs",
-    "test:load:coverage": "node scripts/check-load-coverage.mjs",
-    "bdd:coverage": "node scripts/check-bdd-coverage.mjs"
+    
+    "bdd:coverage": "npm run bdd:load:coverage && npm run bdd:e2e:coverage && node scripts/report-bdd-summary.mjs",
+    "bdd:load:coverage": "node scripts/check-load-coverage.mjs",    
+    "bdd:e2e:coverage": "node scripts/check-bdd-coverage.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

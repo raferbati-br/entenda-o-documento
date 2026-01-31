@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { createCoverageMap } from "istanbul-lib-coverage";
+import coverageLib from "istanbul-lib-coverage";
 
 const ROOT = process.cwd();
 const UNIT_SUMMARY = path.join(ROOT, "coverage", "unit", "coverage-summary.json");
 const UNIT_SUMMARY_FALLBACK = path.join(ROOT, "test-results", "vitest", "coverage-summary.json");
 const UNIT_COVERAGE_JSON = path.join(ROOT, "test-results", "vitest", "coverage-all", "coverage-final.json");
 const E2E_SUMMARY = path.join(ROOT, "test-results", "playwright", "coverage-report", "coverage-summary.json");
-const BDD_SUMMARY = path.join(ROOT, "test-results", "bdd", "coverage-summary.json");
-const LOAD_SUMMARY = path.join(ROOT, "test-results", "load", "coverage-summary.json");
 
 function readJson(filePath) {
   if (!fs.existsSync(filePath)) return null;
@@ -21,51 +19,45 @@ function formatPercent(value) {
   return `${value.toFixed(2)}%`;
 }
 
-function readUnitCoverage() {
+function formatPercentNumber(value) {
+  if (typeof value !== "number" || Number.isNaN(value)) return null;
+  return Number(value.toFixed(2));
+}
+
+function readUnitCoverageValue() {
   const summary = readJson(UNIT_SUMMARY) || readJson(UNIT_SUMMARY_FALLBACK);
   if (summary?.total?.lines?.pct !== undefined) {
-    return formatPercent(summary.total.lines.pct);
+    return summary.total.lines.pct;
   }
 
   const coverageMapData = readJson(UNIT_COVERAGE_JSON);
   if (coverageMapData) {
+    const { createCoverageMap } = coverageLib;
     const map = createCoverageMap(coverageMapData);
-    const totals = map.getCoverageSummary().lines.pct;
-    return formatPercent(totals);
+    return map.getCoverageSummary().lines.pct;
   }
 
-  return "N/A";
+  return null;
 }
 
-function readE2ECoverage() {
+function readE2ECoverageValue() {
   const data = readJson(E2E_SUMMARY);
   const pct = data?.total?.lines?.pct;
-  return formatPercent(pct);
-}
-
-function readBddCoverage() {
-  const data = readJson(BDD_SUMMARY);
-  const pct = data?.percent;
-  return formatPercent(pct);
-}
-
-function readLoadCoverage() {
-  const data = readJson(LOAD_SUMMARY);
-  const pct = data?.percent;
-  return formatPercent(pct);
+  return typeof pct === "number" ? pct : null;
 }
 
 function main() {
-  const unitPct = readUnitCoverage();
-  const e2ePct = readE2ECoverage();
-  const bddPct = readBddCoverage();
-  const loadPct = readLoadCoverage();
+  const unitValue = formatPercentNumber(readUnitCoverageValue());
+  const e2eValue = formatPercentNumber(readE2ECoverageValue());
+  const averageValue = unitValue === null || e2eValue === null ? null : (unitValue + e2eValue) / 2;
 
-  console.log("Resumo de cobertura:");
-  console.log(`Cobertura dos Testes Unitarios: ${unitPct}`);
-  console.log(`Cobertura dos Testes Funcionais: ${e2ePct}`);
-  console.log(`Cobertura dos Cenários de Negocio: ${bddPct}`);
-  console.log(`Cobertura dos Testes de Carga: ${loadPct}`);
+  const unitPct = formatPercent(unitValue);
+  const e2ePct = formatPercent(e2eValue);
+  const averagePct = formatPercent(averageValue);
+
+  console.log(`\nResumo de cobertura (Codigo): ${averagePct}`);
+  console.log(`Testes Unitarios: ${unitPct}`);
+  console.log(`Testes Funcionais: ${e2ePct}`);
 }
 
 main();

@@ -26,5 +26,6 @@ IDs marcados com `@manual` sao ignorados na checagem de cobertura automatizada.
 - `@load(LOAD-<n>)`: relaciona o cenario BDD a um caso de carga da matriz.
 
 ## Relacao com testes de carga
-Alguns fluxos marcados no BDD devem ser cobertos por carga (k6). Veja a matriz
-em `docs/bdd/coverage-matrix.md`.
+Os cenarios de carga (nao funcionais) sao documentados em `docs/bdd-load/` e
+relacionados na matriz `docs/bdd/coverage-matrix.md`.
+Para detalhes de regras e cobertura, veja `docs/bdd-load/README.md`.

@@ -98,7 +98,7 @@ function getCoverageGaps(scenarios, testContent) {
 }
 
 function printCoverageReport(report) {
-  const { missing, withoutIds } = report;
+  const { missing, withoutIds, allIds, manualIds, coveredIds } = report;
   if (withoutIds.length) {
     console.log("Cenarios sem @id(...) encontrados:");
     for (const item of withoutIds) {
@@ -118,6 +118,12 @@ function printCoverageReport(report) {
   if (!withoutIds.length && !missing.length) {
     console.log("OK: todos os cenarios possuem @id e todos os IDs foram encontrados nos testes E2E.");
   }
+
+  const eligibleIds = new Set([...allIds].filter((id) => !manualIds.has(id)));
+  const total = eligibleIds.size;
+  const covered = [...coveredIds].filter((id) => eligibleIds.has(id)).length;
+  const percent = total ? (covered / total) * 100 : 100;
+  console.log(`Cenarios Funcionais: ${percent.toFixed(2)}%`);
 
   return withoutIds.length || missing.length ? 1 : 0;
 }
