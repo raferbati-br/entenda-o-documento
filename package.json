@@ -14,8 +14,6 @@
     "test:load": "node scripts/run-load-test.mjs",
     "test:coverage": "npm run test:unit:coverage && npm run test:e2e:coverage && npm run bdd:coverage && node scripts/report-coverage-summary.js",
     "bdd:coverage": "node scripts/check-bdd-coverage.js",
-    "test:unit:report": "vitest run --config vitest.config.unit.ts --coverage && powershell -NoProfile -Command \"Start-Process 'test-results/vitest/coverage-all/index.html'\"",
-    "test:unit:watch": "vitest --config vitest.config.unit.ts",
     "test:unit:coverage": "node scripts/run-unit-coverage.js"
   },
   "dependencies": {
