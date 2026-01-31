@@ -122,6 +122,19 @@ Rastreabilidade BDD x E2E:
 
 ---
 
+## 📊 Como interpretar coberturas
+- `npm run bdd:coverage`: cobertura de requisitos (rastreabilidade BDD → E2E). Não mede execução de código.
+- `npm run test:e2e:coverage`: cobertura de código exercitada pelos testes E2E.
+- `npm run test:unit:coverage`: cobertura de código exercitada pelos testes unitários.
+
+Interpretação combinada:
+- BDD alto + E2E baixo → requisitos rastreados, mas testes podem ser superficiais.
+- BDD baixo + E2E alto → muita execução, pouca rastreabilidade.
+- Unit alto + E2E baixo → lógica interna coberta, fluxo real menos exercitado.
+- Todos altos → melhor cenário (requisito ligado a testes + boa execução de código).
+
+---
+
 ## Deploy (Vercel)
 1) Crie um projeto no Vercel e conecte o repositório.
 2) Configure as variáveis de ambiente (veja `.env.example`).
