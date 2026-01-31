@@ -48,12 +48,22 @@ const JUMP_BUTTON_OFFSET = ACTION_BAR_HEIGHT + 12;
 const SUMMARY_PAUSE_MS = 350;
 
 function splitSummary(text: string) {
-  const sentenceRegex = /[^.!?]+(?:[.!?]+|$)/g;
-  return text
-    .split(/\n+/)
-    .flatMap((line) => line.match(sentenceRegex) || [])
-    .map((part) => part.trim())
-    .filter(Boolean);
+  const lines = text.split(/\n+/);
+  const parts: string[] = [];
+  for (const line of lines) {
+    let current = "";
+    for (const ch of line) {
+      current += ch;
+      if (ch === "." || ch === "!" || ch === "?") {
+        const trimmed = current.trim();
+        if (trimmed) parts.push(trimmed);
+        current = "";
+      }
+    }
+    const tail = current.trim();
+    if (tail) parts.push(tail);
+  }
+  return parts;
 }
 
 function confidenceToInfo(confidence: number) {

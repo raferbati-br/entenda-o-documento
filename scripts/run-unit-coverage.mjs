@@ -58,7 +58,7 @@ function main() {
   );
   const result = spawnSync(
     process.platform === "win32" ? `"${vitestCommand}"` : vitestCommand,
-    ["run", "--config", "vitest.config.unit.ts", "--coverage", "--coverage.reporter=text"],
+    ["run", "--config", "vitest.config.unit.ts", "--coverage"],
     { encoding: "utf8", shell: true }
   );
 

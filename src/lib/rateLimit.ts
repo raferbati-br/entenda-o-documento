@@ -14,7 +14,7 @@ type RateLimitGlobal = typeof globalThis & {
 };
 
 const g = globalThis as RateLimitGlobal;
-g.__RATE_LIMIT__ = g.__RATE_LIMIT__ || new Map<string, { count: number; resetAt: number }>();
+g.__RATE_LIMIT__ ??= new Map<string, { count: number; resetAt: number }>();
 const memoryStore: Map<string, { count: number; resetAt: number }> = g.__RATE_LIMIT__;
 
 let redisClient: Redis | null = null;
@@ -24,12 +24,10 @@ function isRedisConfigured() {
 }
 
 function getRedis(): Redis {
-  if (!redisClient) {
-    redisClient = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    });
-  }
+  redisClient ??= new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  });
   return redisClient;
 }
 

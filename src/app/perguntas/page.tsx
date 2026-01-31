@@ -120,7 +120,10 @@ function createQaAttempt(question: string) {
 }
 
 function createQaItemId() {
-  return `qa-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const bytes = new Uint8Array(8);
+  globalThis.crypto.getRandomValues(bytes);
+  const rand = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return `qa-${Date.now()}-${rand}`;
 }
 
 async function streamQaAnswer(
@@ -694,7 +697,7 @@ export default function PerguntasPage() {
                 }}
                 size="small"
                 fullWidth
-                inputProps={{ maxLength: MAX_QUESTION_CHARS }}
+                slotProps={{ htmlInput: { maxLength: MAX_QUESTION_CHARS } }}
               />
               <IconButton
                 onClick={handleAsk}

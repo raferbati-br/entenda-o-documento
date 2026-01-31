@@ -16,7 +16,7 @@ type CaptureStoreGlobal = typeof globalThis & {
 };
 
 const g = globalThis as CaptureStoreGlobal;
-g.__CAPTURE_STORE__ = g.__CAPTURE_STORE__ || new Map<string, CaptureEntry>();
+g.__CAPTURE_STORE__ ??= new Map<string, CaptureEntry>();
 const memoryStore: Map<string, CaptureEntry> = g.__CAPTURE_STORE__;
 
 let redisClient: Redis | null = null;
@@ -26,12 +26,10 @@ export function isRedisConfigured() {
 }
 
 function getRedis(): Redis {
-  if (!redisClient) {
-    redisClient = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    });
-  }
+  redisClient ??= new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  });
   return redisClient;
 }
 
@@ -80,7 +78,7 @@ export async function getCapture(id: string): Promise<CaptureEntry | null> {
       return null;
     }
   }
-  return raw as CaptureEntry;
+  return raw;
 }
 
 export async function deleteCapture(id: string) {

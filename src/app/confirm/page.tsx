@@ -36,13 +36,13 @@ export default function ConfirmPage() {
     telemetryCapture("confirm_open");
   }, []);
 
-  async function retake() {
+  const retake = useCallback(async () => {
     await clearCapture();
     telemetryCapture("confirm_retake");
     router.replace("/camera");
-  }
+  }, [router]);
 
-  async function handleConfirm() {
+  const handleConfirm = useCallback(async () => {
     setLoading(true);
     setErr(null);
     telemetryCapture("confirm_submit");
@@ -114,7 +114,15 @@ export default function ConfirmPage() {
       setErr(mapNetworkError(message));
       telemetryCapture("confirm_error");
     }
-  }
+  }, [router]);
+
+  const handleRetakeClick = useCallback(() => {
+    void retake();
+  }, [retake]);
+
+  const handleConfirmClick = useCallback(() => {
+    void handleConfirm();
+  }, [handleConfirm]);
 
   if (!previewUrl) return null;
 
@@ -149,13 +157,13 @@ export default function ConfirmPage() {
           secondary={{
             label: "Escolher outra",
             startIcon: <ReplayRoundedIcon />,
-            onClick: retake,
+            onClick: handleRetakeClick,
             disabled: loading,
           }}
           primary={{
             label: "Usar esta",
             startIcon: <CheckCircleRoundedIcon />,
-            onClick: handleConfirm,
+            onClick: handleConfirmClick,
             disabled: loading,
           }}
         />
@@ -173,4 +181,3 @@ export default function ConfirmPage() {
     </PageLayout>
   );
 }
-

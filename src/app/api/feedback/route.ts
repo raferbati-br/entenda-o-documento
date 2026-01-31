@@ -14,12 +14,10 @@ function isRedisConfigured() {
 }
 
 function getRedis(): Redis {
-  if (!redisClient) {
-    redisClient = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    });
-  }
+  redisClient ??= new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  });
   return redisClient;
 }
 
@@ -31,8 +29,10 @@ function slugify(value: string) {
   return value
     .toLowerCase()
     .trim()
-    .replaceAll(/[^a-z0-9]+/g, "_")
-    .replaceAll(/(?:^_+|_+$)/g, "")
+    .replaceAll(/[^a-z0-9]/g, "_")
+    .replaceAll(/_+/g, "_")
+    .replace(/^_+/, "")
+    .replace(/_+$/, "")
     .slice(0, 32);
 }
 

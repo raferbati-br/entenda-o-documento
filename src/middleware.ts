@@ -5,7 +5,7 @@ function generateNonce() {
   globalThis.crypto.getRandomValues(bytes);
   let binary = "";
   bytes.forEach((b) => {
-    binary += String.fromCharCode(b);
+    binary += String.fromCodePoint(b);
   });
   return btoa(binary);
 }
