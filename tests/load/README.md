@@ -10,7 +10,7 @@ $env:BASE_URL="http://localhost:3000"; npm run test:load
 
 ## Cobertura
 ```
-npm run bdd:load:coverage
+npm run bdd:coverage:load
 ```
 
 ## Observacoes

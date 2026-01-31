@@ -19,9 +19,9 @@
     "test:e2e:coverage": "set E2E_COVERAGE=1&& set NEXT_DISABLE_TURBOPACK=1&& playwright test && node scripts/report-playwright-coverage.mjs",
     "test:unit:coverage": "node scripts/run-unit-coverage.mjs",
     
-    "bdd:coverage": "npm run bdd:load:coverage && npm run bdd:e2e:coverage && node scripts/report-bdd-summary.mjs",
-    "bdd:load:coverage": "node scripts/check-load-coverage.mjs",    
-    "bdd:e2e:coverage": "node scripts/check-bdd-coverage.mjs"
+    "bdd:coverage": "npm run bdd:coverage:load && npm run bdd:coverage:e2e && node scripts/report-bdd-summary.mjs",
+    "bdd:coverage:load": "node scripts/check-load-coverage.mjs",    
+    "bdd:coverage:e2e": "node scripts/check-bdd-coverage.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

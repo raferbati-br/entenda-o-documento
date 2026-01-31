@@ -5,8 +5,8 @@ import path from "node:path";
 const ROOT = process.cwd();
 const BDD_SUMMARY = path.join(ROOT, "test-results", "bdd", "coverage-summary.json");
 const LOAD_SUMMARY = path.join(ROOT, "test-results", "load", "coverage-summary.json");
-const LOAD_MATRIX = path.join(ROOT, "docs", "req", "coverage-matrix.md");
-const LOAD_BDD_DIR = path.join(ROOT, "docs", "req", "not_funcional");
+const LOAD_MATRIX = path.join(ROOT, "docs", "requirements", "coverage-matrix.md");
+const LOAD_BDD_DIR = path.join(ROOT, "docs", "requirements", "non-functional");
 const LOAD_SCRIPTS_DIR = path.join(ROOT, "tests", "load");
 const LOAD_RUNNER = path.join(ROOT, "scripts", "run-load-test.mjs");
 

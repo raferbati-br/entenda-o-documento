@@ -22,4 +22,5 @@ npm run bdd:coverage
 - IDs com `@manual` sao ignorados na checagem automatizada.
 - A cobertura de carga considera um cenario coberto quando o ID aparece no BDD nao funcional
   e no codigo de algum script de carga (`tests/load/**` ou `scripts/run-load-test.mjs`).
+- Use `npm run bdd:coverage:e2e` e `npm run bdd:coverage:load` para checagens separadas.
 - Instrucoes de execucao de carga ficam em `tests/load/README.md`.

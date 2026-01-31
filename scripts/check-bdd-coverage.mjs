@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const BDD_DIR = path.join(ROOT, "docs", "req", "funcional");
+const BDD_DIR = path.join(ROOT, "docs", "requirements", "functional");
 const E2E_DIR = path.join(ROOT, "tests", "e2e");
 const BDD_RESULTS_DIR = path.join(ROOT, "test-results", "bdd");
 const BDD_SUMMARY_PATH = path.join(BDD_RESULTS_DIR, "coverage-summary.json");

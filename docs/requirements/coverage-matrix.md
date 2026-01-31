@@ -67,11 +67,11 @@ quando houver, tenham script automatizado correspondente.
 
 - BDD x E2E:
 ```
-npm run bdd:coverage
+npm run bdd:coverage:e2e
 ```
 
 - BDD x LOAD (cenarios em `docs/requirements/non-functional/`):
 ```
-npm run bdd:load:coverage
+npm run bdd:coverage:load
 ```
 

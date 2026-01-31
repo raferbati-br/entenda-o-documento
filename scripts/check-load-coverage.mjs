@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const BDD_DIR = path.join(ROOT, "docs", "req", "not_funcional");
-const LOAD_MATRIX = path.join(ROOT, "docs", "req", "coverage-matrix.md");
+const BDD_DIR = path.join(ROOT, "docs", "requirements", "non-functional");
+const LOAD_MATRIX = path.join(ROOT, "docs", "requirements", "coverage-matrix.md");
 const LOAD_SCRIPTS_DIR = path.join(ROOT, "tests", "load");
 const LOAD_RUNNER = path.join(ROOT, "scripts", "run-load-test.mjs");
 const OUTPUT_DIR = path.join(ROOT, "test-results", "load");
