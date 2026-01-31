@@ -115,6 +115,18 @@ npm run test:coverage
 npm run bdd:coverage
 ```
 
+## 🔎 SonarCloud (scanner local)
+
+1) Crie um arquivo local `.env.sonar.local` (ignorado pelo git) baseado em `.env.sonar.local.example`:
+```
+SONAR_TOKEN=seu_token
+```
+
+2) Rode o scanner local (gera cobertura unitária e envia ao SonarCloud):
+```
+.\run-sonar-local.ps1
+```
+
 ---
 
 ## 🧾 BDD (requisitos em Gherkin)

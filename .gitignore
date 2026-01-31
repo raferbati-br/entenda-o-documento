@@ -40,6 +40,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local sonar token
+.env.sonar.local
+
 # vercel
 .vercel
 
@@ -49,4 +52,8 @@ next-env.d.ts
 
 # sonar
 *sonar*
+!sonar-project.properties
+!run-sonar-local.ps1
+!export_sonar_issues.ps1
+!.env.sonar.local.example
 /.scannerwork/
