@@ -102,6 +102,13 @@ Instruções completas:
 - `tests/unit/README.md`
 - `tests/load/README.md`
 
+Resumo rápido:
+```
+npm run test:unit
+npm run test:e2e
+npm run test:e2e:coverage
+```
+
 ---
 
 ## Deploy (Vercel)

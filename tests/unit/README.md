@@ -2,7 +2,7 @@
 
 Foco: seguranca e performance do `postprocess` (sem chamadas a OpenAI).
 
-Rodar (gera cobertura e abre o HTML):
+Rodar:
 ```
 npm run test:unit
 ```
@@ -14,5 +14,10 @@ npm run test:unit:watch
 
 Cobertura geral (todo o `src`):
 ```
-npm run test:unit
+npm run test:unit:coverage
+```
+
+Cobertura com relatório HTML:
+```
+npm run test:unit:report
 ```
