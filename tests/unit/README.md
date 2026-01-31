@@ -1,13 +1,16 @@
-# Suite de testes unit
+# Testes unit
 
-Foco: seguranca e performance do `postprocess` (sem chamadas a OpenAI).
+Suite de testes unitarios (foco em logica e utilitarios).
 
-Rodar:
+## Rodar
 ```
 npm run test:unit
 ```
 
-Cobertura geral (todo o `src`):
+## Cobertura
 ```
 npm run test:unit:coverage
 ```
+
+## Observacoes
+- Cobertura e medida sobre `src/`.

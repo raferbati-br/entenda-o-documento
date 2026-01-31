@@ -64,7 +64,7 @@ Visão geral e endpoints em `docs/architecture/README.md`.
 
 - Capturas são temporárias e não há histórico persistente por usuário.
 - Telemetria é opcional e não inclui conteúdo do documento.
-- Detalhes em `docs/privacy.md`.
+- Detalhes em `docs/governance/privacy.md`.
 
 ## 🚀 Como rodar localmente
 **Pré-requisitos**
@@ -83,7 +83,7 @@ Copie `.env.example` para `.env.local` e preencha ao menos:
 - `API_TOKEN_SECRET`
 - `APP_ORIGIN=http://localhost:3000`
 
-Detalhes das variáveis (Redis, PostHog, métricas e prompts/modelo) estão em `docs/config.md`.
+Detalhes das variáveis (Redis, PostHog, métricas e prompts/modelo) estão em `docs/architecture/config.md`.
 
 **Rodar em desenvolvimento**
 ```
@@ -114,14 +114,14 @@ npm run load:coverage
 ---
 
 ## 🧾 BDD (requisitos em Gherkin)
-Os fluxos end-to-end estão documentados em `docs/bdd/`, separados por módulo/feature.
+Os fluxos end-to-end estão documentados em `docs/requirements/functional/`, separados por módulo/feature.
 
 Destaque:
-- `docs/bdd/fluxo-geral.feature` (visão macro do fluxo completo)
+- `docs/requirements/functional/fluxo-geral.feature` (visão macro do fluxo completo)
 
 Rastreabilidade BDD x E2E:
-- `docs/bdd/README.md`
-- `docs/bdd/coverage-matrix.md`
+- `docs/requirements/README.md`
+- `docs/requirements/coverage-matrix.md`
 
 ---
 

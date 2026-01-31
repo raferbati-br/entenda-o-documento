@@ -2,24 +2,21 @@
 
 Suite de ponta a ponta com Playwright.
 
+## Preparacao
 Instale os navegadores (uma vez):
 ```
 npx playwright install
 ```
 
-Rodar:
+## Rodar
 ```
 npm run test:e2e
 ```
 
-Cobertura E2E (gera relatorio HTML em `test-results/playwright/coverage-report/index.html`):
+## Cobertura
 ```
 npm run test:e2e:coverage
 ```
-
-Observacoes:
-- Esse script desativa o Turbopack para evitar sourcemaps sectioned.
-- O relatorio e por fonte (`src/`), nao por bundle.
 
 ## Estrutura dos testes
 Os cenarios estao divididos por feature/fluxo, com um arquivo `.spec.ts` por modulo:
@@ -33,3 +30,8 @@ Os cenarios estao divididos por feature/fluxo, com um arquivo `.spec.ts` por mod
 - `tests/e2e/metrics.spec.ts` (manual por enquanto, ainda nao existe)
 
 Helpers compartilhados ficam em `tests/e2e/helpers/`.
+
+## Observacoes
+- A cobertura gera relatorio HTML em `test-results/playwright/coverage-report/index.html`.
+- Esse script desativa o Turbopack para evitar sourcemaps sectioned.
+- O relatorio e por fonte (`src/`), nao por bundle.

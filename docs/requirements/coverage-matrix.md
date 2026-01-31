@@ -70,7 +70,7 @@ quando houver, tenham script automatizado correspondente.
 npm run bdd:coverage
 ```
 
-- BDD x LOAD (cenarios em ``):
+- BDD x LOAD (cenarios em `docs/requirements/non-functional/`):
 ```
 npm run bdd:load:coverage
 ```

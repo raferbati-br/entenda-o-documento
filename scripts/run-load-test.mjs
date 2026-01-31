@@ -1,4 +1,5 @@
 import http from "node:http";
+import path from "node:path";
 import { spawn } from "node:child_process";
 import readline from "node:readline";
 
@@ -112,6 +113,11 @@ async function main() {
     await stopProcessTree(devProcess.pid);
     if (devLogCleanup) devLogCleanup();
   }
+
+  const scriptName = path.basename(scriptPath);
+  const statusLabel = exitCode === 0 ? "sucesso" : `falha (exit ${exitCode})`;
+  console.log("\nResumo dos Testes de Carga:");
+  console.log(`Cenario: ${scenarioName}: (${scriptName}): ${statusLabel}`);
 
   if (exitCode !== 0) {
     process.exit(exitCode);
