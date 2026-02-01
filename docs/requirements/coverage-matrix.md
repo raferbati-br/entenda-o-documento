@@ -45,6 +45,11 @@ e cenarios de carga.
 | E2E-36 (manual) | Bloquear acesso sem token valido | /metrics | `metrics.feature` | `metrics.spec.ts` |
 | E2E-37 (manual) | Baixa confianca no resultado | /result | `fluxo-geral.feature` | `fluxo-geral.spec.ts` |
 | E2E-38 (manual) | Duvidas apos ver o resultado | /result, /perguntas | `fluxo-geral.feature` | `fluxo-geral.spec.ts` |
+
+Rastreabilidade funcional -> carga:
+- Tags `@load(LOAD-...)` nos cenarios funcionais sao oficiais e conectam cenarios de negocio
+  aos requisitos de carga correspondentes.
+- Essas tags nao substituem o `@id(LOAD-...)` nos BDDs de carga, que seguem obrigatorios.
 ## Cobertura BDD x LOAD
 
 Objetivo: garantir que os cenarios nao funcionais (carga) estejam documentados em BDD de carga e,

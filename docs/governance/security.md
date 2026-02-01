@@ -14,15 +14,14 @@ Este documento descreve o minimo esperado para seguranca operacional do projeto,
 
 ## Headers obrigatorios
 Os endpoints devem expor os seguintes headers:
-- `Content-Security-Policy`
 - `X-Frame-Options`
 - `X-Content-Type-Options`
 - `Referrer-Policy`
 - `Permissions-Policy`
 
-### CSP com nonce
-O CSP e gerado por request e inclui `nonce` para scripts e estilos inline.
-Isso permite remover `unsafe-inline` e `unsafe-eval` mantendo a execucao segura.
+Observacao:
+- Atualmente o projeto nao aplica CSP via middleware. Os headers acima sao definidos
+  via `next.config.ts`.
 
 ### Alertas filtrados
 - Regra `10096` (Timestamp Disclosure - Unix) e tratada como falso positivo para `/_next/static/*`.

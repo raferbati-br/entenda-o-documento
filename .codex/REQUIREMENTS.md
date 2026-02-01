@@ -1,4 +1,4 @@
-# Requisitos
+﻿# Requisitos
 
 Este projeto utiliza requisitos em **BDD** como fonte oficial de requisitos.
 
@@ -30,6 +30,8 @@ Sempre que implementar uma mudança, o Codex deve:
 
 - Manter requisitos em `docs/requirements/` (funcionais e não funcionais).
 - Não criar ou alterar IDs sem atualizar a matriz de cobertura quando necessário.
+- Ao criar novos IDs (@id ou @load), atualizar `docs/requirements/coverage-matrix.md`
+  e os scripts de carga relacionados quando aplicável.
 - Preferir aderir aos requisitos existentes.
 - Mudanças em requisitos **não funcionais** ou na **matriz de cobertura** exigem confirmação explícita antes de prosseguir.
 

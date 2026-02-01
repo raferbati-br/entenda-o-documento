@@ -1,184 +1,63 @@
-﻿# Entenda o Documento
+# Entenda o Documento
 
-**Entenda o Documento** é um MVP de impacto social que ajuda pessoas a **compreender documentos burocráticos** (cartas bancárias, cobranças, comunicados administrativos etc.) usando **foto + IA multimodal**, com explicações em **português simples e neutro**.
-
-Este projeto é a **primeira etapa do Copilot do Cidadão**.
-
-> 🎯 Foco: empoderamento por compreensão — não oferece aconselhamento jurídico, médico ou financeiro.
+**Entenda o Documento** é um MVP de impacto social que ajuda pessoas a **compreender documentos burocráticos** (cartas bancárias, cobranças, comunicados administrativos etc.) usando **foto + IA multimodal**, com explicações em **português simples e neutro**.  
+Faz parte da primeira etapa do Copilot do Cidadão.  
+🎯 Foco: empoderamento por compreensão — sem aconselhamento jurídico, médico ou financeiro.
 
 ---
 
-## ✅ O que o MVP faz
+## Visão geral
 
-- O usuário tira uma foto ou escolhe uma imagem de um documento
-- A imagem é analisada por um modelo multimodal de IA
-- O sistema devolve uma explicação simples:
-  - O que é o documento
-  - O que ele diz
-  - Datas relevantes (se houver)
-  - O que normalmente acontece em casos semelhantes
-  - Avisos importantes
-- Permite perguntas curtas sobre o documento (Q&A)
-- Permite ouvir a explicação (leitura em voz alta) e compartilhar o resumo
-- Coleta feedback simples (sim/não) para melhorar a qualidade
-- Sempre com linguagem **não prescritiva** e aviso legal explícito
+- Captura de foto/galeria → API (`/api/analyze`, `/api/ocr`, `/api/qa`) → prompt multimodal → cards JSON (`confidence`, `cards`, `notice`).  
+- Cards suavizados em `src/ai/postprocess.ts` para remover linguagem prescritiva e ocultar dados sensíveis.  
+- Suporte a múltiplos provedores (OpenAI, Gemini e mocks) configurados em `src/ai/providers` e controlados por `LLM_PROVIDER`, `LLM_MODEL` e `ANALYZE_*` no `.env`.
 
 ---
 
-## 🧱 Arquitetura
+## Infraestrutura oficial
 
-Visão geral e endpoints em `docs/architecture/README.md`.
-
----
-
-## 🤖 Integração com IA
-
-- **Modelo:** OpenAI GPT-4o-mini (multimodal)
-- **Entrada:** texto + imagem (foto do documento)
-- **Saída (JSON):**
-
-```json
-{
-  "confidence": 0.0,
-  "cards": [
-    { "id": "whatIs", "title": "O que e este documento", "text": "..." },
-    { "id": "whatSays", "title": "O que este documento esta comunicando", "text": "..." },
-    { "id": "dates", "title": "Datas ou prazos importantes", "text": "..." },
-    { "id": "terms", "title": "Palavras dificeis explicadas", "text": "..." },
-    { "id": "whatUsuallyHappens", "title": "O que normalmente acontece", "text": "..." }
-  ],
-  "notice": "string"
-}
-```
+- Arquitetura C4 e diagramas: `docs/architecture/README.md` e `docs/architecture/diagrams/`.  
+- Configurações de prompts, redis, telemetria e tokens: `docs/architecture/config.md`.  
+- Requisitos funcionais e não funcionais (BDD): `docs/requirements/README.md`, `docs/requirements/coverage-matrix.md`, `docs/requirements/functional/` e `docs/requirements/non-functional/`.  
+- Governança (privacidade, headers obrigatórios e scan OWASP ZAP): `docs/governance/privacy.md` e `docs/governance/security.md`.  
+- Detalhes de testes, cobertura, observabilidade e deploy estão centralizados em `docs/README.md`.
 
 ---
 
-## 🛡️ Segurança de linguagem
+## Começar localmente
 
-- Evita verbos prescritivos ("deve", "pague", "faça")
-- Usa linguagem neutra ("o documento informa", "parece indicar")
-- Confiança sempre limitada entre 0 e 1
-- Aviso adicional quando a confiança é baixa
-
-## 🔒 Privacidade
-
-- Capturas são temporárias e não há histórico persistente por usuário.
-- Telemetria é opcional e não inclui conteúdo do documento.
-- Detalhes em `docs/governance/privacy.md`.
-
-## 🛡️ Segurança
-
-- Políticas e varredura automatizada em `docs/governance/security.md`.
-
-## 🚀 Como rodar localmente
 **Pré-requisitos**
 - Node.js 18+
-- Conta e chave de API da OpenAI
+- Conta e chave de API (OpenAI ou Gemini)
 
 **Instalação**
-- git clone https://github.com/raferbati-br/entenda-o-documento.git
-- cd entenda-o-documento
-- npm install
+- `git clone https://github.com/raferbati-br/entenda-o-documento.git`
+- `cd entenda-o-documento`
+- `npm install`
 
-**Variáveis de ambiente**
+**Variáveis mínimas**
+- Copie `.env.example` para `.env.local` e defina `OPENAI_API_KEY`, `API_TOKEN_SECRET` e `APP_ORIGIN=http://localhost:3000`.
+- Consulte `docs/architecture/config.md` para Redis/Upstash, PostHog, métricas e triggers de `ANALYZE_TEXT_ONLY`.
 
-Copie `.env.example` para `.env.local` e preencha ao menos:
-- `OPENAI_API_KEY`
-- `API_TOKEN_SECRET`
-- `APP_ORIGIN=http://localhost:3000`
-
-Detalhes das variáveis (Redis, PostHog, métricas e prompts/modelo) estão em `docs/architecture/config.md`.
-
-**Rodar em desenvolvimento**
-```
+**Executar**
+```bash
 npm run dev
 ```
-
-Acesse:
-http://localhost:3000
+Acesse http://localhost:3000
 
 ---
 
-## ✅ Testes
+## Observabilidade, métricas e operações
 
-Instruções completas:
-- `tests/e2e/README.md`
-- `tests/unit/README.md`
-- `tests/load/README.md`
-
-Resumo rápido:
-```
-npm run test:unit
-npm run test:e2e
-npm run test:e2e:coverage
-npm run test:coverage
-npm run bdd:coverage
-```
-
-## 🔎 SonarCloud (scanner local)
-
-1) Crie um arquivo local `.env.sonar.local` (ignorado pelo git) baseado em `.env.sonar.local.example`:
-```
-SONAR_TOKEN=seu_token
-```
-
-2) Rode o scanner local (gera cobertura unitária e envia ao SonarCloud):
-```
-.\run-sonar-local.ps1
-```
+- Dashboard interno em `/metrics`, protegido por `METRICS_DASHBOARD_TOKEN` (veja `README.md` e `docs/README.md`).  
+- Logs estruturados registram `requestId`, `status`, `duration_ms`, `provider`, `model`, `promptId` e `contextSource`.  
+- Telemetria é opcional via PostHog; métricas e rate limit usam Redis/Upstash quando configurado, com fallback em memória.  
+- Cobertura BDD x E2E x carga monitorada por `npm run bdd:coverage` e `scripts/check-*`. Detalhes em `docs/README.md`.
 
 ---
 
-## 🧾 BDD (requisitos em Gherkin)
-Os fluxos end-to-end estão documentados em `docs/requirements/functional/`, separados por módulo/feature.
+## Aviso legal e contribuições
 
-Destaque:
-- `docs/requirements/functional/fluxo-geral.feature` (visão macro do fluxo completo)
-
-Rastreabilidade BDD x E2E:
-- `docs/requirements/README.md`
-- `docs/requirements/coverage-matrix.md`
-
----
-
-## 📊 Como interpretar coberturas
-- `npm run bdd:coverage`: cobertura de requisitos (funcionais e não funcionais). Não mede execução de código.
-- `npm run bdd:coverage:e2e`: rastreabilidade BDD funcional → E2E.
-- `npm run bdd:coverage:load`: rastreabilidade BDD não funcional → scripts de carga.
-- `npm run test:e2e:coverage`: cobertura de código exercitada pelos testes E2E.
-- `npm run test:unit:coverage`: cobertura de código exercitada pelos testes unitários.
-
-Interpretação combinada:
-- BDD alto + E2E baixo → requisitos rastreados, mas testes podem ser superficiais.
-- BDD baixo + E2E alto → muita execução, pouca rastreabilidade.
-- Unit alto + E2E baixo → lógica interna coberta, fluxo real menos exercitado.
-- Todos altos → melhor cenário (requisito ligado a testes + boa execução de código).
-
----
-
-## Deploy (Vercel)
-1) Crie um projeto no Vercel e conecte o repositório.
-2) Configure as variáveis de ambiente (veja `.env.example`).
-3) Deploy automático via push na branch `main`.
-
-## Dashboard de metricas
-Acesse `/metrics` para ver contadores agregados (ultimos 7 dias). Se `METRICS_DASHBOARD_TOKEN` estiver definido, use `/metrics?token=SEU_TOKEN`.
-
-## Observabilidade (logs)
-Os endpoints registram logs estruturados com:
-- `requestId`, `status`, `duration_ms`, `ip`
-- Em `/api/analyze`, `/api/ocr` e `/api/qa`: `provider`, `model`, `promptId`
-- Em `/api/feedback`: `helpful`, `reason`, `confidenceBucket`, `contextSource`
-
-Onde ver:
-- Local: terminal do `npm run dev`
-- Vercel: Dashboard → Logs/Functions
-
-## ⚠️ Aviso legal
-- Esta aplicação fornece apenas explicações informativas sobre documentos.
-- Ela não substitui orientação profissional (jurídica, financeira, médica ou administrativa).
-
-## Encoding
-Este repositório usa UTF-8. Se você vir caracteres quebrados, configure seu editor para UTF-8.
-
-Contribuições e discussões são bem-vindas.
+- Esta aplicação fornece apenas explicações informativas e não substitui orientação profissional (jurídica, financeira ou médica).  
+- Todo o repositório usa UTF-8; se houver mojibake, ajuste o editor.  
+- Contribuições e discussões são bem-vindas.

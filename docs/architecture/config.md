@@ -32,9 +32,14 @@ Exemplo rapido para Gemini:
 - `LLM_PROVIDER=gemini`
 - `LLM_MODEL=gemini-2.0-flash-lite-001`
 
+Exemplo rapido para mock (testes locais e carga):
+- `LLM_PROVIDER=mock`
+- `ANALYZE_LLM_PROVIDER=mock`
+
 ### Analise text-only (OCR)
 - Custo/latencia: reduz tokens multimodais na segunda chamada quando o OCR e suficiente.
 - Qualidade: depende do OCR; quando o texto vem incompleto, o sistema faz fallback para analise com imagem.
+- Valores aceitos para `ANALYZE_TEXT_ONLY`: `true`, `1`, `yes`, `on` (case-insensitive).
 
 ### Redis / Upstash (opcional)
 Usado para armazenar capturas temporarias, rate limit e contadores agregados.
@@ -46,6 +51,7 @@ Sem Redis, o app usa memoria local (bom para desenvolvimento, nao recomendado em
 ### Seguranca e origem
 - `API_TOKEN_SECRET`: segredo para assinar tokens temporarios de sessao.
 - `APP_ORIGIN`: origem permitida para chamadas das APIs (ex.: `http://localhost:3000`).
+- `API_LOGS`: quando `0`, desliga logs estruturados de API (ligado por padrao fora de teste).
 
 ### Telemetria (opcional)
 - `NEXT_PUBLIC_POSTHOG_KEY`: chave publica do PostHog.

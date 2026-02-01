@@ -1,4 +1,4 @@
-# Padrão de Pull Request
+﻿# Padrão de Pull Request
 
 Este arquivo define como o Codex deve criar Pull Requests quando solicitado.
 
@@ -20,7 +20,6 @@ O título do PR deve seguir **o mesmo padrão do commit principal**.
 
 Formato:
 <tipo>: <resumo curto> (#<issue>)
-
 
 ---
 

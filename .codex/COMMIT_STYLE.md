@@ -1,4 +1,4 @@
-# Padrão de Commit
+﻿# Padrão de Commit
 
 Este arquivo define como o Codex deve criar commits neste repositório.
 
@@ -21,7 +21,6 @@ Aguardar confirmação implícita (ausência de objeção) antes de executar o c
 
 Formato obrigatório:
 <tipo>: <resumo curto> (#<issue>)
-
 
 ---
 

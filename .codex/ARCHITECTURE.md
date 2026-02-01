@@ -1,4 +1,4 @@
-# Arquitetura
+﻿# Arquitetura
 
 Este projeto utiliza documentação no modelo **C4** como fonte oficial de arquitetura.
 
@@ -30,6 +30,8 @@ Sempre que implementar uma mudança, o Codex deve:
 - Preferir aderir à arquitetura existente.
 - Evitar refatorações estruturais não solicitadas pela issue.
 - Mudanças nos níveis **Context** ou **Container** exigem confirmação explícita antes de prosseguir.
+- Mudanças em provider, storage, segurança (CSP/headers) ou telemetria exigem
+  atualização da documentação C4 e do `docs/architecture/config.md`.
 
 ---
 

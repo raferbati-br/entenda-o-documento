@@ -71,7 +71,7 @@ describe("useJumpToEnd", () => {
       useEffect(() => {
         api = hook;
       }, [hook]);
-      return <div ref={hook.endRef as React.RefObject<HTMLDivElement>} />;
+      return null;
     }
 
     render(<Harness />);

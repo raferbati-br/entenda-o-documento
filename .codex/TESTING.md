@@ -1,4 +1,4 @@
-# Testes
+﻿# Testes
 
 Sempre que código for alterado, o Codex deve seguir as diretrizes abaixo.
 
@@ -24,6 +24,8 @@ Antes de escrever ou alterar testes, o Codex deve declarar explicitamente na con
 3. Adicionar testes apenas quando agregam valor.
 4. Manter testes próximos ao código alterado.
 5. Garantir que testes existentes continuem passando.
+6. Ao alterar arquivos `.feature` ou `docs/requirements/coverage-matrix.md`, rodar `npm run bdd:coverage`.
+7. Ao alterar requisitos/fluxos de segurança ou carga, rodar `npm run test:security` e/ou `npm run test:load`.
 
 ---
 
@@ -38,8 +40,6 @@ Formato esperado na conversa:
 > ▶️ Execução de Testes  
 > Comando: <comando>  
 > Resultado: <sucesso | falha>
-
----
 
 ---
 
@@ -61,7 +61,7 @@ Em caso de falha no build:
 - corrigir o problema antes de prosseguir
 
 ## Comando padrão para rodar testes
-- Codigo: npm run lint
+- Código: npm run lint
 - Testes: npm run test
 - Build: npm run build
 

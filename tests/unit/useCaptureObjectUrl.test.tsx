@@ -1,6 +1,5 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it, vi, beforeEach, afterAll } from "vitest";
-import type { ReactElement } from "react";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";

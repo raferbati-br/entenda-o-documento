@@ -80,6 +80,16 @@ function main() {
   const combined = `${result.stdout || ""}\n${result.stderr || ""}`;
   fs.mkdirSync(SUMMARY_DIR, { recursive: true });
   fs.writeFileSync(path.join(SUMMARY_DIR, "coverage-output.txt"), combined);
+
+  // Normalize Windows paths so Sonar can resolve LCOV entries.
+  const lcovPath = path.join(SUMMARY_DIR, "lcov.info");
+  if (fs.existsSync(lcovPath)) {
+    const raw = fs.readFileSync(lcovPath, "utf8");
+    const normalized = raw.replaceAll("SF:src\\", "SF:src/").replaceAll("SF:src\\\\", "SF:src/");
+    if (normalized !== raw) {
+      fs.writeFileSync(lcovPath, normalized);
+    }
+  }
   const linesPct = parseLinesCoverage(combined);
   if (linesPct === null) {
     console.warn("Nao foi possivel extrair cobertura de linhas do resumo do Vitest.");

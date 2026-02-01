@@ -6,3 +6,4 @@ Diagramas C4:
 - C3: Components -> docs/architecture/diagrams/C3.md
 - C4: Code (key flows) -> docs/architecture/diagrams/C4.md
 - Config -> docs/architecture/config.md
+- Contratos JSON -> docs/architecture/contracts.md

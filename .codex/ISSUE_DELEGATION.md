@@ -1,4 +1,4 @@
-# Delegação de Issues
+﻿# Delegação de Issues
 
 Sempre que uma issue do GitHub for mencionada, o Codex deve executar os passos abaixo **em ordem**.
 

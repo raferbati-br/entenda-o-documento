@@ -1,4 +1,4 @@
-# Codex – Contratos Operacionais de Delegação
+﻿# Codex – Contratos Operacionais de Delegação
 
 Esta pasta define **como o Codex deve se comportar** neste repositório.
 Ela funciona como um **contrato operacional** entre humanos e o agente.
