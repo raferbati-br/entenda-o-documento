@@ -51,6 +51,56 @@ function slugify(value: string) {
   return result.slice(start, end).slice(0, 32);
 }
 
+function validateFeedbackBody(body: unknown): { valid: false; error: string } | { valid: true; helpful: boolean; reason: string; confidenceBucket: string; contextSource: string } {
+  if (!body || typeof body !== "object") {
+    return { valid: false, error: "Requisicao invalida." };
+  }
+
+  const bodyObj = body as Record<string, unknown>;
+  if (typeof bodyObj.helpful !== "boolean") {
+    return { valid: false, error: "Feedback invalido." };
+  }
+
+  const helpful = Boolean(bodyObj.helpful);
+  const rawReason = typeof bodyObj.reason === "string" ? bodyObj.reason.trim().slice(0, MAX_REASON_CHARS) : "";
+  const reason = helpful ? "" : rawReason;
+  const confidenceBucket = typeof bodyObj.confidenceBucket === "string" ? bodyObj.confidenceBucket.trim().slice(0, MAX_SOURCE_CHARS) : "unknown";
+  const contextSource = typeof bodyObj.contextSource === "string" ? bodyObj.contextSource.trim().slice(0, MAX_SOURCE_CHARS) : "unknown";
+
+  return { valid: true, helpful, reason, confidenceBucket, contextSource };
+}
+
+async function processFeedback(helpful: boolean, reason: string, confidenceBucket: string, contextSource: string, ctx: ReturnType<typeof createRouteContext>): Promise<void> {
+  await recordFeedback(helpful, reason);
+  logFeedback(ctx, helpful, reason, confidenceBucket, contextSource);
+}
+
+async function recordFeedback(helpful: boolean, reason: string): Promise<void> {
+  if (isRedisConfigured()) {
+    const redis = getRedis();
+    const day = todayKey();
+    await redis.incr(`feedback:${day}:${helpful ? "yes" : "no"}`);
+    if (!helpful && reason) {
+      await redis.incr(`feedback:${day}:reason:${slugify(reason)}`);
+    }
+  }
+}
+
+function logFeedback(ctx: ReturnType<typeof createRouteContext>, helpful: boolean, reason: string, confidenceBucket: string, contextSource: string): void {
+  if (shouldLogApi()) {
+    console.log("[api.feedback]", {
+      requestId: ctx.requestId,
+      ip: ctx.ip,
+      status: 200,
+      helpful,
+      reason,
+      confidenceBucket,
+      contextSource,
+      duration_ms: ctx.durationMs(),
+    });
+  }
+}
+
 export async function POST(req: Request) {
   const ctx = createRouteContext(req);
   try {
@@ -64,37 +114,12 @@ export async function POST(req: Request) {
     const body = await readJsonRecord(req);
     if (!body) return badRequest("Requisicao invalida.");
 
-    if (typeof body.helpful !== "boolean") return badRequest("Feedback invalido.");
+    const validation = validateFeedbackBody(body);
+    if (!validation.valid) return badRequest(validation.error);
 
-    const helpful = Boolean(body.helpful);
-    const rawReason = typeof body.reason === "string" ? body.reason.trim().slice(0, MAX_REASON_CHARS) : "";
-    const reason = helpful ? "" : rawReason;
-    const confidenceBucket =
-      typeof body.confidenceBucket === "string" ? body.confidenceBucket.trim().slice(0, MAX_SOURCE_CHARS) : "unknown";
-    const contextSource =
-      typeof body.contextSource === "string" ? body.contextSource.trim().slice(0, MAX_SOURCE_CHARS) : "unknown";
+    const { helpful, reason, confidenceBucket, contextSource } = validation;
 
-    if (isRedisConfigured()) {
-      const redis = getRedis();
-      const day = todayKey();
-      await redis.incr(`feedback:${day}:${helpful ? "yes" : "no"}`);
-      if (!helpful && reason) {
-        await redis.incr(`feedback:${day}:reason:${slugify(reason)}`);
-      }
-    }
-
-    if (shouldLogApi()) {
-      console.log("[api.feedback]", {
-        requestId: ctx.requestId,
-        ip: ctx.ip,
-        status: 200,
-        helpful,
-        reason,
-        confidenceBucket,
-        contextSource,
-        duration_ms: ctx.durationMs(),
-      });
-    }
+    await processFeedback(helpful, reason, confidenceBucket, contextSource, ctx);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
