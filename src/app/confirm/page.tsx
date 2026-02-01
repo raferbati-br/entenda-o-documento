@@ -11,6 +11,7 @@ import { recordLatencyStep, startLatencyTrace } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 import { mapCaptureError, mapNetworkError } from "@/lib/errorMesages";
 import { useCaptureObjectUrl } from "@/lib/hooks/useCaptureObjectUrl";
+import { UI_TEXTS } from "@/lib/constants";
 
 import { CircularProgress, Typography, Backdrop } from "@mui/material";
 
@@ -140,7 +141,7 @@ export default function ConfirmPage() {
           iconButtonSx={{ color: "white" }}
           title={
             <Typography variant="h6" sx={{ color: "white", fontWeight: 600 }}>
-              Confira a imagem
+              {UI_TEXTS.CHECK_IMAGE_TITLE}
             </Typography>
           }
         />
@@ -155,13 +156,13 @@ export default function ConfirmPage() {
             )
           }
           secondary={{
-            label: "Escolher outra",
+            label: UI_TEXTS.CHOOSE_ANOTHER,
             startIcon: <ReplayRoundedIcon />,
             onClick: handleRetakeClick,
             disabled: loading,
           }}
           primary={{
-            label: "Usar esta",
+            label: UI_TEXTS.USE_THIS,
             startIcon: <CheckCircleRoundedIcon />,
             onClick: handleConfirmClick,
             disabled: loading,
@@ -176,7 +177,7 @@ export default function ConfirmPage() {
         open={loading}
       >
         <CircularProgress color="inherit" />
-        <Typography variant="h6">Processando imagem...</Typography>
+        <Typography variant="h6">{UI_TEXTS.PROCESSING_IMAGE}</Typography>
       </Backdrop>
     </PageLayout>
   );

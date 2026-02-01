@@ -112,7 +112,7 @@ function renderResultNotice(notice: string | null) {
       <Divider sx={{ my: 1 }} />
       <SectionBlock
         icon={<WarningRoundedIcon fontSize="inherit" />}
-        title="ObservaÃ§Ã£o importante"
+        title="Observação importante"
         text={notice}
         iconColor="warning.main"
       />
@@ -380,7 +380,7 @@ export default function ResultPage() {
             title={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
-                  Explicação
+                  {UI_TEXTS.EXPLANATION_TITLE}
                 </Typography>
                 <Chip
                   label={confInfo.text}
@@ -489,7 +489,7 @@ export default function ResultPage() {
             />
             <Divider />
             <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-              Este aplicativo e informativo e pode cometer erros. Consulte um profissional para orientacoes.
+              {UI_TEXTS.DISCLAIMER}
             </Typography>
           </Stack>
         </Box>

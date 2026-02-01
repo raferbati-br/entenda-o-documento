@@ -38,17 +38,17 @@ function CameraContent() {
     <>
       <PageLayout
         header={
-          <BackHeader onBack={() => router.back()} title="Nova Foto" />
+          <BackHeader onBack={() => router.back()} title={UI_TEXTS.NEW_PHOTO_TITLE} />
         }
         footer={
           <FooterActions
             secondary={{
-              label: "Galeria",
+              label: UI_TEXTS.GALLERY_BUTTON,
               startIcon: <PhotoLibraryRoundedIcon />,
               onClick: openGallery,
             }}
             primary={{
-              label: "Tirar foto",
+              label: UI_TEXTS.TAKE_PHOTO_BUTTON,
               startIcon: <CameraAltRoundedIcon />,
               onClick: openCamera,
             }}
@@ -58,10 +58,10 @@ function CameraContent() {
         <Stack spacing={3}>
           <Box>
             <Typography variant="h5" gutterBottom fontWeight={800}>
-              Vamos preparar a câmera
+              {UI_TEXTS.CAMERA_PREP_TITLE}
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Para a inteligência artificial funcionar bem, siga estas dicas rápidas:
+              {UI_TEXTS.CAMERA_PREP_SUBTITLE}
             </Typography>
           </Box>
 
@@ -69,24 +69,24 @@ function CameraContent() {
             <IconTextRow
               icon={<TextFieldsRoundedIcon fontSize="inherit" />}
               iconColor="primary.main"
-              title="Letras Nítidas"
-              description="Aproxime até conseguir ler o texto na tela."
+              title={UI_TEXTS.CAMERA_TIP_CLEAR_TEXT}
+              description={UI_TEXTS.CAMERA_TIP_CLEAR_TEXT_DESCRIPTION}
             />
             <IconTextRow
               icon={<LightModeRoundedIcon fontSize="inherit" />}
               iconColor="warning.main"
-              title="Boa Iluminação"
-              description="Evite sombras. A luz natural ajuda muito."
+              title={UI_TEXTS.CAMERA_TIP_GOOD_LIGHT}
+              description={UI_TEXTS.CAMERA_TIP_GOOD_LIGHT_DESCRIPTION}
             />
             <IconTextRow
               icon={<CropFreeRoundedIcon fontSize="inherit" />}
               iconColor="text.secondary"
-              title="Enquadramento"
+              title={UI_TEXTS.CAMERA_TIP_FRAMING}
               description={UI_TEXTS.CAMERA_HINT}
             />
 
-            <Notice severity="info" title="Dica" density="compact">
-              Mantenha a mão firme ao clicar.
+            <Notice severity="info" title={UI_TEXTS.CAMERA_TIP_TITLE} density="compact">
+              {UI_TEXTS.CAMERA_TIP_DESCRIPTION}
             </Notice>
           </Stack>
         </Stack>

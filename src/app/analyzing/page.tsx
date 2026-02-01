@@ -179,7 +179,7 @@ export default function AnalyzingPage() {
                 {friendlyError.actionLabel}
               </Button>
               <Button variant="text" onClick={() => router.push("/")}>
-                Cancelar e voltar
+                {UI_TEXTS.CANCEL_AND_BACK}
               </Button>
             </Box>
           </Stack>
@@ -244,7 +244,7 @@ export default function AnalyzingPage() {
           </Box>
 
           <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-            A inteligência artificial está analisando cada detalhe.
+            {UI_TEXTS.ANALYZING_DESCRIPTION}
           </Typography>
 
           {/* Barra de Progresso */}
@@ -270,7 +270,7 @@ export default function AnalyzingPage() {
             }}
             sx={{ mt: 8, color: "text.disabled", fontSize: "0.75rem" }}
           >
-            Cancelar
+            {UI_TEXTS.CANCEL}
           </Button>
         </Container>
       </Box>

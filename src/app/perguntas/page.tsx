@@ -474,7 +474,7 @@ export default function PerguntasPage() {
             onBack={() => router.push("/result")}
             title={
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                Tire suas duvidas
+                {UI_TEXTS.QUESTIONS_TITLE}
               </Typography>
             }
           />
@@ -522,7 +522,7 @@ export default function PerguntasPage() {
                     {UI_TEXTS.QUESTIONS_TITLE}
                   </Typography>
                   <Typography color="text.secondary" variant="body1" sx={{ lineHeight: 1.6 }}>
-                    Escolha uma pergunta pronta ou escreva a sua.
+                    {UI_TEXTS.QUESTIONS_SUBTITLE}
                   </Typography>
                 </Stack>
 
@@ -714,7 +714,7 @@ export default function PerguntasPage() {
               </IconButton>
             </Stack>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-              Este aplicativo e informativo e pode cometer erros. Consulte um profissional para orientacoes.
+              {UI_TEXTS.DISCLAIMER}
             </Typography>
           </Stack>
         </Container>

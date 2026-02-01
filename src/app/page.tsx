@@ -47,12 +47,12 @@ export default function HomePage() {
         footer={
           <FooterActions
             secondary={{
-              label: "Galeria",
+              label: UI_TEXTS.GALLERY_BUTTON,
               startIcon: <PhotoLibraryRoundedIcon />,
               onClick: handleOpenGallery,
             }}
             primary={{
-              label: "Tirar foto",
+              label: UI_TEXTS.TAKE_PHOTO_BUTTON,
               startIcon: <CameraAltRoundedIcon />,
               component: Link,
               href: "/camera",
@@ -77,7 +77,7 @@ export default function HomePage() {
 
         {/* Lista de Benefícios */}
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-          O que funciona bem?
+          {UI_TEXTS.HOME_BENEFITS_TITLE}
         </Typography>
 
         <Stack spacing={2}>
@@ -85,19 +85,19 @@ export default function HomePage() {
             icon={<DescriptionRoundedIcon fontSize="inherit" />}
             iconColor="primary.main"
             title={UI_TEXTS.DOCUMENTS_TITLE}
-            description="Cartas judiciais, contas, comunicados e avisos."
+            description={UI_TEXTS.HOME_DOCUMENTS_DESCRIPTION}
           />
           <IconTextRow
             icon={<AutoAwesomeRoundedIcon fontSize="inherit" />}
             iconColor="warning.main"
-            title="Explicação Simples"
-            description="Traduzimos o 'juridiquês' para o português do dia a dia."
+            title={UI_TEXTS.HOME_SIMPLE_EXPLANATION_TITLE}
+            description={UI_TEXTS.HOME_SIMPLE_EXPLANATION_DESCRIPTION}
           />
           <IconTextRow
             icon={<LockRoundedIcon fontSize="inherit" />}
             iconColor="text.secondary"
-            title="Privacidade Total"
-            description="Sua foto é processada e deletada. Nada fica salvo."
+            title={UI_TEXTS.HOME_PRIVACY_TITLE}
+            description={UI_TEXTS.HOME_PRIVACY_DESCRIPTION}
           />
         </Stack>
 
