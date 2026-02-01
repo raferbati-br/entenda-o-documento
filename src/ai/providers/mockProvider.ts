@@ -1,25 +1,16 @@
 import type { AnalyzeInput, AnswerResponse, AnswerStreamResponse, LlmProvider, ProviderResponse, Prompt } from "../types";
+import { MOCK_RESPONSES } from "@/lib/constants";
 
-function mockAnalyzeResponse(): { confidence: number; cards: Array<{ id: string; title: string; text: string }>; notice: string } {
-  return {
-    confidence: 0.82,
-    cards: [
-      { id: "whatIs", title: "O que e este documento", text: "Documento de teste." },
-      { id: "whatSays", title: "O que diz", text: "Conteudo simulado para testes." },
-      { id: "dates", title: "Datas", text: "Sem datas relevantes." },
-      { id: "terms", title: "Termos", text: "Sem termos complexos." },
-      { id: "whatUsuallyHappens", title: "O que acontece", text: "Nada a destacar." },
-    ],
-    notice: "Resposta simulada para testes.",
-  };
+function mockAnalyzeResponse() {
+  return MOCK_RESPONSES.ANALYZE;
 }
 
-function mockOcrResponse(): { documentText: string } {
-  return { documentText: "Texto simulado para OCR." };
+function mockOcrResponse() {
+  return MOCK_RESPONSES.OCR;
 }
 
 async function* mockAnswerIterator() {
-  yield "Resposta simulada para perguntas.";
+  yield MOCK_RESPONSES.ANSWER;
 }
 
 export class MockProvider implements LlmProvider {
@@ -34,7 +25,7 @@ export class MockProvider implements LlmProvider {
 
   async answer(input: { model: string; prompt: Prompt }): Promise<AnswerResponse> {
     return {
-      text: "Resposta simulada para perguntas.",
+      text: MOCK_RESPONSES.ANSWER,
       meta: { provider: "mock", model: input.model },
     };
   }

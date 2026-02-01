@@ -54,7 +54,7 @@ describe("api/feedback", () => {
 
     const res = await POST(new Request("http://test"));
 
-    expect(res).toEqual({ error: "Feedback invalido.", status: 400 });
+    expect(res).toEqual({ error: "Feedback inválido", status: 400 });
   });
 
   it("records feedback in redis", async () => {

@@ -1,19 +1,20 @@
 import OpenAI from "openai";
 import type { AnalyzeInput, LlmProvider, ProviderResponse, Prompt, AnswerResponse, AnswerStreamResponse } from "../types";
 import { parseModelJson } from "./providerUtils";
+import { ERROR_MESSAGES } from "@/lib/constants";
 
 export class OpenAIProvider implements LlmProvider {
   private readonly client: OpenAI;
 
   constructor() {
     const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error("API_KEY_NOT_SET");
+    if (!apiKey) throw new Error(ERROR_MESSAGES.API_KEY_NOT_SET);
     this.client = new OpenAI({ apiKey });
   }
 
   async analyze(input: AnalyzeInput): Promise<ProviderResponse> {
     if (!input.inputText && !input.imageDataUrl) {
-      throw new Error("ANALYZE_INPUT_MISSING");
+      throw new Error(ERROR_MESSAGES.MISSING_INPUT);
     }
 
     const userContent: Array<
@@ -72,7 +73,7 @@ export class OpenAIProvider implements LlmProvider {
 
     const text = (resp.output_text ?? "").trim();
     if (!text) {
-      throw new Error("MODEL_NO_TEXT");
+      throw new Error(ERROR_MESSAGES.MODEL_NO_TEXT);
     }
 
     return {

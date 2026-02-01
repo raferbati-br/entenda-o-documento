@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { cleanupMemoryStore, isRedisConfigured, memoryStats, setCapture } from "@/lib/captureStoreServer";
 import { badRequest, createRouteContext, readJsonRecord, runCommonGuards, shouldLogApi } from "@/lib/apiRouteUtils";
 import { parseDataUrl } from "@/lib/dataUrl";
+import { API_ERROR_MESSAGES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 
@@ -36,23 +37,23 @@ function validateImageBase64(base64: string, declaredMime: string): ValidatedIma
   try {
     buf = Buffer.from(base64, "base64");
   } catch {
-    return { ok: false, error: "Base64 invalido." };
+    return { ok: false, error: API_ERROR_MESSAGES.BASE64_INVALID };
   }
 
-  if (buf.byteLength < 32) return { ok: false, error: "Imagem invalida." };
+  if (buf.byteLength < 32) return { ok: false, error: API_ERROR_MESSAGES.IMAGE_INVALID };
 
   if (buf.byteLength > MAX_IMAGE_BYTES) {
     return {
       ok: false,
-      error: "A imagem e muito grande. Tente aproximar o documento ou usar boa iluminacao.",
+      error: API_ERROR_MESSAGES.IMAGE_TOO_LARGE,
       status: 413,
     };
   }
 
   const detected = detectMime(buf);
-  if (!detected) return { ok: false, error: "Tipo de imagem nao suportado. Use JPG, PNG ou WebP." };
+  if (!detected) return { ok: false, error: API_ERROR_MESSAGES.IMAGE_TYPE_UNSUPPORTED };
 
-  if (declaredMime && detected !== declaredMime) return { ok: false, error: "Tipo de imagem invalido." };
+  if (declaredMime && detected !== declaredMime) return { ok: false, error: API_ERROR_MESSAGES.IMAGE_TYPE_INVALID };
 
   return { ok: true, buffer: buf, bytes: buf.byteLength, mimeType: detected };
 }
@@ -64,7 +65,7 @@ type ImageInputResult =
 function parseImageInput(body: Record<string, unknown>): ImageInputResult {
   if (typeof body.imageBase64 === "string") {
     const parsed = parseDataUrl(body.imageBase64, { requireImage: true });
-    if (!parsed) return { ok: false, error: "Imagem invalida." };
+    if (!parsed) return { ok: false, error: API_ERROR_MESSAGES.IMAGE_INVALID };
     return { ok: true, rawBase64: parsed.base64, declaredMime: parsed.mimeType };
   }
 
@@ -72,7 +73,7 @@ function parseImageInput(body: Record<string, unknown>): ImageInputResult {
     return { ok: true, rawBase64: body.imageBase64Raw, declaredMime: body.mimeType };
   }
 
-  return { ok: false, error: "Imagem nao informada." };
+  return { ok: false, error: API_ERROR_MESSAGES.IMAGE_NOT_PROVIDED };
 }
 
 function extractOcrImageData(body: Record<string, unknown>, originalBytes: number) {
@@ -83,7 +84,7 @@ function extractOcrImageData(body: Record<string, unknown>, originalBytes: numbe
   const parsed = parseDataUrl(body.ocrImageBase64, { requireImage: true });
   if (!parsed) {
     if (shouldLogApi()) {
-      console.warn("[api.capture] OCR data URL invalida.");
+      console.warn("[api.capture] " + API_ERROR_MESSAGES.OCR_DATA_URL_INVALID + ".");
     }
     return { ocrImageBase64, ocrBytes };
   }
@@ -108,11 +109,11 @@ function getMemoryCapacityError(totalBytes: number) {
   if (isRedisConfigured()) return null;
   const { count, totalBytes: currentTotal } = memoryStats();
   if (count >= MAX_CAPTURE_COUNT) {
-    return "O sistema esta temporariamente ocupado. Tente novamente em alguns minutos.";
+    return API_ERROR_MESSAGES.SYSTEM_BUSY;
   }
   const projectedTotal = currentTotal + totalBytes;
   if (projectedTotal > MAX_TOTAL_BYTES) {
-    return "O sistema esta temporariamente cheio. Tente novamente em instantes.";
+    return API_ERROR_MESSAGES.SYSTEM_FULL;
   }
   return null;
 }
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
   const ctx = createRouteContext(req);
   try {
     const guardError = await runCommonGuards(req, ctx, {
-      sessionMessage: "Sessao expirada. Volte para a camera e tire outra foto para continuar.",
+      sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED_CAPTURE,
       rateLimitPrefix: "capture",
       rateLimitTag: "api.capture",
     });
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
     cleanupMemoryStore();
 
     const body = await readJsonRecord(req);
-    if (!body) return badRequest("Requisicao invalida.");
+    if (!body) return badRequest(API_ERROR_MESSAGES.INVALID_REQUEST);
 
     const parsedInput = parseImageInput(body);
     if (!parsedInput.ok) return badRequest(parsedInput.error);
@@ -175,6 +176,6 @@ export async function POST(req: Request) {
     if (shouldLogApi()) {
       console.error("[api.capture]", err);
     }
-    return badRequest("Erro interno ao receber imagem.", 500);
+    return badRequest(API_ERROR_MESSAGES.INTERNAL_ERROR_CAPTURE, 500);
   }
 }

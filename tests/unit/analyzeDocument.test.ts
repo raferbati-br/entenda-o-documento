@@ -6,7 +6,8 @@ vi.mock("@/ai/llmContext", () => ({
 }));
 
 vi.mock("@/lib/promptIds", () => ({
-  getAnalyzePromptId: vi.fn(),
+  getAnalyzeTextPromptId: vi.fn(),
+  getAnalyzeImagePromptId: vi.fn(),
 }));
 
 vi.mock("@/ai/prompts", () => ({
@@ -19,7 +20,7 @@ vi.mock("@/ai/postprocess", () => ({
 
 import { analyzeDocument } from "@/ai/analyzeDocument";
 import { buildLlmContext } from "@/ai/llmContext";
-import { getAnalyzePromptId } from "@/lib/promptIds";
+import { getAnalyzeTextPromptId, getAnalyzeImagePromptId } from "@/lib/promptIds";
 import { getPrompt } from "@/ai/prompts";
 import { postprocessWithStats } from "@/ai/postprocess";
 
@@ -29,13 +30,14 @@ describe("analyzeDocument", () => {
   beforeEach(() => {
     mockAnalyze.mockReset();
     vi.mocked(buildLlmContext).mockReturnValue({ model: "test-model", provider: { analyze: mockAnalyze } });
-    vi.mocked(getAnalyzePromptId).mockReset();
+    vi.mocked(getAnalyzeTextPromptId).mockReset();
+    vi.mocked(getAnalyzeImagePromptId).mockReset();
     vi.mocked(getPrompt).mockReset();
     vi.mocked(postprocessWithStats).mockReset();
   });
 
   it("throws when both image and text are missing", async () => {
-    vi.mocked(getAnalyzePromptId).mockReturnValue("entendaDocumento.v1");
+    vi.mocked(getAnalyzeImagePromptId).mockReturnValue("entendaDocumento.v1");
     vi.mocked(getPrompt).mockReturnValue({ id: "entendaDocumento.v1" });
 
     await expect(analyzeDocument({})).rejects.toThrow("ANALYZE_INPUT_MISSING");
@@ -45,14 +47,14 @@ describe("analyzeDocument", () => {
   it("uses document text when provided", async () => {
     const prompt = { id: "entendaDocumento.text.v1" };
     const result: AnalyzeResult = { confidence: 0.5, cards: [], notice: "ok" };
-    vi.mocked(getAnalyzePromptId).mockReturnValue("entendaDocumento.text.v1");
+    vi.mocked(getAnalyzeTextPromptId).mockReturnValue("entendaDocumento.text.v1");
     vi.mocked(getPrompt).mockReturnValue(prompt);
     mockAnalyze.mockResolvedValue({ raw: { any: "raw" }, meta: { provider: "p", model: "m" } });
     vi.mocked(postprocessWithStats).mockReturnValue({ result, stats: { sanitizerApplied: false, confidenceLow: false } });
 
     const out = await analyzeDocument({ documentText: "  texto  " });
 
-    expect(vi.mocked(getAnalyzePromptId)).toHaveBeenCalledWith(true);
+    expect(vi.mocked(getAnalyzeTextPromptId)).toHaveBeenCalled();
     expect(mockAnalyze).toHaveBeenCalledWith({
       model: "test-model",
       prompt,
@@ -70,14 +72,14 @@ describe("analyzeDocument", () => {
   it("uses image when text is not provided", async () => {
     const prompt = { id: "entendaDocumento.v1" };
     const result: AnalyzeResult = { confidence: 0.9, cards: [], notice: "ok" };
-    vi.mocked(getAnalyzePromptId).mockReturnValue("entendaDocumento.v1");
+    vi.mocked(getAnalyzeImagePromptId).mockReturnValue("entendaDocumento.v1");
     vi.mocked(getPrompt).mockReturnValue(prompt);
     mockAnalyze.mockResolvedValue({ raw: { any: "raw" }, meta: { provider: "p2", model: "m2" } });
     vi.mocked(postprocessWithStats).mockReturnValue({ result, stats: { sanitizerApplied: true, confidenceLow: true } });
 
     const out = await analyzeDocument({ imageDataUrl: "data:image/png;base64,abc" });
 
-    expect(vi.mocked(getAnalyzePromptId)).toHaveBeenCalledWith(false);
+    expect(vi.mocked(getAnalyzeImagePromptId)).toHaveBeenCalled();
     expect(mockAnalyze).toHaveBeenCalledWith({
       model: "test-model",
       prompt,

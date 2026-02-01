@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { getAnalyzePromptId, getOcrPromptId, getQaPromptId } from "@/lib/promptIds";
+import { getAnalyzeTextPromptId, getAnalyzeImagePromptId, getOcrPromptId, getQaPromptId } from "@/lib/promptIds";
 
 
 describe("promptIds", () => {
@@ -18,8 +18,8 @@ describe("promptIds", () => {
   });
 
   it("returns defaults when env is not set", () => {
-    expect(getAnalyzePromptId(true)).toBe("entendaDocumento.text.v1");
-    expect(getAnalyzePromptId(false)).toBe("entendaDocumento.v1");
+    expect(getAnalyzeTextPromptId()).toBe("entendaDocumento.text.v1");
+    expect(getAnalyzeImagePromptId()).toBe("entendaDocumento.v1");
     expect(getOcrPromptId()).toBe("entendaDocumento.ocr.v1");
     expect(getQaPromptId()).toBe("entendaDocumento.qa.v1");
   });
@@ -30,8 +30,8 @@ describe("promptIds", () => {
     process.env.OCR_PROMPT_ID = "ocr-1";
     process.env.QA_PROMPT_ID = "qa-1";
 
-    expect(getAnalyzePromptId(true)).toBe("text-1");
-    expect(getAnalyzePromptId(false)).toBe("img-1");
+    expect(getAnalyzeTextPromptId()).toBe("text-1");
+    expect(getAnalyzeImagePromptId()).toBe("img-1");
     expect(getOcrPromptId()).toBe("ocr-1");
     expect(getQaPromptId()).toBe("qa-1");
   });

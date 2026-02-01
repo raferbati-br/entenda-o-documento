@@ -68,7 +68,7 @@ describe("api/ocr", () => {
 
     const res = await POST(new Request("http://test"));
 
-    expect(res).toEqual({ error: "Imagem nao encontrada ou invalida (capture expirou)", status: 404 });
+    expect(res).toEqual({ error: "Imagem não encontrada ou inválida (capture expirou)", status: 404 });
   });
 
   it("extracts text and returns ok", async () => {

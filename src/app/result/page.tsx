@@ -8,7 +8,7 @@ import { clearLatencyTrace, getLatencyTraceSnapshot } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 import { mapFeedbackError, mapNetworkError } from "@/lib/errorMesages";
 import { postJsonWithSession } from "@/lib/apiClient";
-import { UI_TEXTS } from "@/lib/constants";
+import { UI_TEXTS, ERROR_MESSAGES } from "@/lib/constants";
 import { resetAnalysisSession } from "@/lib/analysisSession";
 import { useJumpToEnd } from "@/lib/hooks/useJumpToEnd";
 import { useSpeechSynthesis } from "@/lib/hooks/useSpeechSynthesis";
@@ -66,7 +66,7 @@ function splitSummary(text: string) {
 }
 
 function confidenceToInfo(confidence: number) {
-  if (confidence < 0.45) return { label: "Baixa", color: "error.main", bg: "error.lighter", text: UI_TEXTS.CONFIDENCE_LOW };
+  if (confidence < 0.45) return { label: "Baixa", color: "error.main", bg: "error.lighter", text: ERROR_MESSAGES.LOW_CONFIDENCE };
   if (confidence < 0.75) return { label: "Média", color: "warning.main", bg: "warning.lighter", text: UI_TEXTS.CONFIDENCE_MEDIUM };
   return { label: "Alta", color: "success.main", bg: "success.lighter", text: UI_TEXTS.CONFIDENCE_HIGH };
 }

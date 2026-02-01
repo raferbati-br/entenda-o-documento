@@ -2,19 +2,20 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { AnalyzeInput, AnswerResponse, AnswerStreamResponse, LlmProvider, ProviderResponse, Prompt } from "../types";
 import { parseDataUrl } from "@/lib/dataUrl";
 import { parseModelJson } from "./providerUtils";
+import { ERROR_MESSAGES } from "@/lib/constants";
 
 export class GeminiProvider implements LlmProvider {
   private readonly client: GoogleGenerativeAI;
 
   constructor() {
     const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) throw new Error("API_KEY_NOT_SET");
+    if (!apiKey) throw new Error(ERROR_MESSAGES.API_KEY_NOT_SET);
     this.client = new GoogleGenerativeAI(apiKey);
   }
 
   async analyze(input: AnalyzeInput): Promise<ProviderResponse> {
     if (!input.inputText && !input.imageDataUrl) {
-      throw new Error("ANALYZE_INPUT_MISSING");
+      throw new Error(ERROR_MESSAGES.MISSING_INPUT);
     }
 
     const model = this.client.getGenerativeModel({
@@ -33,7 +34,7 @@ export class GeminiProvider implements LlmProvider {
     if (input.imageDataUrl) {
       const parsed = parseDataUrl(input.imageDataUrl, { requireImage: true });
       if (!parsed) {
-        throw new Error("ANALYZE_INPUT_MISSING");
+        throw new Error(ERROR_MESSAGES.MISSING_INPUT);
       }
       parts.push({ inlineData: { data: parsed.base64, mimeType: parsed.mimeType } });
     }
@@ -56,7 +57,7 @@ export class GeminiProvider implements LlmProvider {
     const response = await model.generateContent([{ text: input.prompt.user }]);
     const text = (response.response.text() ?? "").trim();
     if (!text) {
-      throw new Error("MODEL_NO_TEXT");
+      throw new Error(ERROR_MESSAGES.MODEL_NO_TEXT);
     }
     return {
       text,

@@ -12,23 +12,24 @@ import {
   safeRecordMetrics,
   shouldLogApi,
 } from "@/lib/apiRouteUtils";
+import { API_ERROR_MESSAGES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 
 async function validateRequest(req: Request, ctx: ReturnType<typeof createRouteContext>) {
   const guardError = await runCommonGuards(req, ctx, {
-    sessionMessage: "Sessao expirada. Tire outra foto para continuar.",
+    sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED_ANALYZE,
     rateLimitPrefix: "ocr",
     rateLimitTag: "api.ocr",
   });
   if (guardError) return { error: guardError };
 
   const body = await readJsonRecord(req);
-  if (!body) return { error: badRequest("Requisicao invalida.") };
+  if (!body) return { error: badRequest(API_ERROR_MESSAGES.INVALID_REQUEST) };
 
   const captureId = typeof body.captureId === "string" ? body.captureId : "";
   const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
-  if (!captureId) return { error: badRequest("CaptureId nao informado.") };
+  if (!captureId) return { error: badRequest(API_ERROR_MESSAGES.CAPTURE_ID_MISSING) };
 
   return { captureId, attempt };
 }
@@ -37,7 +38,7 @@ async function validateCapture(captureId: string) {
   const entry = await getCapture(captureId);
   const imageDataUrl = entry?.ocrImageBase64 || entry?.imageBase64 || "";
   if (!imageDataUrl?.startsWith("data:image/")) {
-    return { error: badRequest("Imagem nao encontrada ou invalida (capture expirou)", 404) };
+    return { error: badRequest(API_ERROR_MESSAGES.IMAGE_NOT_FOUND, 404) };
   }
   return { imageDataUrl };
 }
@@ -52,14 +53,14 @@ async function handleError(err: unknown, ctx: ReturnType<typeof createRouteConte
     ctx,
     countMetric: "ocr_invalid_json",
     latencyMetric: "ocr_latency_ms",
-    message: "Modelo nao retornou JSON valido",
+    message: API_ERROR_MESSAGES.MODEL_INVALID_JSON,
   });
   if (modelJsonError) return modelJsonError;
 
   if (shouldLogApi()) {
     console.error("[api.ocr]", err);
   }
-  return badRequest("Erro interno ao extrair texto", 500);
+  return badRequest(API_ERROR_MESSAGES.INTERNAL_ERROR_OCR, 500);
 }
 
 export async function POST(req: Request) {

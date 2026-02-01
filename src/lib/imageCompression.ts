@@ -1,7 +1,11 @@
-// src/lib/imageCompression.ts
+/**
+ * Compressão de imagens usando Canvas API.
+ * Redimensiona e comprime blobs de imagem para reduzir tamanho.
+ */
+
 export type CompressOptions = {
-  maxDimension?: number; // maior lado em px
-  quality?: number; // 0..1
+  maxDimension?: number; // Maior lado em px
+  quality?: number; // Qualidade 0..1
   mimeType?: "image/jpeg" | "image/webp";
 };
 
@@ -11,6 +15,7 @@ const DEFAULTS: Required<CompressOptions> = {
   mimeType: "image/jpeg",
 };
 
+// Comprime blob para data URL
 export async function compressBlobToDataUrl(
   blob: Blob,
   opts: CompressOptions = {}
@@ -28,7 +33,7 @@ export async function compressBlobToDataUrl(
   const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) throw new Error("Canvas 2D indisponível.");
 
-  // fundo branco (evita preto/transparência em JPEG)
+  // Fundo branco para evitar preto/transparência em JPEG
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, w, h);
 
@@ -47,6 +52,7 @@ export async function compressBlobToDataUrl(
   return { dataUrl, bytes, width: w, height: h };
 }
 
+// Ajusta dimensões para caber dentro do máximo
 function fitInside(srcW: number, srcH: number, maxDim: number) {
   const longSide = Math.max(srcW, srcH);
   if (longSide <= maxDim) return { w: srcW, h: srcH };
@@ -54,6 +60,7 @@ function fitInside(srcW: number, srcH: number, maxDim: number) {
   return { w: Math.max(1, Math.round(srcW * scale)), h: Math.max(1, Math.round(srcH * scale)) };
 }
 
+// Decodifica imagem de blob
 async function decodeImage(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
   // Tenta respeitar orientação EXIF quando suportado
   if (globalThis.window !== undefined && "createImageBitmap" in globalThis.window) {
@@ -61,7 +68,7 @@ async function decodeImage(blob: Blob): Promise<ImageBitmap | HTMLImageElement> 
       const options = { imageOrientation: "from-image" } as ImageBitmapOptions;
       return await createImageBitmap(blob, options);
     } catch {
-      // fallback abaixo
+      // Fallback abaixo
     }
   }
 
@@ -74,6 +81,7 @@ async function decodeImage(blob: Blob): Promise<ImageBitmap | HTMLImageElement> 
   }
 }
 
+// Carrega imagem de URL
 function loadImg(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -83,6 +91,7 @@ function loadImg(src: string): Promise<HTMLImageElement> {
   });
 }
 
+// Estima bytes de data URL
 function estimateDataUrlBytes(dataUrl: string) {
   const base64 = dataUrl.split(",")[1] ?? "";
   let padding = 0;

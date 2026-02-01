@@ -1,3 +1,8 @@
+/**
+ * Sistema de métricas de qualidade para operações de IA.
+ * Registra contagens e latências usando Redis ou memória local.
+ */
+
 import { Redis } from "@upstash/redis";
 
 type MetricName =
@@ -15,6 +20,7 @@ type MetricName =
 
 type LatencyMetricName = "analyze_latency_ms" | "ocr_latency_ms" | "qa_latency_ms";
 
+// Métricas de contagem
 const COUNT_METRICS: MetricName[] = [
   "analyze_total",
   "analyze_invalid_json",
@@ -29,15 +35,17 @@ const COUNT_METRICS: MetricName[] = [
   "qa_retry",
 ];
 
+// Métricas de latência
 const LATENCY_METRICS: LatencyMetricName[] = [
   "analyze_latency_ms",
   "ocr_latency_ms",
   "qa_latency_ms",
 ];
 
-const memoryStore = new Map<string, number>();
+const memoryStore = new Map<string, number>(); // Armazenamento em memória
 let redisClient: Redis | null = null;
 
+// Obtém cliente Redis se configurado
 function getRedis() {
   if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
     redisClient ??= new Redis({
@@ -49,19 +57,23 @@ function getRedis() {
   return null;
 }
 
+// Gera chave para dia (YYYY-MM-DD)
 function dayKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
 
+// Gera chave para métrica
 function metricKey(day: string, name: string) {
   return `metrics:quality:${day}:${name}`;
 }
 
+// Incrementa em memória
 function incrementMemory(key: string, inc = 1) {
   const current = memoryStore.get(key) || 0;
   memoryStore.set(key, current + inc);
 }
 
+// Incrementa no Redis
 async function incrementRedis(redis: Redis, key: string, inc = 1) {
   if (inc === 1) {
     await redis.incr(key);
@@ -70,6 +82,7 @@ async function incrementRedis(redis: Redis, key: string, inc = 1) {
   }
 }
 
+// Constrói chaves de datas para os últimos dias
 function buildDateKeys(days: number) {
   const now = new Date();
   const dates: string[] = [];
@@ -81,6 +94,7 @@ function buildDateKeys(days: number) {
   return dates;
 }
 
+// Carrega contagens da memória
 function loadMemoryCounts(day: string) {
   const counts: Record<string, number> = {};
   for (const name of COUNT_METRICS) {
@@ -89,6 +103,7 @@ function loadMemoryCounts(day: string) {
   return counts;
 }
 
+// Carrega latências da memória
 function loadMemoryLatency(day: string) {
   const latency: Record<string, { avg: number; sum: number; count: number }> = {};
   for (const name of LATENCY_METRICS) {
@@ -103,6 +118,7 @@ function loadMemoryLatency(day: string) {
   return latency;
 }
 
+// Carrega contagens do Redis
 async function loadRedisCounts(redis: Redis, day: string) {
   const counts: Record<string, number> = {};
   const countKeys = COUNT_METRICS.map((name) => metricKey(day, name));
@@ -113,6 +129,7 @@ async function loadRedisCounts(redis: Redis, day: string) {
   return counts;
 }
 
+// Carrega latências do Redis
 async function loadRedisLatency(redis: Redis, day: string) {
   const latency: Record<string, { avg: number; sum: number; count: number }> = {};
   for (const name of LATENCY_METRICS) {
@@ -133,6 +150,7 @@ async function loadRedisLatency(redis: Redis, day: string) {
   return latency;
 }
 
+// Registra contagem de métrica
 export async function recordQualityCount(name: MetricName, inc = 1, date = new Date()) {
   const day = dayKey(date);
   const key = metricKey(day, name);
@@ -144,6 +162,7 @@ export async function recordQualityCount(name: MetricName, inc = 1, date = new D
   await incrementRedis(redis, key, inc);
 }
 
+// Registra latência de métrica
 export async function recordQualityLatency(name: LatencyMetricName, ms: number, date = new Date()) {
   const day = dayKey(date);
   const redis = getRedis();
@@ -157,6 +176,7 @@ export async function recordQualityLatency(name: LatencyMetricName, ms: number, 
   await Promise.all([incrementRedis(redis, sumKey, ms), incrementRedis(redis, countKey, 1)]);
 }
 
+// Obtém métricas dos últimos dias
 export async function getQualityMetrics(days = 7) {
   const dates = buildDateKeys(days);
   const redis = getRedis();

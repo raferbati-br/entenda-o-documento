@@ -13,6 +13,7 @@ import {
   safeRecordMetrics,
   shouldLogApi,
 } from "@/lib/apiRouteUtils";
+import { API_ERROR_MESSAGES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 
@@ -31,10 +32,10 @@ function parseQaRequest(body: Record<string, unknown>): QaParseResult {
   const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
   const context = typeof body.context === "string" ? body.context.trim() : "";
 
-  if (!question || question.length < 4) return { ok: false, error: "Pergunta muito curta." };
-  if (question.length > MAX_QUESTION_CHARS) return { ok: false, error: "Pergunta longa demais." };
-  if (!context) return { ok: false, error: "Contexto do documento nao informado." };
-  if (context.length > MAX_CONTEXT_CHARS) return { ok: false, error: "Contexto muito longo." };
+  if (!question || question.length < 4) return { ok: false, error: API_ERROR_MESSAGES.QUESTION_TOO_SHORT };
+  if (question.length > MAX_QUESTION_CHARS) return { ok: false, error: API_ERROR_MESSAGES.QUESTION_TOO_LONG };
+  if (!context) return { ok: false, error: API_ERROR_MESSAGES.CONTEXT_MISSING };
+  if (context.length > MAX_CONTEXT_CHARS) return { ok: false, error: API_ERROR_MESSAGES.CONTEXT_TOO_LONG };
 
   return { ok: true, value: { question, context, attempt } };
 }
@@ -89,7 +90,7 @@ async function handleEmptyAnswer(
   }
 
   controller.enqueue(
-    encoder.encode(serializeQaStreamEvent({ type: "error", message: "Modelo nao retornou texto valido" }))
+    encoder.encode(serializeQaStreamEvent({ type: "error", message: API_ERROR_MESSAGES.MODEL_NO_TEXT }))
   );
   controller.close();
 }
@@ -151,7 +152,7 @@ function createQaStream(options: {
           console.error("[api.qa]", err);
         }
         controller.enqueue(
-          encoder.encode(serializeQaStreamEvent({ type: "error", message: "Erro interno ao responder pergunta" }))
+          encoder.encode(serializeQaStreamEvent({ type: "error", message: API_ERROR_MESSAGES.INTERNAL_ERROR_QA }))
         );
         controller.close();
       }
@@ -163,14 +164,14 @@ export async function POST(req: Request) {
   const ctx = createRouteContext(req);
   try {
     const guardError = await runCommonGuards(req, ctx, {
-      sessionMessage: "Sessao expirada. Refaca a analise do documento e tente novamente.",
+      sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED_QA,
       rateLimitPrefix: "qa",
       rateLimitTag: "api.qa",
     });
     if (guardError) return guardError;
 
     const body = await readJsonRecord(req);
-    if (!body) return badRequest("Requisicao invalida.");
+    if (!body) return badRequest(API_ERROR_MESSAGES.INVALID_REQUEST);
 
     const parsed = parseQaRequest(body);
     if (!parsed.ok) return badRequest(parsed.error);
@@ -197,13 +198,13 @@ export async function POST(req: Request) {
       ctx,
       countMetric: "qa_model_error",
       latencyMetric: "qa_latency_ms",
-      message: "Modelo nao retornou texto valido",
+      message: API_ERROR_MESSAGES.MODEL_NO_TEXT,
     });
     if (modelTextError) return modelTextError;
 
     if (shouldLogApi()) {
       console.error("[api.qa]", err);
     }
-    return badRequest("Erro interno ao responder pergunta", 500);
+    return badRequest(API_ERROR_MESSAGES.INTERNAL_ERROR_QA, 500);
   }
 }

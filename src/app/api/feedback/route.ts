@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { badRequest, createRouteContext, readJsonRecord, runCommonGuards, shouldLogApi } from "@/lib/apiRouteUtils";
+import { API_ERROR_MESSAGES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 
@@ -53,12 +54,12 @@ function slugify(value: string) {
 
 function validateFeedbackBody(body: unknown): { valid: false; error: string } | { valid: true; helpful: boolean; reason: string; confidenceBucket: string; contextSource: string } {
   if (!body || typeof body !== "object") {
-    return { valid: false, error: "Requisicao invalida." };
+    return { valid: false, error: API_ERROR_MESSAGES.INVALID_REQUEST };
   }
 
   const bodyObj = body as Record<string, unknown>;
   if (typeof bodyObj.helpful !== "boolean") {
-    return { valid: false, error: "Feedback invalido." };
+    return { valid: false, error: API_ERROR_MESSAGES.FEEDBACK_INVALID };
   }
 
   const helpful = Boolean(bodyObj.helpful);
@@ -105,14 +106,14 @@ export async function POST(req: Request) {
   const ctx = createRouteContext(req);
   try {
     const guardError = await runCommonGuards(req, ctx, {
-      sessionMessage: "Sessao expirada. Refaca a analise para enviar feedback.",
+      sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED_FEEDBACK,
       rateLimitPrefix: "feedback",
       rateLimitTag: "api.feedback",
     });
     if (guardError) return guardError;
 
     const body = await readJsonRecord(req);
-    if (!body) return badRequest("Requisicao invalida.");
+    if (!body) return badRequest(API_ERROR_MESSAGES.INVALID_REQUEST);
 
     const validation = validateFeedbackBody(body);
     if (!validation.valid) return badRequest(validation.error);
@@ -126,6 +127,6 @@ export async function POST(req: Request) {
     if (shouldLogApi()) {
       console.error("[api.feedback]", err);
     }
-    return badRequest("Erro interno ao registrar feedback", 500);
+    return badRequest(API_ERROR_MESSAGES.INTERNAL_ERROR_FEEDBACK, 500);
   }
 }

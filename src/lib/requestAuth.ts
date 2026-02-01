@@ -1,19 +1,28 @@
+/**
+ * Utilitários de autenticação para requisições.
+ * Cria e verifica tokens de sessão, valida origens permitidas.
+ */
+
 import crypto from "node:crypto";
 
-const TOKEN_TTL_SECONDS = 5 * 60;
+const TOKEN_TTL_SECONDS = 5 * 60; // 5 minutos
 
+// Codifica em base64url
 function base64UrlEncode(input: string) {
   return Buffer.from(input).toString("base64url");
 }
 
+// Decodifica de base64url
 function base64UrlDecode(input: string) {
   return Buffer.from(input, "base64url").toString("utf8");
 }
 
+// Assina payload com HMAC
 function sign(payloadB64: string, secret: string) {
   return crypto.createHmac("sha256", secret).update(payloadB64).digest("base64url");
 }
 
+// Cria token de sessão JWT-like
 export function createSessionToken() {
   const secret = process.env.API_TOKEN_SECRET;
   if (!secret) throw new Error("API_TOKEN_SECRET_NOT_SET");
@@ -24,6 +33,7 @@ export function createSessionToken() {
   return `${payload}.${sig}`;
 }
 
+// Verifica token de sessão
 export function verifySessionToken(token: string) {
   const secret = process.env.API_TOKEN_SECRET;
   if (!secret) return false;
@@ -44,9 +54,11 @@ export function verifySessionToken(token: string) {
   }
 }
 
+// Verifica se origem é permitida
 export function isOriginAllowed(req: Request) {
   const allowed = process.env.APP_ORIGIN;
   if (!allowed) {
+    // Em desenvolvimento, permite localhost
     const origin = req.headers.get("origin") || "";
     return origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1");
   }

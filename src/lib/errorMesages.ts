@@ -1,19 +1,26 @@
+/**
+ * Mapeamento de erros de API para mensagens amigáveis em português.
+ * Converte códigos de status e mensagens técnicas em textos compreensíveis para o usuário.
+ */
+
 import { isRecord } from "./typeGuards";
 
 export type FriendlyError = {
-  title: string;
-  message: string;
-  hint?: string;
-  actionLabel?: string;
-  actionHref?: string;
+  title: string; // Título do erro
+  message: string; // Mensagem principal
+  hint?: string; // Dica adicional
+  actionLabel?: string; // Rótulo da ação
+  actionHref?: string; // Link da ação
 };
 
+// Parseia header Retry-After em segundos
 function parseRetryAfterSeconds(res: Response) {
   const v = res.headers.get("Retry-After");
   const n = v ? Number(v) : Number.NaN;
   return Number.isFinite(n) ? Math.max(1, Math.floor(n)) : null;
 }
 
+// Constrói erro amigável para análise
 export function buildAnalyzeFriendlyError(res: Response | null, data: unknown): FriendlyError {
   const apiMsg = isRecord(data) && typeof data.error === "string" ? data.error : "";
   const status = res?.status ?? 0;
@@ -63,6 +70,7 @@ export function buildAnalyzeFriendlyError(res: Response | null, data: unknown): 
   };
 }
 
+// Mapeia erro de captura para string
 export function mapCaptureError(status: number, apiError: string) {
   if (status === 401) return "Sessão expirada. Tire outra foto para continuar.";
   if (status === 403) return "Não foi possível validar a solicitação. Tente novamente.";
@@ -92,6 +100,7 @@ export function mapCaptureError(status: number, apiError: string) {
   }
 }
 
+// Mapeia erro de QA para string
 export function mapQaError(status: number, apiError: string) {
   if (status === 401) return "Sessão expirada. Refaça a análise do documento.";
   if (status === 403) return "Não foi possível validar a solicitação. Tente novamente.";
@@ -115,6 +124,7 @@ export function mapQaError(status: number, apiError: string) {
   }
 }
 
+// Mapeia erro de feedback para string
 export function mapFeedbackError(status: number, apiError: string) {
   if (status === 401) return "Sessão expirada. Refaça a análise para enviar feedback.";
   if (status === 403) return "Não foi possível validar a solicitação. Tente novamente.";
@@ -131,6 +141,7 @@ export function mapFeedbackError(status: number, apiError: string) {
   }
 }
 
+// Mapeia erro de rede para string
 export function mapNetworkError(message: string) {
   if (!message) return "Falha de conexão. Verifique sua internet e tente novamente.";
   if (/load failed/i.test(message) || /failed to fetch/i.test(message)) {

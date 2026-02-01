@@ -1,35 +1,36 @@
+/**
+ * Módulo para pós-processamento dos resultados da análise de documentos.
+ * Suaviza linguagem prescritiva, redige dados sensíveis e estrutura em cards.
+ */
+
 import type { AnalyzeResult, Card, CardId, Prompt } from "./types";
 import { redactSensitiveData, safeShorten } from "../lib/text";
 import { isRecord } from "../lib/typeGuards";
+import { POSTPROCESS_TEXTS } from "../lib/constants";
 
+// Limita valor entre 0 e 1
 function clamp01(n: number) {
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.min(1, n));
 }
 
+// Converte valor para string, com fallback
 function asString(x: unknown): string {
   return typeof x === "string" ? x : "";
 }
 
 type SanitizerStats = {
-  softened: boolean;
+  softened: boolean; // Indica se a linguagem foi suavizada
 };
 
-const SANITIZER_CONFIDENCE_PENALTY = 0.1;
+const SANITIZER_CONFIDENCE_PENALTY = 0.1; // Penalidade na confiança se suavizado
 
 /**
- * Este é um "mini-sanitizer" leve que você já tinha no route.ts.
- * (O épico do sanitizer completo pode vir depois.)
+ * Suaviza linguagem prescritiva para tom neutro, evitando conselhos diretos.
  */
 function softenPrescriptiveLanguage(s: string): { text: string; softened: boolean } {
   if (!s) return { text: s, softened: false };
-  const replacements: Array<[RegExp, string]> = [
-    [/\bvocê deve\b/gi, "o documento indica que"],
-    [/\bvocê tem que\b/gi, "o documento menciona que"],
-    [/\btem que\b/gi, "o documento menciona que"],
-    [/\bobrigatório\b/gi, "mencionado como necessário"],
-    [/\bprocure imediatamente\b/gi, "pode ser útil buscar orientação adequada"],
-  ];
+  const replacements = POSTPROCESS_TEXTS.SOFTEN_REPLACEMENTS;
   let out = s;
   let softened = false;
   for (const [rx, rep] of replacements) {
@@ -40,6 +41,7 @@ function softenPrescriptiveLanguage(s: string): { text: string; softened: boolea
   return { text: out, softened };
 }
 
+// Normaliza texto do card, aplicando sanitização e limites
 function normalizeCardText(value: unknown, fallback: string, stats: SanitizerStats, max = 500) {
   const softened = softenPrescriptiveLanguage(asString(value));
   if (softened.softened) stats.softened = true;
@@ -53,6 +55,7 @@ type RawCard = {
   text?: unknown;
 };
 
+// Constrói um card estruturado a partir dos dados brutos
 function buildCard(
   id: CardId,
   titleFallback: string,
@@ -68,53 +71,57 @@ function buildCard(
 }
 
 export type PostprocessStats = {
-  sanitizerApplied: boolean;
-  confidenceLow: boolean;
+  sanitizerApplied: boolean; // Se o sanitizer foi aplicado
+  confidenceLow: boolean; // Se a confiança é baixa
 };
 
+// Pós-processa com estatísticas
 export function postprocessWithStats(raw: unknown, prompt: Prompt): { result: AnalyzeResult; stats: PostprocessStats } {
   const rawRecord = isRecord(raw) ? raw : {};
   let confidence = clamp01(Number(rawRecord.confidence));
   const stats: SanitizerStats = { softened: false };
 
+  // Organiza cards por ID
   const inputCards = Array.isArray(rawRecord.cards) ? rawRecord.cards : [];
   const byId: Record<string, RawCard> = {};
   for (const c of inputCards) {
     if (isRecord(c) && typeof c.id === "string") byId[c.id] = c as RawCard;
   }
 
+  // Constrói lista de cards padrão
   const cards: Card[] = [
-    buildCard("whatIs", "O que é este documento", "Não foi possível confirmar pelo documento.", byId, stats),
+    buildCard("whatIs", POSTPROCESS_TEXTS.CARD_TITLES.whatIs, POSTPROCESS_TEXTS.CARD_FALLBACKS.whatIs, byId, stats),
     buildCard(
       "whatSays",
-      "O que este documento está comunicando",
-      "Não foi possível confirmar pelo documento.",
+      POSTPROCESS_TEXTS.CARD_TITLES.whatSays,
+      POSTPROCESS_TEXTS.CARD_FALLBACKS.whatSays,
       byId,
       stats
     ),
     buildCard(
       "dates",
-      "Datas ou prazos importantes",
-      "Não foi possível confirmar datas ou prazos no documento.",
+      POSTPROCESS_TEXTS.CARD_TITLES.dates,
+      POSTPROCESS_TEXTS.CARD_FALLBACKS.dates,
       byId,
       stats
     ),
     buildCard(
       "terms",
-      "📘 Palavras difíceis explicadas",
-      "Não há termos difíceis relevantes neste documento.",
+      POSTPROCESS_TEXTS.CARD_TITLES.terms,
+      POSTPROCESS_TEXTS.CARD_FALLBACKS.terms,
       byId,
       stats
     ),
     buildCard(
       "whatUsuallyHappens",
-      "O que normalmente acontece",
-      "Não foi possível confirmar pelo documento.",
+      POSTPROCESS_TEXTS.CARD_TITLES.whatUsuallyHappens,
+      POSTPROCESS_TEXTS.CARD_FALLBACKS.whatUsuallyHappens,
       byId,
       stats
     ),
   ];
 
+  // Processa o aviso (notice)
   const rawNotice = asString(rawRecord.notice) || prompt.noticeDefault;
   const softenedNotice = softenPrescriptiveLanguage(rawNotice);
   if (softenedNotice.softened) stats.softened = true;
@@ -124,7 +131,7 @@ export function postprocessWithStats(raw: unknown, prompt: Prompt): { result: An
   }
   const confidenceLow = confidence < 0.45;
   if (confidenceLow) {
-    notice = "A imagem parece estar pouco legível, então a explicação pode estar incompleta. " + notice;
+    notice = POSTPROCESS_TEXTS.LOW_CONFIDENCE_NOTICE_PREFIX + notice;
   }
 
   return {
@@ -133,6 +140,7 @@ export function postprocessWithStats(raw: unknown, prompt: Prompt): { result: An
   };
 }
 
+// Pós-processa sem estatísticas (versão simplificada)
 export function postprocess(raw: unknown, prompt: Prompt): AnalyzeResult {
   return postprocessWithStats(raw, prompt).result;
 }

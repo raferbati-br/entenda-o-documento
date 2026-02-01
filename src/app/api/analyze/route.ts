@@ -14,6 +14,7 @@ import {
   safeRecordMetrics,
   shouldLogApi,
 } from "@/lib/apiRouteUtils";
+import { API_ERROR_MESSAGES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 
@@ -63,7 +64,7 @@ async function recordAnalyzeMetrics(options: {
 
 async function handleAnalyzeRequest(req: Request, ctx: ApiRouteContext) {
   const guardError = await runCommonGuards(req, ctx, {
-    sessionMessage: "Sessao expirada. Tire outra foto para continuar.",
+    sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED_ANALYZE,
     rateLimitPrefix: "analyze",
     rateLimitTag: "api.analyze",
   });
@@ -72,7 +73,7 @@ async function handleAnalyzeRequest(req: Request, ctx: ApiRouteContext) {
   cleanupMemoryStore();
 
   const body = await readJsonRecord(req);
-  if (!body) return badRequest("Requisicao invalida.");
+  if (!body) return badRequest(API_ERROR_MESSAGES.INVALID_REQUEST);
 
   const captureId = typeof body.captureId === "string" ? body.captureId : "";
   const attempt = Number(body.attempt) > 0 ? Number(body.attempt) : 1;
@@ -84,7 +85,7 @@ async function handleAnalyzeRequest(req: Request, ctx: ApiRouteContext) {
   const { useTextOnly, analysisMode } = resolveAnalysisMode(textOnlyEnabled, ocrText, Boolean(ocrQuality?.ok));
 
   if (!useTextOnly && !imageDataUrl?.startsWith("data:image/")) {
-    return badRequest("Imagem nao encontrada ou invalida (capture expirou)", 404);
+    return badRequest(API_ERROR_MESSAGES.IMAGE_NOT_FOUND, 404);
   }
 
   const { result, meta, promptId, stats } = await analyzeDocument(
@@ -126,13 +127,13 @@ export async function POST(req: Request) {
       ctx,
       countMetric: "analyze_invalid_json",
       latencyMetric: "analyze_latency_ms",
-      message: "Modelo nao retornou JSON valido",
+      message: API_ERROR_MESSAGES.MODEL_INVALID_JSON,
     });
     if (modelJsonError) return modelJsonError;
 
     if (shouldLogApi()) {
       console.error("[api.analyze]", err);
     }
-    return badRequest("Erro interno ao analisar documento", 500);
+    return badRequest(API_ERROR_MESSAGES.INTERNAL_ERROR_ANALYZE, 500);
   }
 }

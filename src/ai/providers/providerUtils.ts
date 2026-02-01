@@ -16,20 +16,22 @@ export function extractFirstJsonObject(text: string): string | null {
   return null;
 }
 
+import { ERROR_MESSAGES } from "@/lib/constants";
+
 export function parseModelJson(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch {
     const extracted = extractFirstJsonObject(text);
     if (!extracted) {
-      const err: ModelParseError = new Error("MODEL_NO_JSON");
+      const err: ModelParseError = new Error(ERROR_MESSAGES.MODEL_NO_JSON);
       err.raw = text;
       throw err;
     }
     try {
       return JSON.parse(extracted);
     } catch {
-      const err: ModelParseError = new Error("MODEL_INVALID_JSON");
+      const err: ModelParseError = new Error(ERROR_MESSAGES.MODEL_INVALID_JSON);
       err.raw = text;
       throw err;
     }

@@ -1,3 +1,8 @@
+/**
+ * Armazenamento de resultados de análise no sessionStorage do navegador.
+ * Persiste dados de análise entre navegações na mesma aba.
+ */
+
 const KEY = "eod_result_v2";
 
 export type Card = {
@@ -7,16 +12,18 @@ export type Card = {
 };
 
 export type AnalysisResult = {
-  confidence: number; // 0..1
-  cards: Card[];
-  notice: string;
+  confidence: number; // Confiança 0..1
+  cards: Card[]; // Lista de cards
+  notice: string; // Aviso adicional
 };
 
+// Salva resultado no sessionStorage
 export function saveResult(payload: AnalysisResult) {
   if (globalThis.window === undefined) return;
   globalThis.sessionStorage.setItem(KEY, JSON.stringify(payload));
 }
 
+// Carrega resultado do sessionStorage
 export function loadResult(): AnalysisResult | null {
   if (globalThis.window === undefined) return null;
 
@@ -26,7 +33,7 @@ export function loadResult(): AnalysisResult | null {
   try {
     const parsed = JSON.parse(raw) as AnalysisResult;
 
-    // Validação mínima para evitar quebrar a UI se algo inválido cair no storage
+    // Validação para evitar dados inválidos
     if (
       typeof parsed?.confidence !== "number" ||
       !Array.isArray(parsed?.cards) ||
@@ -41,6 +48,7 @@ export function loadResult(): AnalysisResult | null {
   }
 }
 
+// Limpa resultado do sessionStorage
 export function clearResult() {
   if (globalThis.window === undefined) return;
   globalThis.sessionStorage.removeItem(KEY);

@@ -86,7 +86,7 @@ describe("api/qa", () => {
 
     const res = await POST(new Request("http://test"));
 
-    expect(res).toEqual({ error: "Pergunta muito curta.", status: 400 });
+    expect(res).toEqual({ error: "Pergunta muito curta", status: 400 });
   });
 
   it("streams answer and closes", async () => {

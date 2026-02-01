@@ -1,12 +1,19 @@
-export type QaStreamEvent =
-  | { type: "delta"; text: string }
-  | { type: "done" }
-  | { type: "error"; message: string };
+/**
+ * Utilitários para streaming de respostas de QA.
+ * Define eventos e funções para ler streams de texto incremental.
+ */
 
+export type QaStreamEvent =
+  | { type: "delta"; text: string } // Parte da resposta
+  | { type: "done" } // Fim da resposta
+  | { type: "error"; message: string }; // Erro
+
+// Serializa evento para string JSON
 export function serializeQaStreamEvent(event: QaStreamEvent): string {
   return `${JSON.stringify(event)}\n`;
 }
 
+// Lê stream e produz eventos
 export async function* readQaStream(stream: ReadableStream<Uint8Array>): AsyncIterable<QaStreamEvent> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
