@@ -4,10 +4,10 @@ import { Fab, SvgIcon } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
 type JumpToEndFabProps = {
-  show: boolean;
-  onClick: () => void;
-  bottom: number;
-  ariaLabel?: string;
+  readonly show: boolean;
+  readonly onClick: () => void;
+  readonly bottom: number;
+  readonly ariaLabel?: string;
 };
 
 export default function JumpToEndFab({ show, onClick, bottom, ariaLabel }: JumpToEndFabProps) {
