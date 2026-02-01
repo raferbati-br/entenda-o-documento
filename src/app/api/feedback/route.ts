@@ -26,14 +26,29 @@ function todayKey() {
 }
 
 function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replaceAll(/[^a-z0-9]/g, "_")
-    .replaceAll(/_+/g, "_")
-    .replace(/^_+/, "")
-    .replace(/_+$/, "")
-    .slice(0, 32);
+  const lower = value.toLowerCase().trim();
+  let result = "";
+  let lastWasUnderscore = false;
+
+  for (const element of lower) {
+    const ch = element;
+    const isAlphaNum = ch >= "a" && ch <= "z" || ch >= "0" && ch <= "9";
+    if (isAlphaNum) {
+      result += ch;
+      lastWasUnderscore = false;
+      continue;
+    }
+    if (!lastWasUnderscore) {
+      result += "_";
+      lastWasUnderscore = true;
+    }
+  }
+
+  let start = 0;
+  let end = result.length;
+  while (start < end && result[start] === "_") start += 1;
+  while (end > start && result[end - 1] === "_") end -= 1;
+  return result.slice(start, end).slice(0, 32);
 }
 
 export async function POST(req: Request) {

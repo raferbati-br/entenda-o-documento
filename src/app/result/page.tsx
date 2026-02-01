@@ -18,13 +18,10 @@ import {
   Button,
   Chip,
   Divider,
-  Fab,
   Stack,
-  SvgIcon,
   Typography,
   Snackbar,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
 
 import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
@@ -40,6 +37,7 @@ import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
 import Notice from "../_components/Notice";
 import FeedbackActions from "../_components/FeedbackActions";
+import JumpToEndFab from "../_components/JumpToEndFab";
 
 // === Tipos e Helpers ===
 type CardT = { id: string; title: string; text: string };
@@ -499,46 +497,7 @@ export default function ResultPage() {
         <Box ref={endRef} sx={{ height: 8 }} />
       </PageLayout>
 
-      {showJump && (
-        <Fab
-          size="small"
-          aria-label="Ir para o fim"
-          onClick={handleJumpToEnd}
-          sx={(theme) => ({
-            position: "fixed",
-            left: "50%",
-            transform: "translateX(-50%)",
-            bottom: JUMP_BUTTON_OFFSET,
-            zIndex: theme.zIndex.appBar + 2,
-            width: 28,
-            height: 28,
-            minWidth: 28,
-            minHeight: 28,
-            padding: 0,
-            borderRadius: "50%",
-            bgcolor: theme.palette.background.paper,
-            color: theme.palette.text.primary,
-            border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
-            boxShadow: "none",
-            "&:hover": {
-              bgcolor: theme.palette.background.paper,
-              borderColor: alpha(theme.palette.text.primary, 0.18),
-            },
-          })}
-        >
-          <SvgIcon viewBox="0 0 24 24" sx={{ fontSize: 22, opacity: 0.9 }} fill="none">
-            <path d="M12 3.5v10.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-            <path
-              d="M5.5 12.5L12 19l6.5-6.5"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </SvgIcon>
-        </Fab>
-      )}
+      <JumpToEndFab show={showJump} onClick={handleJumpToEnd} bottom={JUMP_BUTTON_OFFSET} />
 
       <Snackbar
         open={!!toastMsg}

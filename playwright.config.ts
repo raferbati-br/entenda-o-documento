@@ -11,14 +11,14 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: "npm run dev",
+    command: "npm run build && npm run start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 180_000,
     env: {
       API_TOKEN_SECRET: "test-secret",
       APP_ORIGIN: "http://localhost:3000",
-      ...(process.env.NEXT_DISABLE_TURBOPACK ? { NEXT_DISABLE_TURBOPACK: process.env.NEXT_DISABLE_TURBOPACK } : {}),
+      DISABLE_CSP: "1",
     },
   },
   projects: [

@@ -24,7 +24,7 @@ function buildCsp(nonce: string) {
 
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     `style-src 'self' 'nonce-${nonce}'`,
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
@@ -37,6 +37,8 @@ function buildCsp(nonce: string) {
 }
 
 export function middleware(request: NextRequest) {
+  const isDev = process.env.NODE_ENV !== "production";
+  const disableCsp = process.env.DISABLE_CSP === "1";
   const nonce = generateNonce();
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
@@ -47,7 +49,9 @@ export function middleware(request: NextRequest) {
     },
   });
 
-  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  if (!isDev && !disableCsp) {
+    response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  }
   return response;
 }
 

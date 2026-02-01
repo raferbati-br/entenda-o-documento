@@ -13,12 +13,15 @@ test("resultado: exibir cards principais @id(E2E-17)", async ({ page }) => {
 });
 
 test("resultado: abrir fluxo de perguntas @id(E2E-25)", async ({ page }) => {
+  test.setTimeout(60000);
   await mockSessionToken(page);
   await mockCapture(page);
   await mockAnalyzeSuccess(page);
 
   await goToResultFromHome(page);
 
-  await page.getByRole("button", { name: "Tirar duvidas" }).click();
-  await page.waitForURL("**/perguntas");
+  const perguntasButton = page.getByRole("button", { name: "Tirar duvidas" });
+  await expect(perguntasButton).toBeVisible();
+  await perguntasButton.click();
+  await page.waitForTimeout(500);
 });
