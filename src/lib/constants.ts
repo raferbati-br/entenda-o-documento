@@ -33,6 +33,13 @@ export const UI_TEXTS = {
   DOCUMENTS_TITLE: "Documentos Burocráticos",
   CAMERA_HINT: "Tente pegar o documento inteiro.",
   ANALYZING_MESSAGE: "Lendo o documento...",
+  ANALYZING_STEPS: [
+    "Lendo o documento...",
+    "Identificando termos técnicos...",
+    "Traduzindo juridiquês...",
+    "Gerando explicação simples...",
+    "Quase pronto..."
+  ],
   QUESTIONS_TITLE: "Tire suas duvidas sobre o documento",
   VIEW_DOCUMENT: "Ver documento",
   RESULT_TITLE: "📋 *Explicação do Documento*",

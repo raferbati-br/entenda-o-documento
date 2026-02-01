@@ -4,6 +4,7 @@ import { useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { telemetryCapture } from "@/lib/telemetry";
 import { useCaptureInput } from "@/lib/hooks/useCaptureInput";
+import { UI_TEXTS } from "@/lib/constants";
 
 import { Box, Stack, Typography, CircularProgress } from "@mui/material";
 
@@ -81,7 +82,7 @@ function CameraContent() {
               icon={<CropFreeRoundedIcon fontSize="inherit" />}
               iconColor="text.secondary"
               title="Enquadramento"
-              description="Tente pegar o documento inteiro."
+              description={UI_TEXTS.CAMERA_HINT}
             />
 
             <Notice severity="info" title="Dica" density="compact">

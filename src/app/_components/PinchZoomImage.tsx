@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
+import { ERROR_MESSAGES } from "@/lib/constants";
 
 type PinchZoomImageProps = Readonly<{
   src?: string | null;
@@ -95,7 +96,7 @@ export default function PinchZoomImage({
       ) : (
         <Box sx={{ p: 3, textAlign: "center" }}>
           <Typography variant="body2" color="text.secondary">
-            {errorMessage || "Documento indisponivel."}
+            {errorMessage || ERROR_MESSAGES.DOCUMENT_UNAVAILABLE_SHORT}
           </Typography>
         </Box>
       )}

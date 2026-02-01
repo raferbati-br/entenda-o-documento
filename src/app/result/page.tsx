@@ -8,6 +8,7 @@ import { clearLatencyTrace, getLatencyTraceSnapshot } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 import { mapFeedbackError, mapNetworkError } from "@/lib/errorMesages";
 import { postJsonWithSession } from "@/lib/apiClient";
+import { UI_TEXTS } from "@/lib/constants";
 import { resetAnalysisSession } from "@/lib/analysisSession";
 import { useJumpToEnd } from "@/lib/hooks/useJumpToEnd";
 import { useSpeechSynthesis } from "@/lib/hooks/useSpeechSynthesis";
@@ -287,7 +288,7 @@ export default function ResultPage() {
   const fullText = useMemo(() => {
     const notice = result?.notice || "";
     const parts = [
-      "📋 *Explicação do Documento*",
+      UI_TEXTS.RESULT_TITLE,
       "",
       cardMap["whatIs"]?.title ? `*${cardMap["whatIs"]?.title}*\n${cardMap["whatIs"]?.text}` : "",
       cardMap["whatSays"]?.title ? `*${cardMap["whatSays"]?.title}*\n${cardMap["whatSays"]?.text}` : "",
@@ -296,7 +297,7 @@ export default function ResultPage() {
       cardMap["whatUsuallyHappens"]?.title ? `*${cardMap["whatUsuallyHappens"]?.title}*\n${cardMap["whatUsuallyHappens"]?.text}` : "",
       notice ? `⚠️ *Aviso*\n${notice}` : "",
       "",
-      "Gerado por Entenda o Documento"
+      UI_TEXTS.RESULT_FOOTER
     ].filter(Boolean).join("\n\n");
     return parts;
   }, [cardMap, result?.notice]);
@@ -310,7 +311,7 @@ export default function ResultPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Explicação do Documento',
+          title: UI_TEXTS.RESULT_SHARE_TITLE,
           text: fullText,
         });
       } catch {

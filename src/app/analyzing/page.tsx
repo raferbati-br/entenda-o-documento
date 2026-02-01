@@ -8,6 +8,7 @@ import { saveResult } from "@/lib/resultStore";
 import { motion, AnimatePresence } from "framer-motion"; // Instale: npm install framer-motion
 import { postJsonWithSession } from "@/lib/apiClient";
 import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
+import { UI_TEXTS } from "@/lib/constants";
 import { markLatencyTrace, recordLatencyStep } from "@/lib/latencyTrace";
 import { telemetryCapture } from "@/lib/telemetry";
 import { buildAnalyzeFriendlyError, type FriendlyError } from "@/lib/errorMesages";
@@ -91,13 +92,7 @@ export default function AnalyzingPage() {
 
   // Mensagens para feedback visual
   const steps = useMemo(
-    () => [
-      "Lendo o documento...",
-      "Identificando termos técnicos...",
-      "Traduzindo juridiquês...",
-      "Gerando explicação simples...",
-      "Quase pronto..."
-    ],
+    () => UI_TEXTS.ANALYZING_STEPS,
     []
   );
 

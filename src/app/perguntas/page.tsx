@@ -8,6 +8,7 @@ import { loadResult, AnalysisResult } from "@/lib/resultStore";
 import { telemetryCapture } from "@/lib/telemetry";
 import { mapFeedbackError, mapNetworkError, mapQaError } from "@/lib/errorMesages";
 import { readQaStream } from "@/lib/qaStream";
+import { UI_TEXTS, ERROR_MESSAGES } from "@/lib/constants";
 import { postJsonWithSession, postJsonWithSessionResponse } from "@/lib/apiClient";
 import { resetAnalysisSession } from "@/lib/analysisSession";
 import { useCaptureObjectUrl } from "@/lib/hooks/useCaptureObjectUrl";
@@ -79,7 +80,7 @@ const QUICK_QUESTION_META: Record<string, QuickQuestionMeta> = {
     icon: <PaidRoundedIcon fontSize="inherit" />,
     description: "Valores, custos e possiveis multas.",
   },
-  "O que este documento pede?": {
+  [UI_TEXTS.WHAT_IS_QUESTION]: {
     iconColor: "warning.main",
     icon: <DescriptionRoundedIcon fontSize="inherit" />,
     description: "O pedido principal em poucas palavras.",
@@ -190,7 +191,7 @@ export default function PerguntasPage() {
   const initialViewportRef = useRef<number | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const { url: imageUrl, error: imageError } = useCaptureObjectUrl({
-    missingMessage: "Documento indisponivel para visualizacao.",
+    missingMessage: ERROR_MESSAGES.DOCUMENT_UNAVAILABLE,
   });
   const { endRef, showJump, updateJumpState, handleScroll, jumpToEnd } = useJumpToEnd({
     scrollRef,
@@ -217,7 +218,7 @@ export default function PerguntasPage() {
     () => [
       "Qual e o prazo?",
       "Qual e o valor?",
-      "O que este documento pede?",
+      UI_TEXTS.WHAT_IS_QUESTION,
       "Outras",
     ],
     []
@@ -226,7 +227,7 @@ export default function PerguntasPage() {
   const hasOcrContext = useMemo(() => Boolean(loadQaContext()?.trim()), []);
   const cardsArr = useMemo<CardT[]>(() => (result?.cards as CardT[]) || [], [result]);
   const cardMap = useMemo(() => Object.fromEntries(cardsArr.map((c) => [c.id, c])), [cardsArr]);
-  const documentTitle = useMemo(() => cardMap["whatIs"]?.title || "Documento", [cardMap]);
+  const documentTitle = useMemo(() => cardMap["whatIs"]?.title || UI_TEXTS.DEFAULT_DOCUMENT_TITLE, [cardMap]);
   const confidence = result?.confidence ?? 0;
   const confidenceBucket = getConfidenceBucket(confidence);
 
@@ -425,7 +426,7 @@ export default function PerguntasPage() {
     if (validationError === "missing_context") {
       setQaHistory((prev) => [
         ...prev,
-        { id: `${Date.now()}-error`, question: q, error: "Nao foi possivel montar o contexto do documento." },
+        { id: `${Date.now()}-error`, question: q, error: ERROR_MESSAGES.CONTEXT_BUILD_ERROR },
       ]);
       return;
     }
@@ -485,7 +486,7 @@ export default function PerguntasPage() {
               transition: "bottom 160ms ease-out",
             }}
             secondary={{
-              label: "Ver documento",
+              label: UI_TEXTS.VIEW_DOCUMENT,
               startIcon: <DescriptionRoundedIcon />,
               onClick: openDocument,
               disabled: !imageUrl,
@@ -518,7 +519,7 @@ export default function PerguntasPage() {
               >
                 <Stack spacing={1} sx={{ mb: 1 }}>
                   <Typography variant="h4" gutterBottom fontWeight={800} sx={{ letterSpacing: "-0.02em" }}>
-                    Tire suas duvidas sobre o documento
+                    {UI_TEXTS.QUESTIONS_TITLE}
                   </Typography>
                   <Typography color="text.secondary" variant="body1" sx={{ lineHeight: 1.6 }}>
                     Escolha uma pergunta pronta ou escreva a sua.
@@ -736,7 +737,7 @@ export default function PerguntasPage() {
               iconButtonSx={{ color: "white" }}
               title={
                 <Typography variant="h6" sx={{ color: "white", fontWeight: 600 }}>
-                  Documento
+                  {UI_TEXTS.DEFAULT_DOCUMENT_TITLE}
                 </Typography>
               }
             />
@@ -746,7 +747,7 @@ export default function PerguntasPage() {
             key={imageUrl ?? "empty"}
             src={imageUrl}
             alt={documentTitle}
-            errorMessage={imageError || "Documento indisponivel."}
+            errorMessage={imageError || ERROR_MESSAGES.DOCUMENT_UNAVAILABLE_SHORT}
             minZoom={1}
             maxZoom={3}
           />
