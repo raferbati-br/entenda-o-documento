@@ -5,10 +5,12 @@ import {
   DEFAULT_QA_PROMPT_ID,
 } from "@/lib/constants";
 
-export function getAnalyzePromptId(useText: boolean): string {
-  return useText
-    ? process.env.ANALYZE_TEXT_PROMPT_ID ?? DEFAULT_ANALYZE_TEXT_PROMPT_ID
-    : process.env.PROMPT_ID ?? DEFAULT_PROMPT_ID;
+export function getAnalyzeTextPromptId(): string {
+  return process.env.ANALYZE_TEXT_PROMPT_ID ?? DEFAULT_ANALYZE_TEXT_PROMPT_ID;
+}
+
+export function getAnalyzeImagePromptId(): string {
+  return process.env.PROMPT_ID ?? DEFAULT_PROMPT_ID;
 }
 
 export function getOcrPromptId(): string {

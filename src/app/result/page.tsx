@@ -9,7 +9,6 @@ import { telemetryCapture } from "@/lib/telemetry";
 import { mapFeedbackError, mapNetworkError } from "@/lib/errorMesages";
 import { postJsonWithSession } from "@/lib/apiClient";
 import { UI_TEXTS } from "@/lib/constants";
-import { UI_TEXTS } from "@/lib/constants";
 import { resetAnalysisSession } from "@/lib/analysisSession";
 import { useJumpToEnd } from "@/lib/hooks/useJumpToEnd";
 import { useSpeechSynthesis } from "@/lib/hooks/useSpeechSynthesis";
