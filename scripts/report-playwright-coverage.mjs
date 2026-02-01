@@ -33,12 +33,46 @@ async function listCoverageFiles(dir) {
 
 function normalizeCoveragePath(filePath) {
   if (!filePath) return null;
+  if (filePath.includes("turbopack:")) {
+    const match = filePath.match(/turbopack:[/\\\\]\\[project][\\\\/](.*)$/);
+    if (match && match[1]) {
+      return path.join(REPO_ROOT, match[1]);
+    }
+  }
+  const winTurbopackMarker = "turbopack:\\\\[project]\\\\";
+  const winIndex = filePath.indexOf(winTurbopackMarker);
+  if (winIndex >= 0) {
+    const rel = filePath.slice(winIndex + winTurbopackMarker.length).replace(/\\/g, "/");
+    return path.join(REPO_ROOT, rel);
+  }
+  const unixTurbopackMarker = "turbopack:/[project]/";
+  const unixIndex = filePath.indexOf(unixTurbopackMarker);
+  if (unixIndex >= 0) {
+    const rel = filePath.slice(unixIndex + unixTurbopackMarker.length);
+    return path.join(REPO_ROOT, rel);
+  }
+  if (filePath.startsWith("turbopack:///[project]/")) {
+    const cleaned = filePath.replace("turbopack:///[project]/", "");
+    return path.join(REPO_ROOT, cleaned);
+  }
   if (filePath.startsWith("webpack://")) {
     const cleaned = filePath.replace(/^webpack:\/\//, "").replace(/^\/+/, "");
+    const srcIndex = cleaned.replace(/\\/g, "/").indexOf("src/");
+    if (srcIndex >= 0) {
+      const rel = cleaned.slice(srcIndex);
+      return path.join(REPO_ROOT, rel);
+    }
     return path.join(REPO_ROOT, cleaned);
   }
   if (filePath.startsWith("file://")) {
-    return fileURLToPath(filePath);
+    const localPath = fileURLToPath(filePath);
+    const normalized = localPath.replace(/\\/g, "/");
+    const srcIndex = normalized.indexOf("/src/");
+    if (srcIndex >= 0) {
+      const rel = normalized.slice(srcIndex + 1);
+      return path.join(REPO_ROOT, rel);
+    }
+    return localPath;
   }
   return filePath;
 }
@@ -47,6 +81,9 @@ function isSourceFile(filePath) {
   const normalized = normalizeCoveragePath(filePath);
   if (!normalized) return false;
   const normalizedPath = path.normalize(normalized);
+  if (process.platform === "win32") {
+    return normalizedPath.toLowerCase().startsWith((SOURCE_ROOT + path.sep).toLowerCase());
+  }
   return normalizedPath.startsWith(SOURCE_ROOT + path.sep);
 }
 
@@ -157,8 +194,12 @@ async function main() {
   const { createCoverageMap } = istanbulCoverage;
   const filteredMap = createCoverageMap({});
   map.files().forEach((file) => {
-    if (!isSourceFile(file)) return;
+    const isProjectSource = isSourceFile(file);
+    const isTurbopackSource = file.includes("turbopack:") && /[\\/]src[\\/]/.test(file);
+    if (!isProjectSource && !isTurbopackSource) return;
     const normalized = normalizeCoveragePath(file);
+    if (!normalized) return;
+    if (normalized.includes(`${path.sep}node_modules${path.sep}`)) return;
     const data = map.fileCoverageFor(file).toJSON();
     data.path = normalized;
     filteredMap.addFileCoverage(data);

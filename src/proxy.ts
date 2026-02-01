@@ -36,7 +36,7 @@ function buildCsp(nonce: string) {
   ].join("; ");
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const isDev = process.env.NODE_ENV !== "production";
   const disableCsp = process.env.DISABLE_CSP === "1";
   const nonce = generateNonce();

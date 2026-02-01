@@ -34,7 +34,7 @@ async function waitForServer() {
 
 function runCommand(cmd, args, opts = {}) {
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, { stdio: "inherit", shell: true, ...opts });
+    const child = spawn(cmd, args, { stdio: "inherit", ...opts });
     child.on("exit", (code) => resolve(code ?? 1));
   });
 }
@@ -58,17 +58,24 @@ async function main() {
   let devLogCleanup = null;
 
   if (!alreadyRunning) {
-    devProcess = spawn("npm", ["run", "dev", "--", "-p", String(devPort)], {
-      stdio: ["ignore", "pipe", "pipe"],
-      shell: true,
-      env: {
-        ...process.env,
-        LLM_PROVIDER: "mock",
-        ANALYZE_LLM_PROVIDER: "mock",
-        API_LOGS: "0",
-        APP_ORIGIN: BASE_URL,
-      },
-    });
+    const devEnv = {
+      ...process.env,
+      LLM_PROVIDER: "mock",
+      ANALYZE_LLM_PROVIDER: "mock",
+      API_LOGS: "0",
+      APP_ORIGIN: BASE_URL,
+    };
+    if (process.platform === "win32") {
+      devProcess = spawn("cmd.exe", ["/d", "/s", "/c", `npm run dev -- -p ${devPort}`], {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: devEnv,
+      });
+    } else {
+      devProcess = spawn("npm", ["run", "dev", "--", "-p", String(devPort)], {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: devEnv,
+      });
+    }
     const stdoutRl = readline.createInterface({ input: devProcess.stdout });
     const stderrRl = readline.createInterface({ input: devProcess.stderr });
     const ESC = String.fromCodePoint(27);
