@@ -18,7 +18,7 @@ export const runtime = "nodejs";
 
 async function validateRequest(req: Request, ctx: ReturnType<typeof createRouteContext>) {
   const guardError = await runCommonGuards(req, ctx, {
-    sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED_ANALYZE,
+    sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED,
     rateLimitPrefix: "ocr",
     rateLimitTag: "api.ocr",
   });

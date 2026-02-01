@@ -122,7 +122,7 @@ export async function POST(req: Request) {
   const ctx = createRouteContext(req);
   try {
     const guardError = await runCommonGuards(req, ctx, {
-      sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED_CAPTURE,
+      sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED,
       rateLimitPrefix: "capture",
       rateLimitTag: "api.capture",
     });

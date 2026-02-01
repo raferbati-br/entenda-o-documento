@@ -64,7 +64,7 @@ async function recordAnalyzeMetrics(options: {
 
 async function handleAnalyzeRequest(req: Request, ctx: ApiRouteContext) {
   const guardError = await runCommonGuards(req, ctx, {
-    sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED_ANALYZE,
+    sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED,
     rateLimitPrefix: "analyze",
     rateLimitTag: "api.analyze",
   });

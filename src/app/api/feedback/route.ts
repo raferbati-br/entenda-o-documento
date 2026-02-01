@@ -106,7 +106,7 @@ export async function POST(req: Request) {
   const ctx = createRouteContext(req);
   try {
     const guardError = await runCommonGuards(req, ctx, {
-      sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED_FEEDBACK,
+      sessionMessage: API_ERROR_MESSAGES.SESSION_EXPIRED,
       rateLimitPrefix: "feedback",
       rateLimitTag: "api.feedback",
     });
