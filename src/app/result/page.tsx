@@ -9,6 +9,7 @@ import { telemetryCapture } from "@/lib/telemetry";
 import { mapFeedbackError, mapNetworkError } from "@/lib/errorMesages";
 import { postJsonWithSession } from "@/lib/apiClient";
 import { UI_TEXTS } from "@/lib/constants";
+import { UI_TEXTS } from "@/lib/constants";
 import { resetAnalysisSession } from "@/lib/analysisSession";
 import { useJumpToEnd } from "@/lib/hooks/useJumpToEnd";
 import { useSpeechSynthesis } from "@/lib/hooks/useSpeechSynthesis";
@@ -66,9 +67,9 @@ function splitSummary(text: string) {
 }
 
 function confidenceToInfo(confidence: number) {
-  if (confidence < 0.45) return { label: "Baixa", color: "error.main", bg: "error.lighter", text: "Difícil de ler" };
-  if (confidence < 0.75) return { label: "Média", color: "warning.main", bg: "warning.lighter", text: "Leitura parcial" };
-  return { label: "Alta", color: "success.main", bg: "success.lighter", text: "Leitura clara" };
+  if (confidence < 0.45) return { label: "Baixa", color: "error.main", bg: "error.lighter", text: UI_TEXTS.CONFIDENCE_LOW };
+  if (confidence < 0.75) return { label: "Média", color: "warning.main", bg: "warning.lighter", text: UI_TEXTS.CONFIDENCE_MEDIUM };
+  return { label: "Alta", color: "success.main", bg: "success.lighter", text: UI_TEXTS.CONFIDENCE_HIGH };
 }
 
 function getConfidenceBucket(confidence: number) {
@@ -79,7 +80,7 @@ function getConfidenceBucket(confidence: number) {
 
 function renderTtsErrorNotice(ttsError: string | null) {
   if (!ttsError) return null;
-  const severity = ttsError === "Leitura interrompida." ? "info" : "warning";
+  const severity = ttsError === UI_TEXTS.TTS_INTERRUPTED ? "info" : "warning";
   return (
     <Notice severity={severity} sx={{ mb: 3 }}>
       {ttsError}
@@ -210,9 +211,9 @@ export default function ResultPage() {
   } = useSpeechSynthesis({
     lang: "pt-BR",
     rate: 0.95,
-    unsupportedMessage: "Seu navegador nÃ£o suporta leitura em voz alta.",
-    errorMessage: "Erro na leitura.",
-    interruptedMessage: "Leitura interrompida.",
+    unsupportedMessage: UI_TEXTS.TTS_UNSUPPORTED,
+    errorMessage: UI_TEXTS.TTS_ERROR,
+    interruptedMessage: UI_TEXTS.TTS_INTERRUPTED,
   });
 
   // Share State
@@ -227,7 +228,7 @@ export default function ResultPage() {
   }, [result, router]);
 
   useEffect(() => {
-    if (ttsError !== "Leitura interrompida.") return;
+    if (ttsError !== UI_TEXTS.TTS_INTERRUPTED) return;
     const timeoutId = globalThis.setTimeout(() => setTtsError(null), 3000);
     return () => globalThis.clearTimeout(timeoutId);
   }, [ttsError, setTtsError]);

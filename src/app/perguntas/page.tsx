@@ -136,7 +136,7 @@ async function streamQaAnswer(
       onDelta(answerText);
     }
     if (event.type === "error") {
-      throw new Error(event.message || "Erro ao responder pergunta.");
+      throw new Error(event.message || ERROR_MESSAGES.ANSWER_QUESTION_ERROR);
     }
     if (event.type === "done") {
       break;
@@ -152,7 +152,7 @@ async function getQaResponseBody(res: Response) {
     throw new Error(mapQaError(res.status, apiError));
   }
   if (!res.body) {
-    throw new Error("Resposta vazia.");
+    throw new Error(ERROR_MESSAGES.EMPTY_RESPONSE);
   }
   return res.body;
 }

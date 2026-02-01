@@ -22,6 +22,9 @@ export const ERROR_MESSAGES = {
   DOCUMENT_UNAVAILABLE: "Documento indisponivel para visualizacao.",
   CONTEXT_BUILD_ERROR: "Nao foi possivel montar o contexto do documento.",
   DOCUMENT_UNAVAILABLE_SHORT: "Documento indisponivel.",
+  ANSWER_QUESTION_ERROR: "Erro ao responder pergunta.",
+  EMPTY_RESPONSE: "Resposta vazia.",
+  LOW_CONFIDENCE: "Difícil de ler",
 };
 
 // === TEXTOS DA INTERFACE ===
@@ -47,6 +50,14 @@ export const UI_TEXTS = {
   RESULT_SHARE_TITLE: "Explicação do Documento",
   DEFAULT_DOCUMENT_TITLE: "Documento",
   WHAT_IS_QUESTION: "O que este documento pede?",
+  CONFIDENCE_LOW: "Difícil de ler",
+  CONFIDENCE_MEDIUM: "Leitura parcial",
+  CONFIDENCE_HIGH: "Leitura clara",
+  SPEAK_STOP: "Parar leitura",
+  SPEAK_START: "Ler em voz alta",
+  TTS_UNSUPPORTED: "Seu navegador não suporta leitura em voz alta.",
+  TTS_ERROR: "Erro na leitura.",
+  TTS_INTERRUPTED: "Leitura interrompida.",
 };
 
 // === OUTRAS CONSTANTES ===

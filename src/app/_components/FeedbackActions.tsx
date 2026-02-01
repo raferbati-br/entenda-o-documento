@@ -9,6 +9,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { UI_TEXTS } from "@/lib/constants";
 import ThumbUpOutlinedIcon from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlinedIcon from "@mui/icons-material/ThumbDownOutlined";
 import ThumbUpAltRoundedIcon from "@mui/icons-material/ThumbUpAltRounded";
@@ -62,7 +63,7 @@ export default function FeedbackActions({
 }: FeedbackActionsProps) {
   const disableFeedback = feedbackLoading || feedbackSent;
   const showReasons = feedbackChoice === "down" && !feedbackSent;
-  const speakLabel = isSpeaking ? "Parar leitura" : "Ler em voz alta";
+  const speakLabel = isSpeaking ? UI_TEXTS.SPEAK_STOP : UI_TEXTS.SPEAK_START;
   const isUpSelected = feedbackChoice === "up" || feedbackValue === "up";
   const isDownSelected = feedbackChoice === "down" || feedbackValue === "down";
 
