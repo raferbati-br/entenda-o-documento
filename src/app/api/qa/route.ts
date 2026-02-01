@@ -39,6 +39,91 @@ function parseQaRequest(body: Record<string, unknown>): QaParseResult {
   return { ok: true, value: { question, context, attempt } };
 }
 
+async function processQaStream(
+  stream: AsyncIterable<string>,
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder
+): Promise<string> {
+  let answerText = "";
+  let sentChars = 0;
+
+  for await (const chunk of stream) {
+    if (!chunk) continue;
+    if (sentChars >= MAX_ANSWER_CHARS) break;
+
+    const remaining = MAX_ANSWER_CHARS - sentChars;
+    const next = chunk.length > remaining ? chunk.slice(0, remaining) : chunk;
+    if (!next) continue;
+
+    sentChars += next.length;
+    answerText += next;
+    controller.enqueue(encoder.encode(serializeQaStreamEvent({ type: "delta", text: next })));
+  }
+
+  return answerText;
+}
+
+async function handleEmptyAnswer(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder,
+  ctx: ReturnType<typeof createRouteContext>,
+  durationMs: number,
+  meta: { provider: string; model: string },
+  promptId: string
+): Promise<void> {
+  await safeRecordMetrics([
+    recordQualityCount("qa_model_error"),
+    recordQualityLatency("qa_latency_ms", durationMs),
+  ]);
+
+  if (shouldLogApi()) {
+    console.log("[api.qa]", {
+      requestId: ctx.requestId,
+      ip: ctx.ip,
+      status: 502,
+      provider: meta.provider,
+      model: meta.model,
+      promptId,
+      duration_ms: durationMs,
+    });
+  }
+
+  controller.enqueue(
+    encoder.encode(serializeQaStreamEvent({ type: "error", message: "Modelo nao retornou texto valido" }))
+  );
+  controller.close();
+}
+
+async function handleSuccessAnswer(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder,
+  ctx: ReturnType<typeof createRouteContext>,
+  durationMs: number,
+  meta: { provider: string; model: string },
+  promptId: string,
+  attempt: number
+): Promise<void> {
+  await safeRecordMetrics([
+    recordQualityLatency("qa_latency_ms", durationMs),
+    attempt > 1 ? recordQualityCount("qa_retry") : Promise.resolve(),
+  ]);
+
+  if (shouldLogApi()) {
+    console.log("[api.qa]", {
+      requestId: ctx.requestId,
+      ip: ctx.ip,
+      status: 200,
+      provider: meta.provider,
+      model: meta.model,
+      promptId,
+      duration_ms: durationMs,
+    });
+  }
+
+  controller.enqueue(encoder.encode(serializeQaStreamEvent({ type: "done" })));
+  controller.close();
+}
+
 function createQaStream(options: {
   ctx: ReturnType<typeof createRouteContext>;
   stream: AsyncIterable<string>;
@@ -51,67 +136,16 @@ function createQaStream(options: {
 
   return new ReadableStream({
     async start(controller) {
-      let answerText = "";
-      let sentChars = 0;
       try {
-        for await (const chunk of stream) {
-          if (!chunk) continue;
-          if (sentChars >= MAX_ANSWER_CHARS) break;
-
-          const remaining = MAX_ANSWER_CHARS - sentChars;
-          const next = chunk.length > remaining ? chunk.slice(0, remaining) : chunk;
-          if (!next) continue;
-
-          sentChars += next.length;
-          answerText += next;
-          controller.enqueue(encoder.encode(serializeQaStreamEvent({ type: "delta", text: next })));
-        }
-
+        const answerText = await processQaStream(stream, controller, encoder);
         const durationMs = ctx.durationMs();
+
         if (!answerText.trim()) {
-          await safeRecordMetrics([
-            recordQualityCount("qa_model_error"),
-            recordQualityLatency("qa_latency_ms", durationMs),
-          ]);
-
-          if (shouldLogApi()) {
-            console.log("[api.qa]", {
-              requestId: ctx.requestId,
-              ip: ctx.ip,
-              status: 502,
-              provider: meta.provider,
-              model: meta.model,
-              promptId,
-              duration_ms: durationMs,
-            });
-          }
-
-          controller.enqueue(
-            encoder.encode(serializeQaStreamEvent({ type: "error", message: "Modelo nao retornou texto valido" }))
-          );
-          controller.close();
+          await handleEmptyAnswer(controller, encoder, ctx, durationMs, meta, promptId);
           return;
         }
 
-        await safeRecordMetrics([
-          recordQualityLatency("qa_latency_ms", durationMs),
-          attempt > 1 ? recordQualityCount("qa_retry") : Promise.resolve(),
-        ]);
-
-        if (shouldLogApi()) {
-          console.log("[api.qa]", {
-            requestId: ctx.requestId,
-            ip: ctx.ip,
-            status: 200,
-            provider: meta.provider,
-            model: meta.model,
-            promptId,
-            duration_ms: durationMs,
-          });
-        }
-
-        controller.enqueue(encoder.encode(serializeQaStreamEvent({ type: "done" })));
-        controller.close();
+        await handleSuccessAnswer(controller, encoder, ctx, durationMs, meta, promptId, attempt);
       } catch (err) {
         if (shouldLogApi()) {
           console.error("[api.qa]", err);
