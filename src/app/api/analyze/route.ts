@@ -12,13 +12,12 @@ import {
   type RouteContext as ApiRouteContext,
   runCommonGuards,
   safeRecordMetrics,
+  shouldLogApi,
 } from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
 
 const TEXT_ONLY_VALUES = new Set(["1", "true", "yes", "on"]);
-const SHOULD_LOG_API = process.env.API_LOGS !== "0";
-
 function isTextOnlyEnabled() {
   const value = String(process.env.ANALYZE_TEXT_ONLY || "").toLowerCase();
   return TEXT_ONLY_VALUES.has(value);
@@ -95,7 +94,7 @@ async function handleAnalyzeRequest(req: Request, ctx: ApiRouteContext) {
 
   await recordAnalyzeMetrics({ attempt, useTextOnly, analysisMode, stats, durationMs });
 
-  if (SHOULD_LOG_API) {
+  if (shouldLogApi()) {
     console.log("[api.analyze]", {
       requestId: ctx.requestId,
       ip: ctx.ip,
@@ -131,7 +130,9 @@ export async function POST(req: Request) {
     });
     if (modelJsonError) return modelJsonError;
 
-    console.error("[api.analyze]", err);
+    if (shouldLogApi()) {
+      console.error("[api.analyze]", err);
+    }
     return badRequest("Erro interno ao analisar documento", 500);
   }
 }

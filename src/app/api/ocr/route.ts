@@ -10,6 +10,7 @@ import {
   readJsonRecord,
   runCommonGuards,
   safeRecordMetrics,
+  shouldLogApi,
 } from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
@@ -45,15 +46,17 @@ export async function POST(req: Request) {
       attempt > 1 ? recordQualityCount("ocr_retry") : Promise.resolve(),
     ]);
 
-    console.log("[api.ocr]", {
-      requestId: ctx.requestId,
-      ip: ctx.ip,
-      status: 200,
-      provider: meta.provider,
-      model: meta.model,
-      promptId,
-      duration_ms: durationMs,
-    });
+    if (shouldLogApi()) {
+      console.log("[api.ocr]", {
+        requestId: ctx.requestId,
+        ip: ctx.ip,
+        status: 200,
+        provider: meta.provider,
+        model: meta.model,
+        promptId,
+        duration_ms: durationMs,
+      });
+    }
 
     return NextResponse.json({ ok: true, documentText });
   } catch (err: unknown) {
@@ -70,7 +73,9 @@ export async function POST(req: Request) {
     });
     if (modelJsonError) return modelJsonError;
 
-    console.error("[api.ocr]", err);
+    if (shouldLogApi()) {
+      console.error("[api.ocr]", err);
+    }
     return badRequest("Erro interno ao extrair texto", 500);
   }
 }

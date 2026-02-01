@@ -46,7 +46,9 @@ export function ensureSessionToken(req: Request, message: string) {
 export async function ensureRateLimit(prefix: string, ctx: RouteContext, tag: string) {
   const rl = await rateLimit(`${prefix}:${ctx.ip}`);
   if (rl.ok) return null;
-  console.log(`[${tag}]`, { requestId: ctx.requestId, ip: ctx.ip, status: 429, duration_ms: ctx.durationMs() });
+  if (shouldLogApi()) {
+    console.log(`[${tag}]`, { requestId: ctx.requestId, ip: ctx.ip, status: 429, duration_ms: ctx.durationMs() });
+  }
   return jsonError("Muitas tentativas. Aguarde um pouco e tente novamente.", 429, {
     "Retry-After": String(rl.resetSeconds),
   });
@@ -99,6 +101,10 @@ export function handleApiKeyError(code: string, message = "Chave de API nao conf
 export function handleTokenSecretError(code: string, message = "API_TOKEN_SECRET nao configurada") {
   if (code !== "API_TOKEN_SECRET_NOT_SET") return null;
   return jsonError(message, 500);
+}
+
+export function shouldLogApi() {
+  return process.env.NODE_ENV !== "test" && process.env.API_LOGS !== "0";
 }
 
 type ModelErrorOptions = {

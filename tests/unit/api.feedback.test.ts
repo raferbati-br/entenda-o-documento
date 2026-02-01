@@ -22,6 +22,7 @@ vi.mock("@/lib/apiRouteUtils", () => ({
   createRouteContext: (...args: unknown[]) => mockCreateRouteContext(...args),
   readJsonRecord: (...args: unknown[]) => mockReadJsonRecord(...args),
   runCommonGuards: (...args: unknown[]) => mockRunCommonGuards(...args),
+  shouldLogApi: () => false,
 }));
 
 vi.mock("next/server", () => ({

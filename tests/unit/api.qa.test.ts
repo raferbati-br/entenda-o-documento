@@ -30,6 +30,7 @@ vi.mock("@/lib/apiRouteUtils", () => ({
   readJsonRecord: (...args: unknown[]) => mockReadJsonRecord(...args),
   runCommonGuards: (...args: unknown[]) => mockRunCommonGuards(...args),
   safeRecordMetrics: (...args: unknown[]) => mockSafeRecordMetrics(...args),
+  shouldLogApi: () => false,
 }));
 
 vi.mock("next/server", () => {

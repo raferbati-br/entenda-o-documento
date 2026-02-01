@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { cleanupMemoryStore, isRedisConfigured, memoryStats, setCapture } from "@/lib/captureStoreServer";
-import { badRequest, createRouteContext, readJsonRecord, runCommonGuards } from "@/lib/apiRouteUtils";
+import { badRequest, createRouteContext, readJsonRecord, runCommonGuards, shouldLogApi } from "@/lib/apiRouteUtils";
 import { parseDataUrl } from "@/lib/dataUrl";
 
 export const runtime = "nodejs";
@@ -9,7 +9,6 @@ export const runtime = "nodejs";
 const MAX_IMAGE_BYTES = 2.5 * 1024 * 1024;
 const MAX_CAPTURE_COUNT = 80;
 const MAX_TOTAL_BYTES = 120 * 1024 * 1024;
-const SHOULD_LOG_API = process.env.API_LOGS !== "0";
 
 type ValidatedImage = {
   ok: true;
@@ -83,13 +82,17 @@ function extractOcrImageData(body: Record<string, unknown>, originalBytes: numbe
 
   const parsed = parseDataUrl(body.ocrImageBase64, { requireImage: true });
   if (!parsed) {
-    console.warn("[api.capture] OCR data URL invalida.");
+    if (shouldLogApi()) {
+      console.warn("[api.capture] OCR data URL invalida.");
+    }
     return { ocrImageBase64, ocrBytes };
   }
 
   const ocrValidated = validateImageBase64(parsed.base64, parsed.mimeType);
   if (!ocrValidated.ok) {
-    console.warn("[api.capture] OCR invalido.", ocrValidated.error);
+    if (shouldLogApi()) {
+      console.warn("[api.capture] OCR invalido.", ocrValidated.error);
+    }
     return { ocrImageBase64, ocrBytes };
   }
 
@@ -156,7 +159,7 @@ export async function POST(req: Request) {
       ...(ocrImageBase64 ? { ocrImageBase64, ocrBytes } : {}),
     });
 
-    if (SHOULD_LOG_API) {
+    if (shouldLogApi()) {
       console.log("[api.capture]", {
         requestId: ctx.requestId,
         ip: ctx.ip,
@@ -169,7 +172,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, captureId });
   } catch (err) {
-    console.error("[api.capture]", err);
+    if (shouldLogApi()) {
+      console.error("[api.capture]", err);
+    }
     return badRequest("Erro interno ao receber imagem.", 500);
   }
 }

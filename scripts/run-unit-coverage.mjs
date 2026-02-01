@@ -58,8 +58,16 @@ function main() {
   );
   const result = spawnSync(
     process.platform === "win32" ? `"${vitestCommand}"` : vitestCommand,
-    ["run", "--config", "vitest.config.unit.ts", "--coverage"],
-    { encoding: "utf8", shell: true }
+    ["run", "--config", "vitest.config.unit.ts", "--coverage", "--color"],
+    {
+      encoding: "utf8",
+      shell: true,
+      env: {
+        ...process.env,
+        FORCE_COLOR: "1",
+        VITEST_FORCE_COLOR: "1",
+      },
+    }
   );
 
   if (result.error) {
@@ -77,6 +85,8 @@ function main() {
     console.warn("Nao foi possivel extrair cobertura de linhas do resumo do Vitest.");
   } else {
     writeSummary(linesPct);
+    const formatted = linesPct.toFixed(2);
+    console.log(`Cobertura dos Testes Unitários: ${formatted}%`);
   }
 
   process.exit(result.status ?? 1);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
-import { badRequest, createRouteContext, readJsonRecord, runCommonGuards } from "@/lib/apiRouteUtils";
+import { badRequest, createRouteContext, readJsonRecord, runCommonGuards, shouldLogApi } from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
 
@@ -83,20 +83,24 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log("[api.feedback]", {
-      requestId: ctx.requestId,
-      ip: ctx.ip,
-      status: 200,
-      helpful,
-      reason,
-      confidenceBucket,
-      contextSource,
-      duration_ms: ctx.durationMs(),
-    });
+    if (shouldLogApi()) {
+      console.log("[api.feedback]", {
+        requestId: ctx.requestId,
+        ip: ctx.ip,
+        status: 200,
+        helpful,
+        reason,
+        confidenceBucket,
+        contextSource,
+        duration_ms: ctx.durationMs(),
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[api.feedback]", err);
+    if (shouldLogApi()) {
+      console.error("[api.feedback]", err);
+    }
     return badRequest("Erro interno ao registrar feedback", 500);
   }
 }

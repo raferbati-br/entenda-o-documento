@@ -11,6 +11,7 @@ import {
   readJsonRecord,
   runCommonGuards,
   safeRecordMetrics,
+  shouldLogApi,
 } from "@/lib/apiRouteUtils";
 
 export const runtime = "nodejs";
@@ -73,15 +74,17 @@ function createQaStream(options: {
             recordQualityLatency("qa_latency_ms", durationMs),
           ]);
 
-          console.log("[api.qa]", {
-            requestId: ctx.requestId,
-            ip: ctx.ip,
-            status: 502,
-            provider: meta.provider,
-            model: meta.model,
-            promptId,
-            duration_ms: durationMs,
-          });
+          if (shouldLogApi()) {
+            console.log("[api.qa]", {
+              requestId: ctx.requestId,
+              ip: ctx.ip,
+              status: 502,
+              provider: meta.provider,
+              model: meta.model,
+              promptId,
+              duration_ms: durationMs,
+            });
+          }
 
           controller.enqueue(
             encoder.encode(serializeQaStreamEvent({ type: "error", message: "Modelo nao retornou texto valido" }))
@@ -95,20 +98,24 @@ function createQaStream(options: {
           attempt > 1 ? recordQualityCount("qa_retry") : Promise.resolve(),
         ]);
 
-        console.log("[api.qa]", {
-          requestId: ctx.requestId,
-          ip: ctx.ip,
-          status: 200,
-          provider: meta.provider,
-          model: meta.model,
-          promptId,
-          duration_ms: durationMs,
-        });
+        if (shouldLogApi()) {
+          console.log("[api.qa]", {
+            requestId: ctx.requestId,
+            ip: ctx.ip,
+            status: 200,
+            provider: meta.provider,
+            model: meta.model,
+            promptId,
+            duration_ms: durationMs,
+          });
+        }
 
         controller.enqueue(encoder.encode(serializeQaStreamEvent({ type: "done" })));
         controller.close();
       } catch (err) {
-        console.error("[api.qa]", err);
+        if (shouldLogApi()) {
+          console.error("[api.qa]", err);
+        }
         controller.enqueue(
           encoder.encode(serializeQaStreamEvent({ type: "error", message: "Erro interno ao responder pergunta" }))
         );
@@ -160,7 +167,9 @@ export async function POST(req: Request) {
     });
     if (modelTextError) return modelTextError;
 
-    console.error("[api.qa]", err);
+    if (shouldLogApi()) {
+      console.error("[api.qa]", err);
+    }
     return badRequest("Erro interno ao responder pergunta", 500);
   }
 }
