@@ -3,9 +3,9 @@
 import type { ReactNode } from "react";
 import type { IconButtonProps } from "@mui/material/IconButton";
 import type { SxProps, Theme } from "@mui/material/styles";
-import { Box, IconButton, Typography } from "@mui/material";
+import { AppBar, Box, IconButton, Toolbar, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import PageHeader from "./PageHeader";
 
 type BackHeaderProps = Readonly<{
   onBack: () => void;
@@ -46,14 +46,24 @@ export default function BackHeader({
     { flexGrow: 1, display: "flex", alignItems: "center" },
     ...normalizeSx(titleSx),
   ];
+  const baseSx: SxProps<Theme> = (theme) => ({
+    borderBottom: "1px solid",
+    borderColor: "divider",
+    bgcolor: alpha(theme.palette.background.default, 0.95),
+    backdropFilter: "blur(10px)",
+  });
+
+  const mergedSx = headerSx ? [baseSx, ...normalizeSx(headerSx)] : [baseSx];
 
   return (
-    <PageHeader sx={headerSx}>
-      <IconButton edge="start" onClick={onBack} sx={iconSx} {...iconButtonProps}>
-        {icon ?? <ArrowBackRoundedIcon />}
-      </IconButton>
-      <Box sx={titleBoxSx}>{titleNode}</Box>
-      {endContent}
-    </PageHeader>
+    <AppBar position="sticky" color="inherit" elevation={0} sx={mergedSx}>
+      <Toolbar>
+        <IconButton edge="start" onClick={onBack} sx={iconSx} {...iconButtonProps}>
+          {icon ?? <ArrowBackRoundedIcon />}
+        </IconButton>
+        <Box sx={titleBoxSx}>{titleNode}</Box>
+        {endContent}
+      </Toolbar>
+    </AppBar>
   );
 }
