@@ -2,7 +2,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import { act } from "react-dom/test-utils";
+import { act } from "react";
 
 vi.mock("@mui/material", async () => {
   const Wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
@@ -40,7 +40,15 @@ vi.mock("@/lib/hooks/useCaptureInput", () => ({
 
 vi.mock("@/app/_components/IconTextRow", () => ({ default: () => <div>icon-row</div> }));
 vi.mock("@/app/_components/FooterActions", () => ({ default: () => <div>footer-actions</div> }));
-vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
+vi.mock("@/app/_components/PageLayout", () => ({
+  default: ({ children, header, footer }: { children?: ReactNode; header?: ReactNode; footer?: ReactNode }) => (
+    <div>
+      {header}
+      {children}
+      {footer}
+    </div>
+  ),
+}));
 
 vi.mock("@mui/icons-material/AutoAwesomeRounded", () => ({ default: () => null }));
 vi.mock("@mui/icons-material/LockRounded", () => ({ default: () => null }));

@@ -2,7 +2,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import { act } from "react-dom/test-utils";
+import { act } from "react";
 
 vi.mock("@mui/material", async () => {
   return {
@@ -60,6 +60,7 @@ function render(ui: ReactElement) {
 describe("Providers", () => {
   beforeEach(() => {
     mockEnsureSessionToken.mockReset();
+    mockEnsureSessionToken.mockResolvedValue(undefined);
     mockBuildTheme.mockClear();
     mockCapture.mockReset();
     mockInit.mockReset();

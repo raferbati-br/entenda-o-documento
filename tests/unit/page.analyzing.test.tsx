@@ -2,7 +2,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import { act } from "react-dom/test-utils";
+import { act } from "react";
 
 vi.mock("framer-motion", async () => {
   return {
@@ -52,7 +52,15 @@ vi.mock("@/lib/typeGuards", () => ({ isRecord: () => true }));
 vi.mock("@mui/icons-material/AutoAwesomeRounded", () => ({ default: () => null }));
 vi.mock("@mui/icons-material/CameraAltRounded", () => ({ default: () => null }));
 
-vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
+vi.mock("@/app/_components/PageLayout", () => ({
+  default: ({ children, header, footer }: { children?: ReactNode; header?: ReactNode; footer?: ReactNode }) => (
+    <div>
+      {header}
+      {children}
+      {footer}
+    </div>
+  ),
+}));
 vi.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
 
 import AnalyzingPage from "@/app/analyzing/page";

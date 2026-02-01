@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import { act } from "react-dom/test-utils";
+import { act } from "react";
 
 vi.mock("@mui/material", async () => {
   const Wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
@@ -43,7 +43,15 @@ vi.mock("@/lib/hooks/useSpeechSynthesis", () => ({
 vi.mock("@/app/_components/SectionBlock", () => ({ default: () => <div>section</div> }));
 vi.mock("@/app/_components/FooterActions", () => ({ default: () => <div>footer</div> }));
 vi.mock("@/app/_components/BackHeader", () => ({ default: ({ title }: { title?: ReactNode }) => <div>{title}</div> }));
-vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
+vi.mock("@/app/_components/PageLayout", () => ({
+  default: ({ children, header, footer }: { children?: ReactNode; header?: ReactNode; footer?: ReactNode }) => (
+    <div>
+      {header}
+      {children}
+      {footer}
+    </div>
+  ),
+}));
 vi.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
 vi.mock("@/app/_components/FeedbackActions", () => ({ default: () => <div>feedback</div> }));
 

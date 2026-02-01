@@ -1,8 +1,9 @@
 /** @vitest-environment jsdom */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import type { ReactElement, ReactNode } from "react";
+import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
-import { act } from "react-dom/test-utils";
+import { act } from "react";
 
 vi.mock("@mui/material", async () => {
   const Wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
@@ -47,7 +48,15 @@ vi.mock("@/lib/qaLimits", () => ({ MAX_CONTEXT_CHARS: 1000, MAX_QUESTION_CHARS: 
 
 vi.mock("@/app/_components/FooterActions", () => ({ default: () => <div>footer-actions</div> }));
 vi.mock("@/app/_components/BackHeader", () => ({ default: ({ title }: { title?: ReactNode }) => <div>{title}</div> }));
-vi.mock("@/app/_components/PageLayout", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
+vi.mock("@/app/_components/PageLayout", () => ({
+  default: ({ children, header, footer }: { children?: ReactNode; header?: ReactNode; footer?: ReactNode }) => (
+    <div>
+      {header}
+      {children}
+      {footer}
+    </div>
+  ),
+}));
 vi.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
 vi.mock("@/app/_components/FeedbackActions", () => ({ default: () => <div>feedback</div> }));
 vi.mock("@/app/_components/IconTextRow", () => ({ default: () => <div>icon-row</div> }));
@@ -62,6 +71,11 @@ vi.mock("@mui/icons-material/SendRounded", () => ({ default: () => null }));
 
 import PerguntasPage from "@/app/perguntas/page";
 
+class NoopResizeObserver {
+  observe() {}
+  disconnect() {}
+}
+
 function render(ui: ReactElement) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -73,8 +87,27 @@ function render(ui: ReactElement) {
 }
 
 describe("PerguntasPage", () => {
+  let root: Root | null = null;
+
+  beforeEach(() => {
+    globalThis.requestAnimationFrame = (cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    };
+    globalThis.cancelAnimationFrame = () => {};
+    globalThis.ResizeObserver = NoopResizeObserver as typeof ResizeObserver;
+  });
+
+  afterEach(() => {
+    root?.unmount();
+    root = null;
+    document.body.innerHTML = "";
+  });
+
   it("renders empty state", () => {
-    const { container } = render(<PerguntasPage />);
+    const rendered = render(<PerguntasPage />);
+    root = rendered.root;
+    const { container } = rendered;
     expect(container.textContent).toContain("Tire suas duvidas");
   });
 });
