@@ -39,12 +39,22 @@ Identificar e explicitar:
 
 ---
 
-### PASSO 3 – Planejamento
+### PASSO 3 – Análise de requisitos (impacto)
+Avaliar impacto de requisitos conforme `.codex/REQUIREMENTS.md`:
+- identificar o tipo de requisito afetado (funcional, não funcional ou matriz)
+- indicar IDs/cenários e arquivos relevantes
+- confirmar aderência aos requisitos existentes
+
+Se houver lacunas nos requisitos, **interromper e perguntar**.
+
+---
+
+### PASSO 4 – Planejamento
 Planejar passos curtos antes de codar, explicando brevemente a abordagem escolhida.
 
 ---
 
-### PASSO 4 – Avaliação arquitetural
+### PASSO 5 – Avaliação arquitetural
 Avaliar impacto arquitetural conforme `.codex/ARCHITECTURE.md`:
 - identificar o nível C4 afetado
 - confirmar aderência à arquitetura existente
@@ -52,17 +62,17 @@ Avaliar impacto arquitetural conforme `.codex/ARCHITECTURE.md`:
 
 ---
 
-### PASSO 5 – Implementação
+### PASSO 6 – Implementação
 Implementar **apenas** o escopo da issue, mantendo mudanças pequenas e focadas.
 
 ---
 
-### PASSO 6 – Testes
+### PASSO 7 – Testes
 Adicionar ou ajustar testes conforme `.codex/TESTING.md`.
 
 ---
 
-### PASSO 7 – Validação (testes e build)
+### PASSO 8 – Validação (testes e build)
 Executar:
 - testes conforme .codex/TESTING.md
 - build do projeto
@@ -73,10 +83,10 @@ Confirmar explicitamente que:
 
 ---
 
-### PASSO 8 – Commit
+### PASSO 9 – Commit
 Fazer commit seguindo `.codex/COMMIT_STYLE.md`, referenciando a issue.
 
 ---
 
 ## Regra final
-Se houver dúvida de escopo ou arquitetura, **interromper a execução e perguntar antes de continuar**.
+Se houver dúvida de escopo, requisitos ou arquitetura, **interromper a execução e perguntar antes de continuar**.

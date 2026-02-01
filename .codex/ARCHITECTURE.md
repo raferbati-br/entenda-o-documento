@@ -18,8 +18,8 @@ Sempre que implementar uma mudança, o Codex deve:
 
 2. Exibir na conversa, antes da implementação, no formato:
 
-> 🏗️ Avaliação Arquitetural  
-> Nível C4 afetado: <nível>  
+> 🏗️ Avaliação Arquitetural
+> Nível C4 afetado: <nível>
 > Impacto: <breve descrição>
 
 ---
