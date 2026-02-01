@@ -2,10 +2,11 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next"; // Importe Viewport
 import { Suspense } from "react";
 import Providers from "./providers";
+import { UI_TEXTS } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Entenda o Documento",
-  description: "Explicações simples para documentos burocráticos",
+  title: UI_TEXTS.APP_TITLE,
+  description: UI_TEXTS.APP_DESCRIPTION,
   manifest: "/manifest.json",
   icons: {
     apple: "/icon-192.png", // Ícone para iPhone/iPad

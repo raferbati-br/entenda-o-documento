@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { telemetryCapture } from "@/lib/telemetry";
 import { useCaptureInput } from "@/lib/hooks/useCaptureInput";
+import { UI_TEXTS } from "@/lib/constants";
 
 import { Box, Divider, Stack, Typography } from "@mui/material";
 
@@ -64,10 +65,10 @@ export default function HomePage() {
         <Stack spacing={2} sx={{ mb: 2 }}>
 
           <Typography variant="h4" gutterBottom fontWeight={800} sx={{ letterSpacing: "-0.02em" }}>
-            Entenda qualquer documento num piscar de olhos
+            {UI_TEXTS.HOME_TITLE}
           </Typography>
           <Typography color="text.secondary" variant="body1" sx={{ lineHeight: 1.6 }}>
-            Envie uma imagem de um documento e receba uma explicação direta ao ponto.
+            {UI_TEXTS.HOME_SUBTITLE}
           </Typography>
 
         </Stack>
@@ -83,7 +84,7 @@ export default function HomePage() {
           <IconTextRow
             icon={<DescriptionRoundedIcon fontSize="inherit" />}
             iconColor="primary.main"
-            title="Documentos Burocráticos"
+            title={UI_TEXTS.DOCUMENTS_TITLE}
             description="Cartas judiciais, contas, comunicados e avisos."
           />
           <IconTextRow

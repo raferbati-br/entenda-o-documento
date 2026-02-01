@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSessionToken } from "@/lib/requestAuth";
 import { badRequest, createRouteContext, handleTokenSecretError, runCommonGuards } from "@/lib/apiRouteUtils";
+import { ERROR_MESSAGES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,6 @@ export async function GET(req: Request) {
     const secretError = handleTokenSecretError(code);
     if (secretError) return secretError;
 
-    return badRequest("Erro ao gerar token", 500);
+    return badRequest(ERROR_MESSAGES.GENERATE_TOKEN_ERROR, 500);
   }
 }

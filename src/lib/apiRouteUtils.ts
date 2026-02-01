@@ -4,6 +4,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
 import { isRecord } from "@/lib/typeGuards";
+import { ERROR_MESSAGES } from "@/lib/constants";
 
 export type RouteContext = {
   startedAt: number;
@@ -34,7 +35,7 @@ export function badRequest(message: string, status = 400) {
 
 export function ensureOriginAllowed(req: Request) {
   if (isOriginAllowed(req)) return null;
-  return jsonError("Origem nao permitida", 403);
+  return jsonError(ERROR_MESSAGES.ORIGIN_NOT_ALLOWED, 403);
 }
 
 export function ensureSessionToken(req: Request, message: string) {
@@ -49,7 +50,7 @@ export async function ensureRateLimit(prefix: string, ctx: RouteContext, tag: st
   if (shouldLogApi()) {
     console.log(`[${tag}]`, { requestId: ctx.requestId, ip: ctx.ip, status: 429, duration_ms: ctx.durationMs() });
   }
-  return jsonError("Muitas tentativas. Aguarde um pouco e tente novamente.", 429, {
+  return jsonError(ERROR_MESSAGES.TOO_MANY_REQUESTS, 429, {
     "Retry-After": String(rl.resetSeconds),
   });
 }
@@ -93,12 +94,12 @@ export async function safeRecordMetrics(tasks: Array<Promise<unknown>>) {
   }
 }
 
-export function handleApiKeyError(code: string, message = "Chave de API nao configurada") {
+export function handleApiKeyError(code: string, message = ERROR_MESSAGES.API_KEY_NOT_CONFIGURED) {
   if (code !== "API_KEY_NOT_SET") return null;
   return jsonError(message, 500);
 }
 
-export function handleTokenSecretError(code: string, message = "API_TOKEN_SECRET nao configurada") {
+export function handleTokenSecretError(code: string, message = ERROR_MESSAGES.TOKEN_SECRET_NOT_CONFIGURED) {
   if (code !== "API_TOKEN_SECRET_NOT_SET") return null;
   return jsonError(message, 500);
 }

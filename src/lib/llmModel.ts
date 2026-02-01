@@ -1,3 +1,5 @@
+import { DEFAULT_LLM_MODEL } from "@/lib/constants";
+
 export function getLlmModel(): string {
-  return process.env.LLM_MODEL ?? "gpt-4o-mini";
+  return process.env.LLM_MODEL ?? DEFAULT_LLM_MODEL;
 }
