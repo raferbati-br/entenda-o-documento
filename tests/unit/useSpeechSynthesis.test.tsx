@@ -82,6 +82,54 @@ describe("useSpeechSynthesis", () => {
     expect(getState().error).toBe("nao");
   });
 
+  it("stops speech and sets interrupted message", () => {
+    const { getState } = renderHook({ interruptedMessage: "interrompido" });
+
+    act(() => {
+      getState().speak("ola");
+    });
+    act(() => {
+      getState().stop();
+    });
+
+    expect(getState().isSpeaking).toBe(false);
+    expect(getState().error).toBe("interrompido");
+  });
+
+  it("sets interrupted message when onerror happens after stop request", () => {
+    const { getState } = renderHook({ interruptedMessage: "parou" });
+
+    act(() => {
+      getState().speak("ola");
+    });
+
+    act(() => {
+      getState().stop({ withMessage: false });
+      lastUtterance?.onerror?.();
+    });
+
+    expect(getState().error).toBe("parou");
+  });
+
+  it("sets error when speak throws", () => {
+    vi.unstubAllGlobals();
+    vi.stubGlobal("SpeechSynthesisUtterance", MockUtterance);
+    vi.stubGlobal("speechSynthesis", {
+      speak: () => {
+        throw new Error("boom");
+      },
+      cancel: vi.fn(),
+    });
+
+    const { getState } = renderHook({ errorMessage: "erro" });
+    act(() => {
+      getState().speak("ola");
+    });
+
+    expect(getState().error).toBe("erro");
+    expect(getState().isSpeaking).toBe(false);
+  });
+
   it("speaks sequence and advances", () => {
     vi.useFakeTimers();
     const { getState } = renderHook();
@@ -102,5 +150,31 @@ describe("useSpeechSynthesis", () => {
 
     expect(lastUtterance?.text).toBe("b");
     vi.useRealTimers();
+  });
+
+  it("sets error when sequence is unsupported", () => {
+    vi.unstubAllGlobals();
+    const { getState } = renderHook({ unsupportedMessage: "nao" });
+
+    act(() => {
+      getState().speakSequence(["a"]);
+    });
+
+    expect(getState().error).toBe("nao");
+  });
+
+  it("sets error when sequence onerror occurs", () => {
+    const { getState } = renderHook({ errorMessage: "erro" });
+
+    act(() => {
+      getState().speakSequence(["a"]);
+    });
+
+    act(() => {
+      lastUtterance?.onerror?.();
+    });
+
+    expect(getState().error).toBe("erro");
+    expect(getState().isSpeaking).toBe(false);
   });
 });

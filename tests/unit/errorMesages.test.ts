@@ -24,19 +24,42 @@ describe("errorMesages", () => {
     expect(result.actionLabel).toBe("Tirar nova foto");
   });
 
+  it("builds analyze error for expired photo and payload too large", () => {
+    const expired = buildAnalyzeFriendlyError(new Response(null, { status: 410 }), null);
+    expect(expired.title).toBe("Foto expirada");
+
+    const tooLarge = buildAnalyzeFriendlyError(new Response(null, { status: 413 }), null);
+    expect(tooLarge.title).toBe("Foto muito pesada");
+  });
+
+  it("builds analyze error default message and retry fallback", () => {
+    const res = new Response(null, { status: 429 });
+    const result = buildAnalyzeFriendlyError(res, { error: "" });
+    expect(result.message).toBe("Aguarde um pouco.");
+
+    const fallback = buildAnalyzeFriendlyError(new Response(null, { status: 418 }), { error: "msg" });
+    expect(fallback.message).toBe("msg");
+  });
+
   it("maps capture errors by status and api message", () => {
     expect(mapCaptureError(413, "")).toBe("Foto muito grande. Aproxime o documento e tente novamente.");
     expect(mapCaptureError(200, "Imagem inválida.")).toBe("Não foi possível ler a foto. Tente outra foto.");
+    expect(mapCaptureError(500, "")).toBe("Erro interno. Tente novamente.");
+    expect(mapCaptureError(200, "")).toBe("Falha ao enviar a imagem.");
   });
 
   it("maps qa errors by status and api message", () => {
     expect(mapQaError(502, "")).toBe("Não conseguimos gerar a resposta. Tente novamente.");
     expect(mapQaError(200, "Pergunta muito curta.")).toBe("Sua pergunta é muito curta.");
+    expect(mapQaError(500, "")).toBe("Erro interno. Tente novamente.");
+    expect(mapQaError(200, "")).toBe("Não conseguimos responder agora.");
   });
 
   it("maps feedback errors by status and api message", () => {
     expect(mapFeedbackError(403, "")).toBe("Não foi possível validar a solicitação. Tente novamente.");
     expect(mapFeedbackError(200, "Feedback inválido.")).toBe("Feedback inválido. Tente novamente.");
+    expect(mapFeedbackError(500, "")).toBe("Erro interno. Tente novamente.");
+    expect(mapFeedbackError(200, "")).toBe("Não conseguimos enviar o feedback.");
   });
 
   it("maps network errors", () => {
