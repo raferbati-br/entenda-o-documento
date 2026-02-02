@@ -34,4 +34,37 @@ describe("sessionToken", () => {
     const token = await ensureSessionToken();
     expect(token).toBeNull();
   });
+
+  it("returns null when response json throws", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw new Error("boom");
+      },
+    } as Response)));
+    const token = await ensureSessionToken();
+    expect(token).toBeNull();
+  });
+
+  it("returns cached token without calling api", async () => {
+    sessionStorage.setItem("eod_session_token_v1", "cached");
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const token = await ensureSessionToken();
+    expect(token).toBe("cached");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("returns null when window is not available", async () => {
+    const originalWindow = globalThis.window;
+    vi.stubGlobal("window", undefined as unknown as Window);
+
+    await expect(getSessionToken()).resolves.toBeNull();
+    await expect(ensureSessionToken()).resolves.toBeNull();
+    await expect(clearSessionToken()).resolves.toBeUndefined();
+
+    vi.stubGlobal("window", originalWindow);
+  });
 });

@@ -58,11 +58,29 @@ describe("captureStoreServer (redis)", () => {
     expect(out?.imageBase64).toBe("x");
   });
 
+  it("returns object payload from redis directly", async () => {
+    const mod = await import("@/lib/captureStoreServer");
+    redisGetValue = { imageBase64: "y", mimeType: "image/png", createdAt: 1, bytes: 2 };
+
+    const out = await mod.getCapture("id2b");
+
+    expect(out?.imageBase64).toBe("y");
+  });
+
   it("returns null for invalid json in redis", async () => {
     const mod = await import("@/lib/captureStoreServer");
     redisGetValue = "{bad json";
 
     const out = await mod.getCapture("id3");
+
+    expect(out).toBeNull();
+  });
+
+  it("returns null when redis has no value", async () => {
+    const mod = await import("@/lib/captureStoreServer");
+    redisGetValue = null;
+
+    const out = await mod.getCapture("id3b");
 
     expect(out).toBeNull();
   });

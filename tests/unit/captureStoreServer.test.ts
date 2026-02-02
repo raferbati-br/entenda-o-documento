@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { deleteCapture, memoryStats, setCapture } from "@/lib/captureStoreServer";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { deleteCapture, memoryStats, setCapture, getCapture, cleanupMemoryStore } from "@/lib/captureStoreServer";
 
 describe("captureStoreServer", () => {
+  beforeEach(() => {
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+  });
+
   it("includes ocrBytes in memoryStats totals", async () => {
     const prevUrl = process.env.UPSTASH_REDIS_REST_URL;
     const prevToken = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -36,5 +41,57 @@ describe("captureStoreServer", () => {
         process.env.UPSTASH_REDIS_REST_TOKEN = prevToken;
       }
     }
+  });
+
+  it("loads and cleans expired entries in memory store", async () => {
+    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
+    await setCapture("mem-1", {
+      imageBase64: "data:image/jpeg;base64,AA",
+      mimeType: "image/jpeg",
+      createdAt: Date.now() - 20 * 60 * 1000,
+      bytes: 10,
+    });
+
+    expect(await getCapture("mem-1")).not.toBeNull();
+    cleanupMemoryStore();
+    expect(await getCapture("mem-1")).toBeNull();
+    nowSpy.mockRestore();
+  });
+
+  it("keeps non-expired entries during cleanup", async () => {
+    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
+    await setCapture("mem-2", {
+      imageBase64: "data:image/jpeg;base64,AA",
+      mimeType: "image/jpeg",
+      createdAt: Date.now() - 1 * 60 * 1000,
+      bytes: 10,
+    });
+
+    cleanupMemoryStore();
+    expect(await getCapture("mem-2")).not.toBeNull();
+    await deleteCapture("mem-2");
+    nowSpy.mockRestore();
+  });
+
+  it("handles missing byte fields in memoryStats", async () => {
+    const base = memoryStats();
+    await setCapture("mem-3", {
+      imageBase64: "data:image/jpeg;base64,AA",
+      mimeType: "image/jpeg",
+      createdAt: Date.now(),
+      bytes: 0,
+      ocrBytes: 0,
+    });
+
+    const next = memoryStats();
+    expect(next.count).toBe(base.count + 1);
+    expect(next.totalBytes).toBe(base.totalBytes);
+    await deleteCapture("mem-3");
+  });
+
+  it("skips cleanup when redis is configured", () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "token";
+    cleanupMemoryStore();
   });
 });

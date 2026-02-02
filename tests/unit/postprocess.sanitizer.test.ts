@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { postprocess, postprocessWithStats } from "@/ai/postprocess";
 import { entendaDocumento_v1 } from "@/ai/prompts/entendaDocumento.v1";
+import { POSTPROCESS_TEXTS } from "@/lib/constants";
 
 describe("postprocess sanitizer behavior", () => {
   it("softens prescriptive language in notice", () => {
@@ -65,5 +66,13 @@ describe("postprocess sanitizer behavior", () => {
     expect(cardText).not.toContain("user@example.com");
     expect(cardText).toContain("***");
     expect(result.notice).not.toMatch(/procure imediatamente/i);
+  });
+
+  it("handles non-object raw input with low confidence notice", () => {
+    const { result, stats } = postprocessWithStats("invalid", entendaDocumento_v1);
+
+    expect(result.confidence).toBe(0);
+    expect(result.notice.startsWith(POSTPROCESS_TEXTS.LOW_CONFIDENCE_NOTICE_PREFIX)).toBe(true);
+    expect(stats.confidenceLow).toBe(true);
   });
 });

@@ -55,6 +55,36 @@ describe("useCaptureObjectUrl", () => {
     });
   });
 
+  it("calls onMissing without setting error when message is empty", async () => {
+    mockLoadCapture.mockResolvedValue(null);
+    const onMissing = vi.fn();
+    let snapshot: { url: string | null; error: string | null } = { url: null, error: null };
+
+    function Harness() {
+      const state = useCaptureObjectUrl({ onMissing });
+      useEffect(() => {
+        snapshot = state;
+      }, [state]);
+      return null;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<Harness />);
+      await flushPromises();
+    });
+
+    expect(snapshot.error).toBeNull();
+    expect(onMissing).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("creates and revokes object URL when capture exists", async () => {
     const blob = new Blob(["hello"], { type: "text/plain" });
     mockLoadCapture.mockResolvedValue({ blob, createdAt: "2024-01-01T00:00:00.000Z" });
@@ -85,6 +115,35 @@ describe("useCaptureObjectUrl", () => {
       root.unmount();
     });
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+  });
+
+  it("does nothing when unmounted before load resolves", async () => {
+    let resolveLoad: (value: unknown) => void = () => undefined;
+    const pending = new Promise((resolve) => {
+      resolveLoad = resolve;
+    });
+    mockLoadCapture.mockReturnValue(pending);
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    function Harness() {
+      useCaptureObjectUrl();
+      return null;
+    }
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    await act(async () => {
+      root.unmount();
+      resolveLoad!({ blob: new Blob(["x"], { type: "text/plain" }), createdAt: "2024-01-01" });
+      await flushPromises();
+    });
+
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
   });
 
   afterAll(() => {

@@ -78,4 +78,19 @@ describe("extractDocumentText", () => {
 
     expect(out.documentText).toBe("");
   });
+
+  it("returns empty when raw output is not a record", async () => {
+    vi.mocked(getOcrPromptId).mockReturnValue("entendaDocumento.ocr.v1");
+    vi.mocked(getOcrPrompt).mockReturnValue({
+      id: "entendaDocumento.ocr.v1",
+      system: "sys",
+      user: "user",
+      noticeDefault: "",
+    });
+    mockAnalyze.mockResolvedValue({ raw: "invalid", meta: { provider: "p", model: "m" } });
+
+    const out = await extractDocumentText("data:image/png;base64,abc");
+
+    expect(out.documentText).toBe("");
+  });
 });

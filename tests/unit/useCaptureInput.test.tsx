@@ -109,4 +109,33 @@ describe("useCaptureInput", () => {
     expect(onSaved).toHaveBeenCalledTimes(1);
     expect(input.value).toBe("");
   });
+
+  it("ignores missing file and telemetry", async () => {
+    let api: HookApi | null = null;
+
+    function Harness() {
+      const hook = useCaptureInput();
+      useEffect(() => {
+        api = hook;
+      }, [hook]);
+      return null;
+    }
+
+    render(<Harness />);
+
+    const input = document.createElement("input");
+    Object.defineProperty(input, "files", { value: [] });
+    const event = {
+      target: input,
+      currentTarget: input,
+    } as React.ChangeEvent<HTMLInputElement>;
+
+    await act(async () => {
+      await api!.onFileChange(event);
+      api!.openGallery();
+    });
+
+    expect(mockSaveCapture).not.toHaveBeenCalled();
+    expect(mockTelemetry).not.toHaveBeenCalled();
+  });
 });

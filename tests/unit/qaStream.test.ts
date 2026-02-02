@@ -46,4 +46,17 @@ describe("qaStream", () => {
 
     expect(received).toEqual([event]);
   });
+
+  it("skips empty lines between events", async () => {
+    const events = [{ type: "delta", text: "a" }, { type: "done" }] as const;
+    const payload = `${serializeQaStreamEvent(events[0])}\n${serializeQaStreamEvent(events[1])}`;
+    const stream = makeStream([payload]);
+
+    const received: QaStreamEvent[] = [];
+    for await (const item of readQaStream(stream)) {
+      received.push(item);
+    }
+
+    expect(received).toEqual(events);
+  });
 });

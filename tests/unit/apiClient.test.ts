@@ -38,6 +38,30 @@ describe("apiClient", () => {
     expect(fetchCall[1].headers["x-session-token"]).toBe("token-1");
   });
 
+  it("does not add session token header when missing", async () => {
+    mockEnsureSessionToken.mockResolvedValue(null);
+    mockFetch({ status: 200, json: async () => ({ ok: true }) });
+
+    await postJsonWithSession("/api/x", { a: 1 });
+
+    const fetchCall = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(fetchCall[1].headers["x-session-token"]).toBeUndefined();
+  });
+
+  it("falls back to empty object when response json fails", async () => {
+    mockEnsureSessionToken.mockResolvedValue("token-4");
+    mockFetch({
+      status: 200,
+      json: async () => {
+        throw new Error("boom");
+      },
+    });
+
+    const { data } = await postJsonWithSession<{ ok?: boolean }>("/api/x", { a: 1 });
+
+    expect(data).toEqual({});
+  });
+
   it("clears session token on 401", async () => {
     mockEnsureSessionToken.mockResolvedValue("token-2");
     mockFetch({ status: 401, json: async () => ({}) });
@@ -54,5 +78,14 @@ describe("apiClient", () => {
     const out = await postJsonWithSessionResponse("/api/x", { a: 1 });
 
     expect(out).toBe(res);
+  });
+
+  it("clears session token on 401 for postJsonWithSessionResponse", async () => {
+    mockEnsureSessionToken.mockResolvedValue("token-3");
+    mockFetch({ status: 401, json: async () => ({}) });
+
+    await postJsonWithSessionResponse("/api/x", { a: 1 });
+
+    expect(mockClearSessionToken).toHaveBeenCalledTimes(1);
   });
 });

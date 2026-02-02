@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { clearResult, loadResult, saveResult } from "@/lib/resultStore";
 
 
@@ -27,5 +27,16 @@ describe("resultStore", () => {
     saveResult(payload);
     clearResult();
     expect(loadResult()).toBeNull();
+  });
+
+  it("no-ops when window is unavailable", () => {
+    const originalWindow = globalThis.window;
+    vi.stubGlobal("window", undefined as unknown as Window);
+
+    saveResult({ confidence: 0.1, cards: [], notice: "" });
+    expect(loadResult()).toBeNull();
+    clearResult();
+
+    vi.stubGlobal("window", originalWindow);
   });
 });

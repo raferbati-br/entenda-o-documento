@@ -42,6 +42,7 @@ import {
   handleTokenSecretError,
   handleModelJsonError,
   handleModelTextError,
+  shouldLogApi,
 } from "@/lib/apiRouteUtils";
 
 
@@ -66,6 +67,14 @@ describe("apiRouteUtils", () => {
     expect(ctx.requestId).toBe("uuid");
     expect(ctx.ip).toBe("1.2.3.4");
     expect(ctx.durationMs()).toBe(0);
+  });
+
+  it("defaults ip to unknown when header is missing", () => {
+    vi.spyOn(Date, "now").mockReturnValue(1000);
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("uuid");
+    const req = new Request("https://example.com");
+    const ctx = createRouteContext(req);
+    expect(ctx.ip).toBe("unknown");
   });
 
   it("builds json errors", async () => {
@@ -107,6 +116,21 @@ describe("apiRouteUtils", () => {
     expect(res?.headers.get("Retry-After")).toBe("5");
   });
 
+  it("logs rate limit when enabled", async () => {
+    const originalEnv = { ...process.env };
+    process.env.NODE_ENV = "production";
+    process.env.API_LOGS = "1";
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    rateLimitMock.mockResolvedValue({ ok: false, remaining: 0, resetSeconds: 5 });
+    const ctx = { requestId: "r", ip: "ip", startedAt: 0, durationMs: () => 10 };
+
+    await ensureRateLimit("p", ctx, "tag");
+
+    expect(logSpy).toHaveBeenCalled();
+    logSpy.mockRestore();
+    process.env = originalEnv;
+  });
+
   it("runs common guards", async () => {
     isOriginAllowedMock.mockReturnValue(true);
     verifySessionTokenMock.mockReturnValue(true);
@@ -119,6 +143,41 @@ describe("apiRouteUtils", () => {
       sessionMessage: "s",
     });
     expect(res).toBeNull();
+  });
+
+  it("returns early when origin is blocked", async () => {
+    isOriginAllowedMock.mockReturnValue(false);
+    const ctx = { requestId: "r", ip: "ip", startedAt: 0, durationMs: () => 1 };
+    const res = await runCommonGuards(new Request("https://example.com"), ctx, {});
+    expect(res?.status).toBe(403);
+  });
+
+  it("skips session when requireSession is false", async () => {
+    isOriginAllowedMock.mockReturnValue(true);
+    verifySessionTokenMock.mockReturnValue(false);
+    const ctx = { requestId: "r", ip: "ip", startedAt: 0, durationMs: () => 1 };
+    const res = await runCommonGuards(new Request("https://example.com"), ctx, { requireSession: false });
+    expect(res).toBeNull();
+  });
+
+  it("returns rate limit error when configured", async () => {
+    isOriginAllowedMock.mockReturnValue(true);
+    verifySessionTokenMock.mockReturnValue(true);
+    rateLimitMock.mockResolvedValue({ ok: false, remaining: 0, resetSeconds: 2 });
+    const ctx = { requestId: "r", ip: "ip", startedAt: 0, durationMs: () => 1 };
+    const res = await runCommonGuards(new Request("https://example.com"), ctx, {
+      rateLimitPrefix: "p",
+      rateLimitTag: "tag",
+    });
+    expect(res?.status).toBe(429);
+  });
+
+  it("returns session error when token is invalid", async () => {
+    isOriginAllowedMock.mockReturnValue(true);
+    verifySessionTokenMock.mockReturnValue(false);
+    const ctx = { requestId: "r", ip: "ip", startedAt: 0, durationMs: () => 1 };
+    const res = await runCommonGuards(new Request("https://example.com"), ctx, { sessionMessage: "msg" });
+    expect(res?.status).toBe(401);
   });
 
   it("reads json record safely", async () => {
@@ -137,6 +196,7 @@ describe("apiRouteUtils", () => {
 
   it("handles api key and token errors", () => {
     expect(handleApiKeyError("OTHER")).toBeNull();
+    expect(handleTokenSecretError("OTHER")).toBeNull();
     expect(handleApiKeyError("API_KEY_NOT_SET")?.status).toBe(500);
     expect(handleTokenSecretError("API_TOKEN_SECRET_NOT_SET")?.status).toBe(500);
   });
@@ -162,5 +222,47 @@ describe("apiRouteUtils", () => {
       status: 503,
     });
     expect(textRes?.status).toBe(503);
+
+    const jsonRes2 = await handleModelJsonError("MODEL_INVALID_JSON", {
+      ctx,
+      countMetric: "m1",
+      latencyMetric: "m2",
+      message: "bad",
+      status: 504,
+    });
+    expect(jsonRes2?.status).toBe(504);
+
+    const textRes2 = await handleModelTextError("MODEL_NO_TEXT", {
+      ctx,
+      countMetric: "m1",
+      latencyMetric: "m2",
+      message: "bad",
+    });
+    expect(textRes2?.status).toBe(502);
+  });
+
+  it("returns null for non-matching model errors", async () => {
+    const ctx = { requestId: "r", ip: "ip", startedAt: 0, durationMs: () => 12 };
+    await expect(
+      handleModelJsonError("OTHER", { ctx, countMetric: "m1", latencyMetric: "m2", message: "bad" })
+    ).resolves.toBeNull();
+    await expect(
+      handleModelTextError("OTHER", { ctx, countMetric: "m1", latencyMetric: "m2", message: "bad" })
+    ).resolves.toBeNull();
+  });
+
+  it("controls api logging via env", () => {
+    const originalEnv = { ...process.env };
+    process.env.NODE_ENV = "test";
+    process.env.API_LOGS = "1";
+    expect(shouldLogApi()).toBe(false);
+
+    process.env.NODE_ENV = "production";
+    process.env.API_LOGS = "0";
+    expect(shouldLogApi()).toBe(false);
+
+    process.env.API_LOGS = "1";
+    expect(shouldLogApi()).toBe(true);
+    process.env = originalEnv;
   });
 });

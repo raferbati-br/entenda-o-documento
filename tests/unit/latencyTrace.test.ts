@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import {
   startLatencyTrace,
   markLatencyTrace,
@@ -43,5 +43,49 @@ describe("latencyTrace", () => {
     expect(readRaw()).not.toBeNull();
     clearLatencyTrace();
     expect(readRaw()).toBeNull();
+  });
+
+  it("handles invalid stored json and missing startMs", () => {
+    sessionStorage.setItem("eod_latency_trace_v1", "{bad json");
+    expect(getLatencyTraceSnapshot()).toBeNull();
+
+    sessionStorage.setItem(
+      "eod_latency_trace_v1",
+      JSON.stringify({ steps: { a: "x" }, marks: { b: 1 } })
+    );
+    const snap = getLatencyTraceSnapshot();
+    expect(snap).toBeNull();
+  });
+
+  it("returns null when no trace is stored", () => {
+    sessionStorage.removeItem("eod_latency_trace_v1");
+    expect(getLatencyTraceSnapshot()).toBeNull();
+  });
+
+  it("loads empty trace when storage is empty", () => {
+    sessionStorage.removeItem("eod_latency_trace_v1");
+    markLatencyTrace("x");
+    const snap = getLatencyTraceSnapshot();
+    expect(snap).toBeNull();
+  });
+
+  it("handles non-record traces and missing browser globals", () => {
+    sessionStorage.setItem("eod_latency_trace_v1", JSON.stringify(["bad"]));
+    markLatencyTrace("x");
+    expect(getLatencyTraceSnapshot()).toBeNull();
+
+    const originalWindow = globalThis.window;
+    const originalSession = globalThis.sessionStorage;
+    vi.stubGlobal("window", undefined as unknown as Window);
+    vi.stubGlobal("sessionStorage", undefined as unknown as Storage);
+
+    startLatencyTrace();
+    markLatencyTrace("y");
+    recordLatencyStep("s", 1);
+    expect(getLatencyTraceSnapshot()).toBeNull();
+    clearLatencyTrace();
+
+    vi.stubGlobal("window", originalWindow);
+    vi.stubGlobal("sessionStorage", originalSession);
   });
 });

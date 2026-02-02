@@ -111,6 +111,21 @@ describe("useSpeechSynthesis", () => {
     expect(getState().error).toBe("parou");
   });
 
+  it("ignores stop error message when no interruptedMessage is set", () => {
+    const { getState } = renderHook();
+
+    act(() => {
+      getState().speak("ola");
+    });
+
+    act(() => {
+      getState().stop({ withMessage: true });
+      lastUtterance?.onerror?.();
+    });
+
+    expect(getState().error).toBeNull();
+  });
+
   it("sets error when speak throws", () => {
     vi.unstubAllGlobals();
     vi.stubGlobal("SpeechSynthesisUtterance", MockUtterance);
@@ -127,6 +142,54 @@ describe("useSpeechSynthesis", () => {
     });
 
     expect(getState().error).toBe("erro");
+    expect(getState().isSpeaking).toBe(false);
+  });
+
+  it("swallows errors when cancel throws during stop", () => {
+    vi.stubGlobal("speechSynthesis", {
+      speak: vi.fn(),
+      cancel: () => {
+        throw new Error("cancel-fail");
+      },
+    });
+    const { getState } = renderHook();
+
+    act(() => {
+      getState().stop();
+    });
+
+    expect(getState().isSpeaking).toBe(false);
+  });
+
+  it("sets error on utterance error when not interrupted", () => {
+    const { getState } = renderHook({ errorMessage: "erro" });
+
+    act(() => {
+      getState().speak("ola");
+    });
+
+    act(() => {
+      lastUtterance?.onerror?.();
+    });
+
+    expect(getState().error).toBe("erro");
+    expect(getState().isSpeaking).toBe(false);
+  });
+
+  it("ignores empty text", () => {
+    const { getState } = renderHook();
+    act(() => {
+      getState().speak("");
+    });
+    expect(lastUtterance).toBeNull();
+  });
+
+  it("ignores empty sequences", () => {
+    const { getState } = renderHook();
+    act(() => {
+      getState().speakSequence([]);
+    });
+    expect(lastUtterance).toBeNull();
     expect(getState().isSpeaking).toBe(false);
   });
 
@@ -152,6 +215,127 @@ describe("useSpeechSynthesis", () => {
     vi.useRealTimers();
   });
 
+  it("stops sequence when only blank parts are provided", () => {
+    const { getState } = renderHook();
+    act(() => {
+      getState().speakSequence([" ", "\n"]);
+    });
+    expect(lastUtterance).toBeNull();
+    expect(getState().isSpeaking).toBe(false);
+  });
+
+  it("sets interrupted message on sequence error after stop", () => {
+    const { getState } = renderHook({ interruptedMessage: "parou" });
+
+    act(() => {
+      getState().speakSequence(["a"]);
+    });
+
+    act(() => {
+      getState().stop({ withMessage: false });
+      lastUtterance?.onerror?.();
+    });
+
+    expect(getState().error).toBe("parou");
+    expect(getState().isSpeaking).toBe(false);
+  });
+
+  it("stops sequence on end after stop request", () => {
+    const { getState } = renderHook();
+
+    act(() => {
+      getState().speakSequence(["a", "b"]);
+    });
+
+    act(() => {
+      getState().stop({ withMessage: false });
+      lastUtterance?.onend?.();
+    });
+
+    expect(getState().isSpeaking).toBe(false);
+  });
+
+  it("finishes sequence when last part ends", () => {
+    const { getState } = renderHook();
+
+    act(() => {
+      getState().speakSequence(["a"]);
+    });
+
+    act(() => {
+      lastUtterance?.onend?.();
+    });
+
+    expect(getState().isSpeaking).toBe(false);
+  });
+
+  it("clears pending sequence timer on stop", () => {
+    vi.useFakeTimers();
+    const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+    const { getState } = renderHook();
+
+    act(() => {
+      getState().speakSequence(["a", "b"], 50);
+    });
+
+    act(() => {
+      lastUtterance?.onend?.();
+    });
+
+    act(() => {
+      getState().stop({ withMessage: false });
+    });
+
+    expect(clearSpy).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("bails out when a queued sequence callback runs after stop", () => {
+    let scheduled: (() => void) | null = null;
+    const setSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation((cb) => {
+      scheduled = cb as () => void;
+      return 123 as unknown as ReturnType<typeof setTimeout>;
+    });
+    vi.spyOn(globalThis, "clearTimeout").mockImplementation(() => undefined);
+    const { getState } = renderHook();
+
+    act(() => {
+      getState().speakSequence(["a", "b"], 10);
+    });
+
+    act(() => {
+      lastUtterance?.onend?.();
+    });
+
+    act(() => {
+      getState().stop({ withMessage: false });
+      scheduled?.();
+    });
+
+    expect(getState().isSpeaking).toBe(false);
+    setSpy.mockRestore();
+  });
+
+  it("ignores stale sequence events after a new sequence starts", () => {
+    const { getState } = renderHook();
+
+    act(() => {
+      getState().speakSequence(["a", "b"]);
+    });
+
+    const first = lastUtterance;
+
+    act(() => {
+      getState().speakSequence(["c"]);
+    });
+
+    act(() => {
+      first?.onend?.();
+    });
+
+    expect(getState().isSpeaking).toBe(false);
+  });
+
   it("sets error when sequence is unsupported", () => {
     vi.unstubAllGlobals();
     const { getState } = renderHook({ unsupportedMessage: "nao" });
@@ -161,6 +345,20 @@ describe("useSpeechSynthesis", () => {
     });
 
     expect(getState().error).toBe("nao");
+  });
+
+  it("cleans up on unmount even if cancel throws", () => {
+    vi.stubGlobal("speechSynthesis", {
+      speak: vi.fn(),
+      cancel: () => {
+        throw new Error("cancel-fail");
+      },
+    });
+
+    const { root } = renderHook();
+    expect(() => {
+      act(() => root.unmount());
+    }).not.toThrow();
   });
 
   it("sets error when sequence onerror occurs", () => {

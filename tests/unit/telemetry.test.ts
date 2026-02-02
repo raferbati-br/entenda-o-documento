@@ -35,4 +35,21 @@ describe("telemetry", () => {
     telemetryCapture("event", { a: 1 });
     expect(captureMock).toHaveBeenCalledWith("event", { a: 1 });
   });
+
+  it("passes empty properties when none provided", () => {
+    process.env.NEXT_PUBLIC_POSTHOG_KEY = "key";
+    telemetryCapture("event");
+    expect(captureMock).toHaveBeenCalledWith("event", {});
+  });
+
+  it("does nothing when window is missing even with key", () => {
+    const originalWindow = globalThis.window;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).window = undefined;
+    process.env.NEXT_PUBLIC_POSTHOG_KEY = "key";
+    telemetryCapture("event", { a: 1 });
+    expect(captureMock).not.toHaveBeenCalled();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).window = originalWindow;
+  });
 });
