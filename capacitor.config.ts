@@ -3,6 +3,10 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'br.raferbati.entendaodocumento',
   appName: 'Entenda o Documento',
+  // NOTE: This `webDir` is a placeholder required by the Capacitor CLI (from `cap:init`).
+  // In this project we use a hybrid architecture: the native WebView loads the remote
+  // Next.js app from `server.url` (no `next export` / static `out` build in normal flow).
+  // Do not rely on `out/` for app content; update `server.url` for the real backend URL.
   webDir: 'out',
   server: {
     // For development, point to localhost. For production, update to deployed URL
