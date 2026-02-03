@@ -15,6 +15,7 @@
 /.playwright/
 /playwright-report/
 /test-results/
+.pa11y-screenshots/
 
 # next.js
 /.next/

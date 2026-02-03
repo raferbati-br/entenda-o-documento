@@ -20,6 +20,7 @@ Faz parte da primeira etapa do Copilot do Cidadão.
 - Configurações de prompts, redis, telemetria e tokens: `docs/architecture/config.md`.  
 - Requisitos funcionais e não funcionais (BDD): `docs/requirements/README.md`, `docs/requirements/coverage-matrix.md`, `docs/requirements/functional/` e `docs/requirements/non-functional/`.  
 - Governança (privacidade, headers obrigatórios e scan OWASP ZAP): `docs/governance/privacy.md` e `docs/governance/security.md`.  
+- **Acessibilidade (WCAG 2.1 AA):** `docs/governance/accessibility.md` - Diretrizes, testes automatizados e conformidade com padrões W3C.
 - **Publicação mobile (Apple Store e Google Play):** `docs/deployment/mobile-publishing.md` - Guia completo de setup do Capacitor, iOS, Android e submissão às lojas.  
 - Detalhes de testes, cobertura, observabilidade e deploy estão centralizados em `docs/README.md`.
 
