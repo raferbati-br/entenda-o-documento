@@ -157,8 +157,9 @@ Permissões já configuradas:
 Configurações adicionais:
 - `screenOrientation="portrait"` - Força modo retrato
 - `windowSoftInputMode="adjustResize"` - Ajusta layout com teclado
-- `usesCleartextTraffic="true"` - Permite HTTP em desenvolvimento
+- `usesCleartextTraffic="true"` - Permite HTTP **apenas em desenvolvimento (build debug)**, nunca em produção
 
+> Antes de gerar o build de produção (release), verifique que o `AndroidManifest.xml` de release **não** permite tráfego em claro: use `android:usesCleartextTraffic="false"` (ou remova o atributo) no manifest de produção e deixe `usesCleartextTraffic="true"` somente no manifest/buildType de `debug`.
 ### 4. Gerar Keystore de Assinatura
 
 ```bash
