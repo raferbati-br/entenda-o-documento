@@ -1,30 +1,12 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const config: CapacitorConfig = {
-  appId: 'br.raferbati.entendaodocumento',
-  appName: 'Entenda o Documento',
-  // NOTE: This `webDir` is a placeholder required by the Capacitor CLI (from `cap:init`).
-const serverUrl = process.env.CAPACITOR_SERVER_URL || 'http://localhost:3000';
-const isProduction = process.env.NODE_ENV === 'production';
-
-if (isProduction) {
-  // Em produção, exigir URL HTTPS explícita para evitar tráfego em claro.
-  if (!serverUrl.startsWith('https://')) {
-    throw new Error(
-      'CAPACITOR_SERVER_URL must be set to an HTTPS URL in production (for example, https://seu-dominio.com).',
-    );
-  }
-}
-
-const config: CapacitorConfig = {
+const capacitorConfig: CapacitorConfig = {
   appId: 'br.raferbati.entendaodocumento',
   appName: 'Entenda o Documento',
   webDir: 'out',
   server: {
-    // Desenvolvimento: usa localhost com HTTP.
-    // Produção: defina CAPACITOR_SERVER_URL com uma URL HTTPS pública (obrigatório).
-    url: serverUrl,
-    cleartext: process.env.NODE_ENV === 'development',
+    url: process.env.CAPACITOR_SERVER_URL || 'http://localhost:3000',
+    cleartext: true,
     androidScheme: 'https',
     iosScheme: 'https',
   },
@@ -49,4 +31,4 @@ const config: CapacitorConfig = {
   },
 };
 
-export default config;
+export default capacitorConfig;
