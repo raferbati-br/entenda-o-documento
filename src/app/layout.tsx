@@ -22,8 +22,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false, // Impede zoom de pinça
+  maximumScale: 5, // Allow zoom for accessibility (WCAG 2.1 AA requirement)
+  userScalable: true, // Allow pinch zoom for accessibility
   themeColor: "#FFFFFF",
 };
 
