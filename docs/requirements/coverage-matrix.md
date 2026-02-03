@@ -58,15 +58,15 @@ quando houver, tenham script automatizado correspondente.
 | ID | Cenario | BDD (nao funcional) | Endpoint(s) | Script |
 | --- | --- | --- | --- | --- |
 | LOAD-1 | Captura + analise basica | `fluxo-basico.feature` | /api/session-token, /api/capture, /api/analyze | capture-analyze.js |
-| LOAD-2 | OCR dedicado | `ocr.feature` | /api/session-token, /api/ocr | - |
-| LOAD-3 | Q&A streaming | `qa.feature` | /api/session-token, /api/qa | - |
-| LOAD-4 | Feedback | `feedback.feature` | /api/feedback | - |
-| LOAD-5 | Stress de captura (picos) | `stress-capture.feature` | /api/capture | - |
-| LOAD-6 | Stress de analise (picos) | `stress-analyze.feature` | /api/analyze | - |
-| LOAD-7 | Redis (rate limit) | `rate-limit.feature` | bursts em /api/analyze | - |
-| LOAD-8 | Armazenamento em memoria (capturas) | `memory.feature` | long run /api/capture + /api/analyze | - |
-| LOAD-9 | Provedor real (LLM) | `llm-real.feature` | /api/analyze | - |
-| LOAD-10 | Qualidade do resultado (amostra valida) | `quality.feature` | /api/analyze | - |
+| LOAD-2 | OCR dedicado | `ocr.feature` | /api/session-token, /api/ocr | ocr.js |
+| LOAD-3 | Q&A streaming | `qa.feature` | /api/session-token, /api/qa | qa-stream.js |
+| LOAD-4 | Feedback | `feedback.feature` | /api/feedback | feedback.js |
+| LOAD-5 | Stress de captura (picos) | `stress-capture.feature` | /api/capture | stress-capture.js |
+| LOAD-6 | Stress de analise (picos) | `stress-analyze.feature` | /api/analyze | stress-analyze.js |
+| LOAD-7 | Redis (rate limit) | `rate-limit.feature` | bursts em /api/analyze | rate-limit.js |
+| LOAD-8 | Armazenamento em memoria (capturas) | `memory.feature` | long run /api/capture + /api/analyze | memory-long-run.js |
+| LOAD-9 | Provedor real (LLM) | `llm-real.feature` | /api/analyze | llm-real.js |
+| LOAD-10 | Qualidade do resultado (amostra valida) | `quality.feature` | /api/analyze | quality-assert.js |
 
 ## Checagens
 

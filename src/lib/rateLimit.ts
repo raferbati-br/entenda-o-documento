@@ -43,11 +43,27 @@ function nowSeconds() {
   return Math.floor(Date.now() / 1000);
 }
 
+function getRateLimitConfig() {
+  const windowSeconds = Number(process.env.RATE_LIMIT_WINDOW_SECONDS || "");
+  const maxPerWindow = Number(process.env.RATE_LIMIT_MAX_PER_WINDOW || "");
+  const disabled = process.env.RATE_LIMIT_DISABLED === "1";
+  return {
+    windowSeconds: Number.isFinite(windowSeconds) && windowSeconds > 0 ? windowSeconds : WINDOW_SECONDS,
+    maxPerWindow: Number.isFinite(maxPerWindow) && maxPerWindow > 0 ? maxPerWindow : MAX_PER_WINDOW,
+    disabled,
+  };
+}
+
 // Verifica rate limit para uma chave
 export async function rateLimit(key: string): Promise<RateLimitResult> {
+  const { windowSeconds, maxPerWindow, disabled } = getRateLimitConfig();
+  if (disabled) {
+    return { ok: true, remaining: Number.MAX_SAFE_INTEGER, resetSeconds: windowSeconds };
+  }
+
   const now = nowSeconds();
-  const windowStart = now - (now % WINDOW_SECONDS);
-  const resetAt = windowStart + WINDOW_SECONDS;
+  const windowStart = now - (now % windowSeconds);
+  const resetAt = windowStart + windowSeconds;
   const redisKey = `rl:${key}:${windowStart}`;
 
   if (!isRedisConfigured()) {
@@ -55,13 +71,13 @@ export async function rateLimit(key: string): Promise<RateLimitResult> {
     const entry = memoryStore.get(redisKey);
     if (!entry || entry.resetAt <= now) {
       memoryStore.set(redisKey, { count: 1, resetAt });
-      return { ok: true, remaining: MAX_PER_WINDOW - 1, resetSeconds: resetAt - now };
+      return { ok: true, remaining: maxPerWindow - 1, resetSeconds: resetAt - now };
     }
     entry.count += 1;
     memoryStore.set(redisKey, entry);
     return {
-      ok: entry.count <= MAX_PER_WINDOW,
-      remaining: Math.max(0, MAX_PER_WINDOW - entry.count),
+      ok: entry.count <= maxPerWindow,
+      remaining: Math.max(0, maxPerWindow - entry.count),
       resetSeconds: Math.max(1, resetAt - now),
     };
   }
@@ -70,11 +86,11 @@ export async function rateLimit(key: string): Promise<RateLimitResult> {
   const redis = getRedis();
   const count = await redis.incr(redisKey);
   if (count === 1) {
-    await redis.expire(redisKey, WINDOW_SECONDS);
+    await redis.expire(redisKey, windowSeconds);
   }
   return {
-    ok: count <= MAX_PER_WINDOW,
-    remaining: Math.max(0, MAX_PER_WINDOW - count),
+    ok: count <= maxPerWindow,
+    remaining: Math.max(0, maxPerWindow - count),
     resetSeconds: Math.max(1, resetAt - now),
   };
 }

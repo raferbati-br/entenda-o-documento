@@ -7,9 +7,9 @@ import { API_ERROR_MESSAGES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 
-const MAX_IMAGE_BYTES = 2.5 * 1024 * 1024;
-const MAX_CAPTURE_COUNT = 80;
-const MAX_TOTAL_BYTES = 120 * 1024 * 1024;
+const MAX_IMAGE_BYTES = Number(process.env.CAPTURE_MAX_IMAGE_BYTES || "") || 2.5 * 1024 * 1024;
+const MAX_CAPTURE_COUNT = Number(process.env.CAPTURE_MAX_COUNT || "") || 80;
+const MAX_TOTAL_BYTES = Number(process.env.CAPTURE_MAX_TOTAL_BYTES || "") || 120 * 1024 * 1024;
 
 type ValidatedImage = {
   ok: true;
