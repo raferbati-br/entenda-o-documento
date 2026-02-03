@@ -1,12 +1,10 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const config: CapacitorConfig = {
-  appId: 'br.raferbati.entendaodocumento',
-  appName: 'Entenda o Documento',
-  // NOTE: This `webDir` is a placeholder required by the Capacitor CLI (from `cap:init`).
+// Environment configuration
 const serverUrl = process.env.CAPACITOR_SERVER_URL || 'http://localhost:3000';
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Validate HTTPS in production
 if (isProduction) {
   // Em produção, exigir URL HTTPS explícita para evitar tráfego em claro.
   if (!serverUrl.startsWith('https://')) {
