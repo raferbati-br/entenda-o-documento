@@ -5,8 +5,10 @@ const capacitorConfig: CapacitorConfig = {
   appName: 'Entenda o Documento',
   webDir: 'out',
   server: {
+    // Development: uses localhost with HTTP
+    // Production: set CAPACITOR_SERVER_URL to an HTTPS URL (e.g., https://your-domain.com)
     url: process.env.CAPACITOR_SERVER_URL || 'http://localhost:3000',
-    cleartext: true,
+    cleartext: process.env.NODE_ENV === 'development',
     androidScheme: 'https',
     iosScheme: 'https',
   },
