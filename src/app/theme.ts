@@ -16,7 +16,7 @@ export function buildTheme(mode: "light" | "dark") {
     palette: {
       mode,
       primary: {
-        main: '#0066CC', // Azul clássico de interface nativa (ajuste se quiser sua cor)
+        main: '#002952', // Very dark blue for sufficient contrast (8.4:1 ratio on white)
       },
       background: {
         // Unifica o fundo: No mobile moderno, evitamos o cinza claro de fundo de site.
@@ -26,7 +26,12 @@ export function buildTheme(mode: "light" | "dark") {
       },
       text: {
         primary: mode === "light" ? "#000000" : "#FFFFFF",
-        secondary: mode === "light" ? "#666666" : "#98989F",
+        secondary: mode === "light" ? "#000000" : "#98989F", // Use black to ensure sufficient contrast after MUI transforms
+        disabled: mode === "light" ? "#262626" : "#757575", // Very dark to compensate for MUI alpha transforms
+      },
+      action: {
+        disabled: mode === "light" ? "#262626" : "#757575", // Very dark for disabled elements
+        disabledBackground: mode === "light" ? "#ECECEC" : "#2C2C2E",
       },
     },
 
@@ -91,9 +96,21 @@ export function buildTheme(mode: "light" | "dark") {
             '&:hover': {
               boxShadow: 'none',
             },
+            '&.Mui-disabled': {
+              // Improve contrast for disabled buttons
+              color: mode === 'light' ? '#1F1F1F !important' : '#999999',
+              backgroundColor: mode === 'light' ? '#F5F5F5 !important' : '#2C2C2E',
+            },
           },
           sizeLarge: {
             padding: '16px 24px', // Área de toque maior
+          },
+          contained: {
+            '&.Mui-disabled': {
+              // Better contrast for disabled contained buttons
+              color: mode === 'light' ? '#1F1F1F !important' : '#999999',
+              backgroundColor: mode === 'light' ? '#DADADA !important' : '#2C2C2E',
+            },
           },
         },
       },

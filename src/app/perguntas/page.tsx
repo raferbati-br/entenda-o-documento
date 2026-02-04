@@ -701,6 +701,7 @@ export default function PerguntasPage() {
               <IconButton
                 onClick={handleAsk}
                 disabled={!canAsk}
+                aria-label="Enviar pergunta"
                 sx={{
                   height: 40,
                   width: 40,

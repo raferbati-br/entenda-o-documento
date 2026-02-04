@@ -18,12 +18,12 @@ export const metadata: Metadata = {
   },
 };
 
-// Configuração CRUCIAL para parecer app nativo
+// Configuração para viewport acessível
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false, // Impede zoom de pinça
+  maximumScale: 5, // Allow zooming up to 5x for accessibility
+  userScalable: true, // Allow pinch zoom for accessibility
   themeColor: "#FFFFFF",
 };
 
