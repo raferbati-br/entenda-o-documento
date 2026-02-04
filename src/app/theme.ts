@@ -27,11 +27,11 @@ export function buildTheme(mode: "light" | "dark") {
       text: {
         primary: mode === "light" ? "#000000" : "#FFFFFF",
         secondary: mode === "light" ? "#000000" : "#98989F", // Use black to ensure sufficient contrast after MUI transforms
-        disabled: mode === "light" ? "#424242" : "#757575", // Darker to compensate for MUI transforms
+        disabled: mode === "light" ? "#262626" : "#757575", // Very dark to compensate for MUI alpha transforms
       },
       action: {
-        disabled: mode === "light" ? "#757575" : "#757575", // Better contrast for disabled elements
-        disabledBackground: mode === "light" ? "#E0E0E0" : "#2C2C2E",
+        disabled: mode === "light" ? "#262626" : "#757575", // Very dark for disabled elements
+        disabledBackground: mode === "light" ? "#ECECEC" : "#2C2C2E",
       },
     },
 
@@ -98,8 +98,8 @@ export function buildTheme(mode: "light" | "dark") {
             },
             '&.Mui-disabled': {
               // Improve contrast for disabled buttons
-              color: mode === 'light' ? '#3A3A3A' : '#999999',
-              backgroundColor: mode === 'light' ? '#ECECEC' : '#2C2C2E',
+              color: mode === 'light' ? '#1F1F1F !important' : '#999999',
+              backgroundColor: mode === 'light' ? '#F5F5F5 !important' : '#2C2C2E',
             },
           },
           sizeLarge: {
@@ -108,8 +108,8 @@ export function buildTheme(mode: "light" | "dark") {
           contained: {
             '&.Mui-disabled': {
               // Better contrast for disabled contained buttons
-              color: mode === 'light' ? '#3A3A3A' : '#999999',
-              backgroundColor: mode === 'light' ? '#D5D5D5' : '#2C2C2E',
+              color: mode === 'light' ? '#1F1F1F !important' : '#999999',
+              backgroundColor: mode === 'light' ? '#DADADA !important' : '#2C2C2E',
             },
           },
         },
