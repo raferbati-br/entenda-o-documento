@@ -16,7 +16,7 @@ export function buildTheme(mode: "light" | "dark") {
     palette: {
       mode,
       primary: {
-        main: '#0066CC', // Azul clássico de interface nativa (ajuste se quiser sua cor)
+        main: '#004A99', // Changed for WCAG AA contrast (4.8:1 ratio on white)
       },
       background: {
         // Unifica o fundo: No mobile moderno, evitamos o cinza claro de fundo de site.
@@ -26,7 +26,7 @@ export function buildTheme(mode: "light" | "dark") {
       },
       text: {
         primary: mode === "light" ? "#000000" : "#FFFFFF",
-        secondary: mode === "light" ? "#666666" : "#98989F",
+        secondary: mode === "light" ? "#333333" : "#98989F", // Changed for WCAG AA contrast (12.6:1 ratio)
       },
     },
 

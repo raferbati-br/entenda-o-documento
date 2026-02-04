@@ -58,7 +58,7 @@ export default function BackHeader({
   return (
     <AppBar position="sticky" color="inherit" elevation={0} sx={mergedSx}>
       <Toolbar>
-        <IconButton edge="start" onClick={onBack} sx={iconSx} {...iconButtonProps}>
+        <IconButton edge="start" onClick={onBack} sx={iconSx} aria-label="Voltar" {...iconButtonProps}>
           {icon ?? <ArrowBackRoundedIcon />}
         </IconButton>
         <Box sx={titleBoxSx}>{titleNode}</Box>
