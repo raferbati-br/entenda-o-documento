@@ -35,7 +35,7 @@ export default function BackHeader({
 }: BackHeaderProps) {
   const titleNode =
     typeof title === "string" ? (
-      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+      <Typography variant="h6" color="text.primary" sx={{ fontWeight: 700 }}>
         {title}
       </Typography>
     ) : (

@@ -26,12 +26,12 @@ export function buildTheme(mode: "light" | "dark") {
       },
       text: {
         primary: mode === "light" ? "#000000" : "#FFFFFF",
-        secondary: mode === "light" ? "#000000" : "#98989F", // Use black to ensure sufficient contrast after MUI transforms
-        disabled: mode === "light" ? "#262626" : "#757575", // Very dark to compensate for MUI alpha transforms
+        secondary: mode === "light" ? "#1F1F1F" : "#B3B3B8", // Keep strong contrast in light mode
+        disabled: mode === "light" ? "#2B2B2B" : "#8A8A8A", // Dark enough for legibility
       },
       action: {
-        disabled: mode === "light" ? "#262626" : "#757575", // Very dark for disabled elements
-        disabledBackground: mode === "light" ? "#ECECEC" : "#2C2C2E",
+        disabled: mode === "light" ? "#2B2B2B" : "#8A8A8A", // Keep accessible contrast
+        disabledBackground: mode === "light" ? "#E0E0E0" : "#2C2C2E",
       },
     },
 

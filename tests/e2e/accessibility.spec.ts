@@ -7,6 +7,10 @@ import AxeBuilder from "@axe-core/playwright";
  */
 
 test.describe("Accessibility Tests", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "light" });
+  });
+
   test("Home page should not have accessibility violations", async ({ page }) => {
     await page.goto("/");
 
@@ -50,7 +54,27 @@ test.describe("Accessibility Tests", () => {
   });
 
   test("Analyze page should not have accessibility violations", async ({ page }) => {
-    await page.goto("/analyze");
+    await page.addInitScript(() => {
+      sessionStorage.setItem("eod_capture_id_v1", "test-capture");
+    });
+
+    await page.route("**/api/ocr", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, documentText: "" }),
+      });
+    });
+
+    await page.route("**/api/analyze", async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: false, error: "forced-error" }),
+      });
+    });
+
+    await page.goto("/analyzing");
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

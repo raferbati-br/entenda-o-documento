@@ -63,7 +63,7 @@ Criado workflow `.github/workflows/accessibility.yml` que:
 - **text.disabled**: Alterado para `#262626`
   - Compensa transformações alpha do MUI
 - **Botões desabilitados**: Cores customizadas com `!important`
-  - `color`: `#1F1F1F` 
+  - `color`: `#1F1F1F`
   - `backgroundColor`: `#F5F5F5` (outlined), `#DADADA` (contained)
 
 #### Zoom e Escalabilidade
@@ -145,9 +145,9 @@ npm run lint
    </IconButton>
    ```
 
-2. **Evite cores muito claras**: Use ferramentas como [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) para validar contraste mínimo 4.5:1
+2. **Evite cores muito claras**: Use ferramentas como WebAIM Contrast Checker para validar contraste mínimo 4.5:1
 
-3. **Teste com leitores de tela**: 
+3. **Teste com leitores de tela**:
    - macOS: VoiceOver (Cmd+F5)
    - Windows: NVDA (gratuito)
    - ChromeVox extension
@@ -193,10 +193,10 @@ npm run lint
 
 ## Referências
 
-- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
-- [Axe-core Documentation](https://www.deque.com/axe/core-documentation/)
-- [eslint-plugin-jsx-a11y](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y)
-- [Playwright Accessibility Testing](https://playwright.dev/docs/accessibility-testing)
+- WCAG 2.1 Guidelines: https://www.w3.org/WAI/WCAG21/quickref/
+- Axe-core Documentation: https://www.deque.com/axe/core-documentation/
+- eslint-plugin-jsx-a11y: https://github.com/jsx-eslint/eslint-plugin-jsx-a11y
+- Playwright Accessibility Testing: https://playwright.dev/docs/accessibility-testing
 
 ---
 

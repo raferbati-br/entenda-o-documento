@@ -13,7 +13,7 @@
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
     "lint": "eslint",
-    "accessibility": "npm run lint && playwright test tests/e2e/accessibility.spec.ts",
+    "test:accessibility": "playwright test tests/e2e/accessibility.spec.ts",
     "test": "npm run test:unit && npm run test:e2e",
     "test:e2e": "playwright test",
     "test:unit": "vitest run --config vitest.config.unit.ts",

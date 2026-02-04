@@ -236,14 +236,14 @@ export default function AnalyzingPage() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.5 }}
               >
-                <Typography variant="h5" fontWeight={800} gutterBottom>
+                <Typography variant="h5" fontWeight={800} gutterBottom color="text.primary">
                   {steps[step]}
                 </Typography>
               </motion.div>
             </AnimatePresence>
           </Box>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          <Typography variant="body2" color="text.primary" sx={{ mb: 4 }}>
             {UI_TEXTS.ANALYZING_DESCRIPTION}
           </Typography>
 
@@ -268,7 +268,7 @@ export default function AnalyzingPage() {
               clearCaptureId();
               router.push("/camera");
             }}
-            sx={{ mt: 8, color: "text.disabled", fontSize: "0.75rem" }}
+            sx={{ mt: 8, color: "text.primary", fontSize: "0.75rem" }}
           >
             {UI_TEXTS.CANCEL}
           </Button>

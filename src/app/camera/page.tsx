@@ -60,7 +60,7 @@ function CameraContent() {
             <Typography variant="h5" gutterBottom fontWeight={800}>
               {UI_TEXTS.CAMERA_PREP_TITLE}
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" color="text.primary">
               {UI_TEXTS.CAMERA_PREP_SUBTITLE}
             </Typography>
           </Box>
@@ -80,7 +80,7 @@ function CameraContent() {
             />
             <IconTextRow
               icon={<CropFreeRoundedIcon fontSize="inherit" />}
-              iconColor="text.secondary"
+              iconColor="text.primary"
               title={UI_TEXTS.CAMERA_TIP_FRAMING}
               description={UI_TEXTS.CAMERA_HINT}
             />

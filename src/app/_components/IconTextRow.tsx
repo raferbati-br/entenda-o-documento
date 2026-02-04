@@ -45,7 +45,7 @@ export default function IconTextRow({
         <Typography variant="body1" sx={SECTION_TITLE_STYLE}>
           {title}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+        <Typography variant="body2" color="text.primary" sx={{ lineHeight: 1.5 }}>
           {description}
         </Typography>
       </Box>
