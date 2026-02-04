@@ -1,0 +1,59 @@
+name: Accessibility Validation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  accessibility:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint accessibility checks
+        run: npm run lint
+        continue-on-error: false
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build Next.js app
+        run: npm run build
+
+      - name: Run accessibility tests
+        run: npx playwright test tests/e2e/accessibility.spec.ts
+        env:
+          CI: true
+
+      - name: Upload accessibility test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-test-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-accessibility-report
+          path: playwright-report/
+          retention-days: 7
