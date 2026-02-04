@@ -1,6 +1,4 @@
-import type { CapacitorConfig } from '@capacitor/cli';
-
-const capacitorConfig: CapacitorConfig = {
+const capacitorConfig = {
   appId: 'br.raferbati.entendaodocumento',
   appName: 'Entenda o Documento',
   webDir: 'out',
