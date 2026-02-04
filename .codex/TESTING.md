@@ -60,10 +60,23 @@ Em caso de falha no build:
 - não realizar commit
 - corrigir o problema antes de prosseguir
 
+---
+
+## Acessibilidade (obrigatório)
+
+Sempre que houver mudanças em UI/UX, componentes visuais, tema, CSS, layout, rotas ou páginas, executar:
+
+- `npm run test:accessibility`
+
+Se o comando falhar:
+- não realizar commit
+- corrigir antes de prosseguir
+
 ## Comando padrão para rodar testes
 - Código: npm run lint
 - Testes: npm run test
 - Build: npm run build
+- Acessibilidade (quando houver mudanças de UI): npm run test:accessibility
 
 ---
 

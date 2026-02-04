@@ -11,6 +11,7 @@ Ela funciona como um **contrato operacional** entre humanos e o agente.
 - O comportamento do Codex está definido nos arquivos desta pasta.
 - Prompts, snippets e skills apenas **referenciam** estes contratos.
 - O Codex deve **tornar visível** cada etapa relevante da execução.
+- Mudanças de UI/UX exigem `npm run test:accessibility` antes do commit.
 
 ---
 

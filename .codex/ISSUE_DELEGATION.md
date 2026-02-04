@@ -69,6 +69,7 @@ Implementar **apenas** o escopo da issue, mantendo mudanças pequenas e focadas.
 
 ### PASSO 7 – Testes
 Adicionar ou ajustar testes conforme `.codex/TESTING.md`.
+Se houver mudanças em UI/UX, tema, CSS, layout, rotas ou páginas, executar `npm run test:accessibility`.
 
 ---
 
