@@ -1,6 +1,6 @@
-# Política de Privacidade - Entenda o Documento
+﻿# Política de Privacidade - Entenda o Documento
 
-**Última atualização:** 2 de fevereiro de 2026
+**Última atualização:** 5 de fevereiro de 2026
 
 ## 1. Introdução
 
@@ -8,10 +8,10 @@ Bem-vindo ao **Entenda o Documento**. Esta Política de Privacidade descreve com
 
 ## 2. Desenvolvedor
 
-**Nome:** [Seu Nome ou Nome da Empresa]  
-**Endereço:** [Seu Endereço]  
-**Email:** [seu-email@exemplo.com]  
-**Website:** [https://seu-website.com]
+**Nome:** Rafael (pessoa física)
+**Endereço:** Brasil
+**Email:** raferbati@hotmail.com
+**Website:** https://entenda-o-documento.vercel.app
 
 ## 3. Informações que Coletamos
 
@@ -32,12 +32,11 @@ Bem-vindo ao **Entenda o Documento**. Esta Política de Privacidade descreve com
 ### 3.3. Dados que NÃO Coletamos
 
 Não coletamos, armazenamos ou processamos:
-- ❌ Informações de identificação pessoal (nome, email, telefone)
-- ❌ Dados de localização geográfica
-- ❌ Histórico de navegação
-- ❌ Lista de contatos
-- ❌ Dados financeiros ou de pagamento
-- ❌ Dados de dispositivo além do necessário para operação
+- Informações de identificação pessoal (nome, email, telefone)
+- Dados de localização geográfica
+- Histórico de navegação
+- Lista de contatos
+- Dados financeiros ou de pagamento
 
 ## 4. Como Usamos Suas Informações
 
@@ -45,7 +44,7 @@ Não coletamos, armazenamos ou processamos:
 
 As fotos enviadas são:
 1. Transmitidas via HTTPS ao nosso servidor
-2. Processadas por serviços de IA (OpenAI ou Google Gemini)
+2. Processadas por serviços de IA (Google Gemini)
 3. Analisadas para extrair informações relevantes
 4. Convertidas em explicações em português simples
 5. Removidas após o processamento
@@ -62,20 +61,18 @@ Podemos usar dados agregados e anônimos para:
 ### 5.1. Provedores de Serviços de IA
 
 Compartilhamos fotos e texto com:
-- **OpenAI (ChatGPT/GPT-4)** - Para análise de documentos
-- **Google (Gemini)** - Para análise alternativa de documentos
+- **Google (Gemini)** - Para análise de documentos
 
 Esses provedores processam os dados de acordo com suas próprias políticas:
-- [OpenAI Privacy Policy](https://openai.com/privacy/)
-- [Google Privacy Policy](https://policies.google.com/privacy)
+- Google Privacy Policy: https://policies.google.com/privacy
 
 ### 5.2. Quando Não Compartilhamos
 
 Não vendemos, alugamos ou compartilhamos suas informações com:
-- ❌ Empresas de marketing ou publicidade
-- ❌ Corretores de dados
-- ❌ Redes sociais
-- ❌ Terceiros não relacionados ao serviço
+- Empresas de marketing ou publicidade
+- Corretores de dados
+- Redes sociais
+- Terceiros não relacionados ao serviço
 
 ### 5.3. Requisitos Legais
 
@@ -89,11 +86,11 @@ Podemos divulgar informações se:
 ### 6.1. Medidas de Proteção
 
 Implementamos medidas de segurança:
-- ✅ **Criptografia em trânsito:** HTTPS/TLS para todas as comunicações
-- ✅ **Redação automática:** Dados sensíveis ocultados na interface
-- ✅ **Processamento temporário:** Dados não armazenados após análise
-- ✅ **Acesso restrito:** Apenas sistemas automatizados processam documentos
-- ✅ **Monitoramento:** Logs de segurança para detectar acessos não autorizados
+- Criptografia em trânsito (HTTPS/TLS)
+- Redação automática de dados sensíveis na interface
+- Processamento temporário (sem armazenamento permanente de documentos)
+- Acesso restrito a dados por sistemas automatizados
+- Logs de segurança para detectar acessos não autorizados
 
 ### 6.2. Limitações
 
@@ -102,41 +99,28 @@ Apesar de nossos esforços, nenhum método de transmissão pela internet é 100%
 ## 7. Seus Direitos (LGPD)
 
 Como titular de dados pessoais, você tem direito a:
+- Confirmação e acesso
+- Correção
+- Anonimização ou exclusão
+- Portabilidade
+- Informação sobre compartilhamento
+- Revogação de consentimento
+- Oposição
 
-### 7.1. Confirmação e Acesso
-Confirmar se processamos seus dados e acessá-los
-
-### 7.2. Correção
-Corrigir dados incompletos, inexatos ou desatualizados
-
-### 7.3. Anonimização ou Exclusão
-Solicitar anonimização ou exclusão de dados desnecessários
-
-### 7.4. Portabilidade
-Obter seus dados em formato estruturado
-
-### 7.5. Informação sobre Compartilhamento
-Saber com quais entidades públicas e privadas compartilhamos dados
-
-### 7.6. Revogação de Consentimento
-Revogar consentimento a qualquer momento
-
-### 7.7. Oposição
-Opor-se ao tratamento em casos específicos
-
-**Como exercer:** Entre em contato através do email [seu-email@exemplo.com]
+**Como exercer:** Entre em contato através do email raferbati@hotmail.com
 
 ## 8. Retenção de Dados
 
 - **Fotos de documentos:** Não armazenadas após processamento
-- **Resultados de análise:** Armazenados localmente no dispositivo (IndexedDB)
-- **Logs do servidor:** Mantidos por até 90 dias para fins de segurança
-- **Dados anônimos:** Podem ser mantidos indefinidamente para melhoria do serviço
+- **Resultados de análise:** Armazenados localmente no dispositivo (IndexedDB e/ou sessionStorage) e removidos ao limpar o cache ou fechar a sessão
+- **Logs do servidor:** Mantidos por até 90 dias para fins de segurança e diagnóstico (podem incluir IP, status e latência)
+- **Feedback agregado:** Contadores diários em Redis/Upstash (sem conteúdo do documento)
+- **Dados de telemetria (se ativado):** Eventos de uso via PostHog, sem conteúdo do documento
 
 ## 9. Transferência Internacional de Dados
 
 Seus dados podem ser processados em servidores localizados fora do Brasil, incluindo:
-- Estados Unidos (OpenAI, Google)
+- Estados Unidos (Google)
 - Outros países onde nossos provedores operam
 
 Garantimos que essas transferências seguem as salvaguardas adequadas da LGPD.
@@ -149,14 +133,14 @@ Este aplicativo não é destinado a menores de 13 anos. Não coletamos conscient
 
 ### 11.1. Uso Limitado
 
-- ✅ Cookies de sessão para autenticação (se implementado)
-- ✅ Armazenamento local (IndexedDB) para cache de resultados
+- Armazenamento local (IndexedDB e sessionStorage) para cache de resultados
+- Dados técnicos mínimos para operação (ex.: tokens de sessão temporários)
 
 ### 11.2. Não Usamos
 
-- ❌ Cookies de rastreamento de terceiros
-- ❌ Pixels de publicidade
-- ❌ Analytics detalhados de comportamento
+- Cookies de rastreamento de terceiros
+- Pixels de publicidade
+- Analytics detalhados de comportamento com conteúdo do documento
 
 ## 12. Atualizações desta Política
 
@@ -178,19 +162,19 @@ Esta política é regida pelas leis do Brasil, incluindo:
 
 ### 14.1. Dúvidas sobre Privacidade
 
-**Email:** [seu-email@exemplo.com]  
+**Email:** raferbati@hotmail.com
 **Prazo de resposta:** Até 5 dias úteis
 
 ### 14.2. Encarregado de Dados (DPO)
 
-**Nome:** [Nome do DPO]  
-**Email:** [dpo@exemplo.com]
+**Nome:** Não aplicável
+**Email:** raferbati@hotmail.com
 
 ### 14.3. Autoridade de Proteção de Dados
 
 Você também pode entrar em contato com a Autoridade Nacional de Proteção de Dados (ANPD):
-- **Website:** https://www.gov.br/anpd
-- **Ouvidoria:** https://www.gov.br/anpd/pt-br/canais_atendimento
+- Website: https://www.gov.br/anpd
+- Ouvidoria: https://www.gov.br/anpd/pt-br/canais_atendimento
 
 ## 15. Consentimento
 
@@ -207,26 +191,25 @@ Se não concordar, por favor, não use o aplicativo.
 
 **Em linguagem simples:**
 
-📸 **O que fazemos:**
 - Você tira foto de um documento
 - Enviamos para IA analisar
 - Você recebe explicação em português simples
-- Apagamos a foto do servidor
+- Apagamos a foto do servidor após o processamento
 
-🔒 **Segurança:**
+**Segurança:**
 - Conexão criptografada
-- Dados sensíveis ocultados (***)
-- Nada fica guardado permanentemente
+- Dados sensíveis ocultados (*** )
+- Nada fica guardado permanentemente no servidor
 
-✅ **Seus direitos:**
+**Seus direitos:**
 - Pedir exclusão dos dados
 - Saber o que processamos
 - Revogar permissão a qualquer momento
 
-📧 **Dúvidas?**
-Entre em contato: [seu-email@exemplo.com]
+**Dúvidas?**
+Entre em contato: raferbati@hotmail.com
 
 ---
 
-**Versão:** 1.0  
-**Efetiva desde:** 2 de fevereiro de 2026
+**Versão:** 1.0
+**Efetiva desde:** 5 de fevereiro de 2026

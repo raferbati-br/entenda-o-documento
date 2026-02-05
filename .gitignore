@@ -62,3 +62,6 @@ next-env.d.ts
 android/
 ios/
 .capacitor/
+
+# Android keystore (do not commit)
+*.keystore
