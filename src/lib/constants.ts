@@ -159,6 +159,7 @@ export const MOCK_RESPONSES = {
 export const API_ERROR_MESSAGES = {
   SESSION_EXPIRED: SESSION_EXPIRED_MESSAGE,
   INVALID_REQUEST: "Requisicao invalida.",
+  REDIS_REQUIRED: "Redis nao configurado para producao.",
   IMAGE_NOT_FOUND: IMAGE_NOT_FOUND_MESSAGE,
   MODEL_INVALID_JSON: MODEL_INVALID_JSON_MESSAGE,
   INTERNAL_ERROR_ANALYZE: getInternalErrorMessage("analisar documento"),

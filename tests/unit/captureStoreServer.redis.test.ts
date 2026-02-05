@@ -5,17 +5,23 @@ type RedisSetCall = { key: string; value: unknown; opts?: { ex: number } };
 const redisSetCalls: RedisSetCall[] = [];
 const redisDelCalls: string[] = [];
 let redisGetValue: unknown = null;
+let redisSetError: Error | null = null;
+let redisGetError: Error | null = null;
+let redisDelError: Error | null = null;
 
 vi.mock("@upstash/redis", () => {
   class Redis {
     async set(key: string, value: unknown, opts?: { ex: number }) {
+      if (redisSetError) throw redisSetError;
       redisSetCalls.push({ key, value, opts });
       return "OK";
     }
     async get() {
+      if (redisGetError) throw redisGetError;
       return redisGetValue;
     }
     async del(key: string) {
+      if (redisDelError) throw redisDelError;
       redisDelCalls.push(key);
       return 1;
     }
@@ -28,6 +34,9 @@ describe("captureStoreServer (redis)", () => {
     redisSetCalls.length = 0;
     redisDelCalls.length = 0;
     redisGetValue = null;
+    redisSetError = null;
+    redisGetError = null;
+    redisDelError = null;
     process.env.UPSTASH_REDIS_REST_URL = "https://example";
     process.env.UPSTASH_REDIS_REST_TOKEN = "token";
     vi.resetModules();
@@ -90,5 +99,29 @@ describe("captureStoreServer (redis)", () => {
     await mod.deleteCapture("id4");
 
     expect(redisDelCalls).toEqual(["capture:id4"]);
+  });
+
+  it("falls back to memory when redis set fails", async () => {
+    const mod = await import("@/lib/captureStoreServer");
+    const entry = { imageBase64: "data", mimeType: "image/png", createdAt: Date.now(), bytes: 10 };
+    redisSetError = new Error("boom");
+
+    await mod.setCapture("id-fallback", entry);
+
+    const out = await mod.getCapture("id-fallback");
+    expect(out).toEqual(entry);
+  });
+
+  it("clears memory when redis delete fails", async () => {
+    const mod = await import("@/lib/captureStoreServer");
+    const entry = { imageBase64: "data", mimeType: "image/png", createdAt: Date.now(), bytes: 10 };
+    redisSetError = new Error("boom");
+    await mod.setCapture("id-del-fallback", entry);
+    redisSetError = null;
+    redisDelError = new Error("boom-del");
+
+    await mod.deleteCapture("id-del-fallback");
+    const out = await mod.getCapture("id-del-fallback");
+    expect(out).toBeNull();
   });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const mockCleanupMemoryStore = vi.fn();
 const mockIsRedisConfigured = vi.fn();
+const mockIsRedisRequiredAndMissing = vi.fn();
 const mockMemoryStats = vi.fn();
 const mockSetCapture = vi.fn();
 const mockBadRequest = vi.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
@@ -17,6 +18,7 @@ vi.mock("crypto", () => ({
 vi.mock("@/lib/captureStoreServer", () => ({
   cleanupMemoryStore: () => mockCleanupMemoryStore(),
   isRedisConfigured: () => mockIsRedisConfigured(),
+  isRedisRequiredAndMissing: () => mockIsRedisRequiredAndMissing(),
   memoryStats: () => mockMemoryStats(),
   setCapture: (...args: unknown[]) => mockSetCapture(...args),
 }));
@@ -46,6 +48,7 @@ describe("api/capture", () => {
   beforeEach(() => {
     mockCleanupMemoryStore.mockReset();
     mockIsRedisConfigured.mockReset();
+    mockIsRedisRequiredAndMissing.mockReset();
     mockMemoryStats.mockReset();
     mockSetCapture.mockReset();
     mockBadRequest.mockReset();
@@ -59,8 +62,18 @@ describe("api/capture", () => {
     expect(res).toEqual({ status: 401 });
   });
 
+  it("blocks when redis is required in production", async () => {
+    mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(true);
+
+    const res = await POST(new Request("http://test"));
+
+    expect(res).toEqual({ error: "Redis nao configurado para producao.", status: 503 });
+  });
+
   it("returns bad request when body invalid", async () => {
     mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(false);
     mockReadJsonRecord.mockResolvedValue(null);
 
     const res = await POST(new Request("http://test"));
@@ -70,6 +83,7 @@ describe("api/capture", () => {
 
   it("accepts data url and stores capture", async () => {
     mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(false);
     const header = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const payload = Buffer.concat([header, Buffer.alloc(40, 1)]);
     mockReadJsonRecord.mockResolvedValue({ imageBase64: "data:image/png;base64," + payload.toString("base64") });

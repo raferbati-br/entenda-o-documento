@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { cleanupMemoryStore, isRedisConfigured, memoryStats, setCapture } from "@/lib/captureStoreServer";
+import {
+  cleanupMemoryStore,
+  isRedisConfigured,
+  isRedisRequiredAndMissing,
+  memoryStats,
+  setCapture,
+} from "@/lib/captureStoreServer";
 import { badRequest, createRouteContext, readJsonRecord, runCommonGuards, shouldLogApi } from "@/lib/apiRouteUtils";
 import { parseDataUrl } from "@/lib/dataUrl";
 import { API_ERROR_MESSAGES } from "@/lib/constants";
@@ -127,6 +133,10 @@ export async function POST(req: Request) {
       rateLimitTag: "api.capture",
     });
     if (guardError) return guardError;
+
+    if (isRedisRequiredAndMissing()) {
+      return badRequest(API_ERROR_MESSAGES.REDIS_REQUIRED, 503);
+    }
 
     cleanupMemoryStore();
 

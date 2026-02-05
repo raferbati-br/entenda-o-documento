@@ -4,6 +4,7 @@ const mockAnalyzeDocument = vi.fn();
 const mockCleanupMemoryStore = vi.fn();
 const mockGetCapture = vi.fn();
 const mockDeleteCapture = vi.fn();
+const mockIsRedisRequiredAndMissing = vi.fn();
 const mockEvaluateOcrText = vi.fn();
 const mockRecordQualityCount = vi.fn((name: string) => Promise.resolve(name));
 const mockRecordQualityLatency = vi.fn((name: string, ms: number) => Promise.resolve([name, ms]));
@@ -22,6 +23,7 @@ vi.mock("@/lib/captureStoreServer", () => ({
   cleanupMemoryStore: () => mockCleanupMemoryStore(),
   getCapture: (...args: unknown[]) => mockGetCapture(...args),
   deleteCapture: (...args: unknown[]) => mockDeleteCapture(...args),
+  isRedisRequiredAndMissing: () => mockIsRedisRequiredAndMissing(),
 }));
 vi.mock("@/lib/ocrTextQuality", () => ({
   evaluateOcrText: (...args: unknown[]) => mockEvaluateOcrText(...args),
@@ -55,6 +57,7 @@ describe("api/analyze", () => {
     mockCleanupMemoryStore.mockReset();
     mockGetCapture.mockReset();
     mockDeleteCapture.mockReset();
+    mockIsRedisRequiredAndMissing.mockReset();
     mockEvaluateOcrText.mockReset();
     mockBadRequest.mockReset();
     mockHandleApiKeyError.mockReset();
@@ -70,8 +73,18 @@ describe("api/analyze", () => {
     expect(res).toEqual({ status: 401 });
   });
 
+  it("blocks when redis is required in production", async () => {
+    mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(true);
+
+    const res = await POST(new Request("http://test"));
+
+    expect(res).toEqual({ error: "Redis nao configurado para producao.", status: 503 });
+  });
+
   it("returns bad request for missing body", async () => {
     mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(false);
     mockReadJsonRecord.mockResolvedValue(null);
 
     const res = await POST(new Request("http://test"));
@@ -81,6 +94,7 @@ describe("api/analyze", () => {
 
   it("returns error when image missing", async () => {
     mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(false);
     mockReadJsonRecord.mockResolvedValue({ captureId: "c1" });
     mockGetCapture.mockResolvedValue({ imageBase64: "" });
 
@@ -91,6 +105,7 @@ describe("api/analyze", () => {
 
   it("analyzes with image and returns result", async () => {
     mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(false);
     mockReadJsonRecord.mockResolvedValue({ captureId: "c1", attempt: 2 });
     mockGetCapture.mockResolvedValue({ imageBase64: "data:image/png;base64,abc" });
     mockAnalyzeDocument.mockResolvedValue({

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { analyzeDocument } from "@/ai/analyzeDocument";
-import { cleanupMemoryStore, deleteCapture, getCapture } from "@/lib/captureStoreServer";
+import { cleanupMemoryStore, deleteCapture, getCapture, isRedisRequiredAndMissing } from "@/lib/captureStoreServer";
 import { evaluateOcrText } from "@/lib/ocrTextQuality";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
 import {
@@ -69,6 +69,10 @@ async function handleAnalyzeRequest(req: Request, ctx: ApiRouteContext) {
     rateLimitTag: "api.analyze",
   });
   if (guardError) return guardError;
+
+  if (isRedisRequiredAndMissing()) {
+    return badRequest(API_ERROR_MESSAGES.REDIS_REQUIRED, 503);
+  }
 
   cleanupMemoryStore();
 

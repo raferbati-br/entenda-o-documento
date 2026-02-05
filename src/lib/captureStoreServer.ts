@@ -26,9 +26,17 @@ const memoryStore: Map<string, CaptureEntry> = g.__CAPTURE_STORE__;
 
 let redisClient: Redis | null = null;
 
+function shouldLogRedisFallback() {
+  return process.env.NODE_ENV !== "test" && process.env.API_LOGS !== "0";
+}
+
 // Verifica se Redis está configurado
 export function isRedisConfigured() {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+}
+
+export function isRedisRequiredAndMissing() {
+  return process.env.NODE_ENV === "production" && !isRedisConfigured();
 }
 
 // Obtém cliente Redis
@@ -46,8 +54,8 @@ function keyFor(id: string) {
 }
 
 // Limpa entradas expiradas na memória (se não usar Redis)
-export function cleanupMemoryStore() {
-  if (isRedisConfigured()) return;
+export function cleanupMemoryStore(force = false) {
+  if (!force && isRedisConfigured()) return;
   const t = Date.now();
   for (const [id, entry] of memoryStore.entries()) {
     if (t - entry.createdAt > TTL_MS) memoryStore.delete(id);
@@ -68,9 +76,17 @@ export async function setCapture(id: string, entry: CaptureEntry) {
     return;
   }
 
-  const redis = getRedis();
-  const ttlSeconds = Math.ceil(TTL_MS / 1000);
-  await redis.set(keyFor(id), entry, { ex: ttlSeconds });
+  try {
+    const redis = getRedis();
+    const ttlSeconds = Math.ceil(TTL_MS / 1000);
+    await redis.set(keyFor(id), entry, { ex: ttlSeconds });
+  } catch (err) {
+    if (shouldLogRedisFallback()) {
+      console.warn("[captureStore] Redis indisponivel, usando memoria (set).", err);
+    }
+    cleanupMemoryStore(true);
+    memoryStore.set(id, entry);
+  }
 }
 
 // Carrega captura do Redis ou memória
@@ -79,27 +95,42 @@ export async function getCapture(id: string): Promise<CaptureEntry | null> {
     return memoryStore.get(id) ?? null;
   }
 
-  const redis = getRedis();
-  const raw = await redis.get<CaptureEntry | string>(keyFor(id));
-  if (!raw) return null;
-
-  if (typeof raw === "string") {
-    try {
-      return JSON.parse(raw) as CaptureEntry;
-    } catch {
-      return null;
+  try {
+    const redis = getRedis();
+    const raw = await redis.get<CaptureEntry | string>(keyFor(id));
+    if (!raw) {
+      cleanupMemoryStore(true);
+      return memoryStore.get(id) ?? null;
     }
+
+    if (typeof raw === "string") {
+      try {
+        return JSON.parse(raw) as CaptureEntry;
+      } catch {
+        return null;
+      }
+    }
+    return raw;
+  } catch (err) {
+    if (shouldLogRedisFallback()) {
+      console.warn("[captureStore] Redis indisponivel, usando memoria (get).", err);
+    }
+    cleanupMemoryStore(true);
+    return memoryStore.get(id) ?? null;
   }
-  return raw;
 }
 
 // Deleta captura do Redis ou memória
 export async function deleteCapture(id: string) {
-  if (!isRedisConfigured()) {
-    memoryStore.delete(id);
-    return;
-  }
+  memoryStore.delete(id);
+  if (!isRedisConfigured()) return;
 
-  const redis = getRedis();
-  await redis.del(keyFor(id));
+  try {
+    const redis = getRedis();
+    await redis.del(keyFor(id));
+  } catch (err) {
+    if (shouldLogRedisFallback()) {
+      console.warn("[captureStore] Redis indisponivel, removido apenas da memoria (del).", err);
+    }
+  }
 }

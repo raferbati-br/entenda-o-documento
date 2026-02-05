@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { extractDocumentText } from "@/ai/extractDocumentText";
-import { getCapture } from "@/lib/captureStoreServer";
+import { getCapture, isRedisRequiredAndMissing } from "@/lib/captureStoreServer";
 import { recordQualityCount, recordQualityLatency } from "@/lib/qualityMetrics";
 import {
   badRequest,
@@ -23,6 +23,10 @@ async function validateRequest(req: Request, ctx: ReturnType<typeof createRouteC
     rateLimitTag: "api.ocr",
   });
   if (guardError) return { error: guardError };
+
+  if (isRedisRequiredAndMissing()) {
+    return { error: badRequest(API_ERROR_MESSAGES.REDIS_REQUIRED, 503) };
+  }
 
   const body = await readJsonRecord(req);
   if (!body) return { error: badRequest(API_ERROR_MESSAGES.INVALID_REQUEST) };

@@ -41,12 +41,12 @@ Exemplo rapido para mock (testes locais e carga):
 - Qualidade: depende do OCR; quando o texto vem incompleto, o sistema faz fallback para analise com imagem.
 - Valores aceitos para `ANALYZE_TEXT_ONLY`: `true`, `1`, `yes`, `on` (case-insensitive).
 
-### Redis / Upstash (opcional)
+### Redis / Upstash (obrigatorio em producao)
 Usado para armazenar capturas temporarias, rate limit e contadores agregados.
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
 
-Sem Redis, o app usa memoria local (bom para desenvolvimento, nao recomendado em producao).
+Sem Redis, o app usa memoria local (bom para desenvolvimento). Em producao, o Redis e obrigatorio.
 
 ### Seguranca e origem
 - `API_TOKEN_SECRET`: segredo para assinar tokens temporarios de sessao.

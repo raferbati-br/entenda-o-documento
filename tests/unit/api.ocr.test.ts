@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const mockExtractDocumentText = vi.fn();
 const mockGetCapture = vi.fn();
+const mockIsRedisRequiredAndMissing = vi.fn();
 const mockRecordQualityCount = vi.fn((name: string) => Promise.resolve(name));
 const mockRecordQualityLatency = vi.fn((name: string, ms: number) => Promise.resolve([name, ms]));
 const mockBadRequest = vi.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
@@ -17,6 +18,7 @@ vi.mock("@/ai/extractDocumentText", () => ({
 }));
 vi.mock("@/lib/captureStoreServer", () => ({
   getCapture: (...args: unknown[]) => mockGetCapture(...args),
+  isRedisRequiredAndMissing: () => mockIsRedisRequiredAndMissing(),
 }));
 vi.mock("@/lib/qualityMetrics", () => ({
   recordQualityCount: (...args: unknown[]) => mockRecordQualityCount(...args),
@@ -44,6 +46,7 @@ describe("api/ocr", () => {
   beforeEach(() => {
     mockExtractDocumentText.mockReset();
     mockGetCapture.mockReset();
+    mockIsRedisRequiredAndMissing.mockReset();
     mockBadRequest.mockReset();
     mockHandleApiKeyError.mockReset();
     mockHandleModelJsonError.mockReset();
@@ -54,6 +57,7 @@ describe("api/ocr", () => {
 
   it("validates captureId", async () => {
     mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(false);
     mockReadJsonRecord.mockResolvedValue({});
 
     const res = await POST(new Request("http://test"));
@@ -63,6 +67,7 @@ describe("api/ocr", () => {
 
   it("returns error when image missing", async () => {
     mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(false);
     mockReadJsonRecord.mockResolvedValue({ captureId: "c1" });
     mockGetCapture.mockResolvedValue({});
 
@@ -73,6 +78,7 @@ describe("api/ocr", () => {
 
   it("extracts text and returns ok", async () => {
     mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(false);
     mockReadJsonRecord.mockResolvedValue({ captureId: "c1" });
     mockGetCapture.mockResolvedValue({ imageBase64: "data:image/png;base64,abc" });
     mockExtractDocumentText.mockResolvedValue({
@@ -84,5 +90,14 @@ describe("api/ocr", () => {
     const res = await POST(new Request("http://test"));
 
     expect(res.body).toEqual({ ok: true, documentText: "texto" });
+  });
+
+  it("blocks when redis is required in production", async () => {
+    mockRunCommonGuards.mockResolvedValue(null);
+    mockIsRedisRequiredAndMissing.mockReturnValue(true);
+
+    const res = await POST(new Request("http://test"));
+
+    expect(res).toEqual({ error: "Redis nao configurado para producao.", status: 503 });
   });
 });
