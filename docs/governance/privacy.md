@@ -31,9 +31,9 @@ Este documento descreve como o Entenda o Documento lida com dados e telemetria.
 
 ## Onde os dados ficam
 - Telemetria de eventos: PostHog (quando habilitado por ambiente).
-- Capturas temporarias: Redis/Upstash (ou memoria local do servidor).
-- Feedback agregado: Redis/Upstash (quando configurado).
-- Metricas de qualidade: Redis/Upstash (ou memoria local quando Redis nao esta configurado).
+- Capturas temporarias: Redis/Upstash (obrigatorio em producao). Fallback em memoria apenas em dev ou falhas temporarias.
+- Feedback agregado: Redis/Upstash (quando configurado; esperado em producao).
+- Metricas de qualidade: Redis/Upstash (obrigatorio em producao). Fallback em memoria apenas em dev ou falhas temporarias.
 - Logs de API: Vercel Logs.
 
 ## Retencao

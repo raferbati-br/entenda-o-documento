@@ -53,7 +53,7 @@ Acesse http://localhost:3000
 
 - Dashboard interno em `/metrics`, protegido por `METRICS_DASHBOARD_TOKEN` (veja `README.md` e `docs/README.md`).  
 - Logs estruturados registram `requestId`, `status`, `duration_ms`, `provider`, `model`, `promptId` e `contextSource`.  
-- Telemetria é opcional via PostHog; métricas e rate limit usam Redis/Upstash quando configurado, com fallback em memória.  
+- Telemetria é opcional via PostHog; métricas e rate limit usam Redis/Upstash (obrigatório em produção). Fallback em memória é apenas para dev ou falhas temporárias.  
 - Cobertura BDD x E2E x carga monitorada por `npm run bdd:coverage` e `scripts/check-*`. Detalhes em `docs/README.md`.
 
 ---

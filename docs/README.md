@@ -34,4 +34,4 @@
 
 ## Deploy e operações
 - Deploy automático via Vercel com variáveis configuradas (veja `README.md` para quickstart).
-- Capturas temporárias, rate limit e métricas usam Redis/Upstash quando configurado (`docs/architecture/config.md`).
+- Capturas temporárias, rate limit e métricas usam Redis/Upstash (obrigatório em produção). Fallback em memória é para dev ou falhas temporárias (`docs/architecture/config.md`).
