@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
-      <body tabIndex={0}>
+      <body>
         <Suspense fallback={null}>
           <Providers>{children}</Providers>
         </Suspense>

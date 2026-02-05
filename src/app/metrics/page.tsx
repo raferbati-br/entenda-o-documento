@@ -23,7 +23,21 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
 
   if (requiredToken && token !== requiredToken) {
     return (
-      <main style={{ padding: "24px", fontFamily: "Arial, sans-serif", color: "#111111", backgroundColor: "#FFFFFF" }}>
+      <main
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+        tabIndex={0}
+        role="region"
+        aria-label="Metrics dashboard"
+        style={{
+          padding: "24px",
+          fontFamily: "Arial, sans-serif",
+          color: "#111111",
+          backgroundColor: "#FFFFFF",
+          height: "100vh",
+          overflowY: "auto",
+        }}
+      >
+        <style>{`main, main * { color: #000000 !important; }`}</style>
         <h1 style={headingStyle}>Metrics</h1>
         <p style={textStyle}>Missing or invalid token.</p>
       </main>
@@ -33,7 +47,21 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
   const rows = await getQualityMetrics(7);
 
   return (
-    <main style={{ padding: "24px", fontFamily: "Arial, sans-serif", color: "#111111", backgroundColor: "#FFFFFF" }}>
+    <main
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabIndex={0}
+      role="region"
+      aria-label="Metrics dashboard"
+      style={{
+        padding: "24px",
+        fontFamily: "Arial, sans-serif",
+        color: "#111111",
+        backgroundColor: "#FFFFFF",
+        height: "100vh",
+        overflowY: "auto",
+      }}
+    >
+      <style>{`main, main * { color: #000000 !important; }`}</style>
       <h1 style={headingStyle}>Quality Metrics (Last 7 Days)</h1>
       <p style={textStyle}>
         Source: aggregated counters stored in Redis (or in-memory fallback when Redis is not configured).
