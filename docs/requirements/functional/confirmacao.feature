@@ -11,7 +11,7 @@ Feature: Confirmacao da imagem
     Then deve ver a imagem em tela cheia
     And deve poder usar zoom na imagem
 
-  @e2e @id(E2E-10) @manual
+  @e2e @id(E2E-10)
   Scenario: Trocar a imagem por outra
     Given que o usuario esta na tela de confirmacao
     When ele clica em "Escolher outra"
@@ -25,9 +25,10 @@ Feature: Confirmacao da imagem
     Then a imagem deve ser comprimida e enviada
     And deve navegar para a tela de analise
 
-  @e2e @id(E2E-12) @manual
+  @e2e @id(E2E-12)
   Scenario: Exibir erro ao enviar a imagem
     Given que o usuario esta na tela de confirmacao
     When ocorre um erro na captura ou no envio
     Then deve ver uma mensagem de erro
     And deve poder fechar a mensagem e tentar novamente
+

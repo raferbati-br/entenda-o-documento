@@ -63,12 +63,23 @@ function parseFeatureFile(file) {
   return results;
 }
 
-function collectE2ETestContent() {
+function collectE2ETestTitles() {
   const files = readAllFiles(E2E_DIR, (p) => p.endsWith(".spec.ts") || p.endsWith(".spec.tsx"));
-  return files.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+  const titles = [];
+  const titleRegex = /test(?:\.only|\.skip)?\s*\(\s*(['"`])((?:\\.|(?!\1)[\s\S])*)\1/g;
+
+  for (const file of files) {
+    const content = fs.readFileSync(file, "utf8");
+    let match;
+    while ((match = titleRegex.exec(content)) !== null) {
+      titles.push(match[2]);
+    }
+  }
+
+  return titles;
 }
 
-function getCoverageGaps(scenarios, testContent) {
+function getCoverageGaps(scenarios, testTitles) {
   const missing = [];
   const withoutIds = [];
   const allIds = new Set();
@@ -86,7 +97,7 @@ function getCoverageGaps(scenarios, testContent) {
         manualIds.add(id);
         return;
       }
-      if (testContent.includes(id)) {
+      if (testTitles.some((title) => title.includes(id))) {
         coveredIds.add(id);
       } else {
         missing.push({ ...scenario, id });
@@ -148,8 +159,8 @@ function writeSummary(report) {
 
 function main() {
   const scenarios = collectBddScenarios();
-  const testContent = collectE2ETestContent();
-  const report = getCoverageGaps(scenarios, testContent);
+  const testTitles = collectE2ETestTitles();
+  const report = getCoverageGaps(scenarios, testTitles);
   writeSummary(report);
   const exitCode = printCoverageReport(report);
   process.exit(exitCode);

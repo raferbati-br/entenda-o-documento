@@ -21,16 +21,17 @@ Feature: Fluxo geral end-to-end
     Then deve ver uma mensagem amigavel de erro
     And deve poder tentar novamente a partir da camera
 
-  @e2e @id(E2E-37) @manual
+  @e2e @id(E2E-37)
   Scenario: Baixa confianca no resultado
     Given que a analise retorna baixa confianca
     When o usuario acessa a tela de resultado
     Then deve ver um aviso de baixa confianca
     And deve ter a opcao de refazer a captura
 
-  @e2e @id(E2E-38) @manual
+  @e2e @id(E2E-38)
   Scenario: Duvidas apos ver o resultado
     Given que o usuario esta na tela de resultado
     When ele abre o fluxo de perguntas
     Then deve conseguir enviar uma pergunta
     And deve receber uma resposta
+

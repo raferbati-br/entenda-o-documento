@@ -11,7 +11,7 @@ Feature: Home e entrada do fluxo
     And deve ver a opcao "Tirar foto"
     And deve ver a opcao "Galeria"
 
-  @e2e @id(E2E-4) @manual
+  @e2e @id(E2E-4)
   Scenario: Iniciar captura pela camera
     Given que o usuario esta na home
     When ele clica em "Tirar foto"
@@ -23,3 +23,4 @@ Feature: Home e entrada do fluxo
     When ele clica em "Galeria"
     Then o seletor de arquivos deve ser aberto
     And ao escolher uma imagem valida deve seguir para a confirmacao
+

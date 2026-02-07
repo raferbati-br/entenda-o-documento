@@ -11,11 +11,11 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-const headingStyle = { color: "#111111", margin: 0 };
-const sectionHeadingStyle = { color: "#111111", margin: 0 };
-const textStyle = { color: "#111111" };
-const thStyleBase = { borderBottom: "1px solid #BDBDBD", padding: "8px", color: "#111111" };
-const tdStyleBase = { padding: "8px", borderBottom: "1px solid #D0D0D0", color: "#111111" };
+const headingStyle = { color: "#F8FAFC", margin: 0 };
+const sectionHeadingStyle = { color: "#F8FAFC", margin: 0 };
+const textStyle = { color: "#E2E8F0" };
+const thStyleBase = { borderBottom: "1px solid #334155", padding: "8px", color: "#F8FAFC" };
+const tdStyleBase = { padding: "8px", borderBottom: "1px solid #334155", color: "#E2E8F0" };
 
 export default async function MetricsPage({ searchParams }: MetricsPageProps) {
   const requiredToken = process.env.METRICS_DASHBOARD_TOKEN;
@@ -31,13 +31,13 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
         style={{
           padding: "24px",
           fontFamily: "Arial, sans-serif",
-          color: "#111111",
-          backgroundColor: "#FFFFFF",
+          color: "#F8FAFC",
+          backgroundColor: "#0F172A",
           height: "100vh",
           overflowY: "auto",
         }}
       >
-        <style>{`main, main * { color: #000000 !important; }`}</style>
+        <style>{`main, main * { color: #F8FAFC !important; }`}</style>
         <h1 style={headingStyle}>Metrics</h1>
         <p style={textStyle}>Missing or invalid token.</p>
       </main>
@@ -55,13 +55,13 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
       style={{
         padding: "24px",
         fontFamily: "Arial, sans-serif",
-        color: "#111111",
-        backgroundColor: "#FFFFFF",
+        color: "#F8FAFC",
+        backgroundColor: "#0F172A",
         height: "100vh",
         overflowY: "auto",
       }}
     >
-      <style>{`main, main * { color: #000000 !important; }`}</style>
+      <style>{`main, main * { color: #F8FAFC !important; }`}</style>
       <h1 style={headingStyle}>Quality Metrics (Last 7 Days)</h1>
       <p style={textStyle}>
         Source: aggregated counters stored in Redis (or in-memory fallback when Redis is not configured).

@@ -18,14 +18,15 @@ Feature: Analise do documento
     Then deve ver um aviso com titulo e mensagem amigavel
     And deve ver uma acao principal para voltar e tentar novamente
 
-  @e2e @id(E2E-15) @manual
+  @e2e @id(E2E-15)
   Scenario: Cancelar a analise em andamento
     Given que o usuario esta na tela de analise
     When ele clica em "Cancelar"
     Then a requisicao deve ser abortada
     And o usuario deve voltar para a camera
 
-  @e2e @id(E2E-16) @manual
+  @e2e @id(E2E-16)
   Scenario: Captura ausente
     Given que o usuario acessa a tela de analise sem uma captura valida
     Then deve ser redirecionado para a home
+

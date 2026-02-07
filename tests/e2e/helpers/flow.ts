@@ -46,6 +46,29 @@ export async function mockAnalyzeSuccess(page: Page) {
   });
 }
 
+export async function mockAnalyzeLowConfidence(page: Page) {
+  await page.route("**/api/analyze", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        result: {
+          confidence: 0.2,
+          cards: [
+            { id: "whatIs", title: "O que e este documento", text: "Documento de teste." },
+            { id: "whatSays", title: "O que diz", text: "Conteudo com baixa confianca." },
+            { id: "dates", title: "Datas", text: "Sem datas relevantes." },
+            { id: "terms", title: "Termos", text: "Sem termos complexos." },
+            { id: "whatUsuallyHappens", title: "O que acontece", text: "Nada a destacar." },
+          ],
+          notice: "Resposta simulada para baixa confianca.",
+        },
+      }),
+    });
+  });
+}
+
 export async function mockAnalyzeError(page: Page) {
   await page.route("**/api/analyze", async (route) => {
     await route.fulfill({
@@ -56,8 +79,49 @@ export async function mockAnalyzeError(page: Page) {
   });
 }
 
+export async function mockQaStreamSuccess(page: Page, answer = "Resposta simulada para perguntas.") {
+  const body = `${JSON.stringify({ type: "delta", text: answer })}\n${JSON.stringify({ type: "done" })}\n`;
+  await page.route("**/api/qa", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/plain",
+      body,
+    });
+  });
+}
+
+export async function mockQaStreamError(page: Page, message = "Falha ao responder pergunta.") {
+  const body = `${JSON.stringify({ type: "error", message })}\n`;
+  await page.route("**/api/qa", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/plain",
+      body,
+    });
+  });
+}
+
+export async function mockFeedbackSuccess(page: Page) {
+  await page.route("**/api/feedback", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+}
+
 export async function uploadTinyImage(page: Page) {
   const fileInput = page.locator('input[type="file"]');
+  await fileInput.setInputFiles({
+    name: "doc.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(tinyPngBase64, "base64"),
+  });
+}
+
+export async function uploadTinyImageTo(page: Page, selector: string) {
+  const fileInput = page.locator(selector);
   await fileInput.setInputFiles({
     name: "doc.png",
     mimeType: "image/png",

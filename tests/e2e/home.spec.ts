@@ -16,3 +16,13 @@ test("home: abrir galeria e seguir para confirmacao @id(E2E-5)", async ({ page }
 
   await expect(page.getByAltText("Captura")).toBeVisible();
 });
+
+test("home: iniciar captura pela camera @id(E2E-4)", async ({ page }) => {
+  await page.goto("/");
+
+  await page
+    .getByRole("button", { name: "Tirar foto" })
+    .or(page.getByRole("link", { name: "Tirar foto" }))
+    .click();
+  await expect(page).toHaveURL(/\/camera/);
+});

@@ -19,6 +19,7 @@ export default defineConfig({
       API_TOKEN_SECRET: "test-secret",
       APP_ORIGIN: "http://localhost:3000",
       DISABLE_CSP: "1",
+      METRICS_DASHBOARD_TOKEN: "test-token",
     },
   },
   projects: [

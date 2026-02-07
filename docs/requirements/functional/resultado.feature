@@ -11,7 +11,7 @@ Feature: Resultado da analise
     Then deve ver os cards principais do documento
     And deve ver um indicador de confianca
 
-  @e2e @id(E2E-18) @manual
+  @e2e @id(E2E-18)
   Scenario: Aviso de baixa confianca
     Given que o resultado tem baixa confianca
     When o usuario acessa a tela de resultado
@@ -33,25 +33,25 @@ Feature: Resultado da analise
     When o usuario clica em "Ouvir resumo"
     Then o resumo deve ser lido em partes
 
-  @e2e @id(E2E-21) @manual
+  @e2e @id(E2E-21)
   Scenario: Compartilhar ou copiar o resultado
     Given que o usuario esta na tela de resultado
     When ele usa a acao de compartilhar
     Then o sistema deve abrir o compartilhamento nativo ou copiar o texto
 
-  @e2e @id(E2E-22) @manual @load(LOAD-4)
+  @e2e @id(E2E-22) @load(LOAD-4)
   Scenario: Enviar feedback positivo
     Given que o usuario esta na tela de resultado
     When ele marca o resultado como util
     Then o feedback deve ser enviado
 
-  @e2e @id(E2E-23) @manual @load(LOAD-4)
+  @e2e @id(E2E-23) @load(LOAD-4)
   Scenario: Enviar feedback negativo com motivo
     Given que o usuario esta na tela de resultado
     When ele marca o resultado como nao util e escolhe um motivo
     Then o feedback deve ser enviado com o motivo
 
-  @e2e @id(E2E-24) @manual
+  @e2e @id(E2E-24)
   Scenario: Iniciar uma nova analise
     Given que o usuario esta na tela de resultado
     When ele clica em "Analisar Outro"
@@ -62,3 +62,4 @@ Feature: Resultado da analise
     Given que o usuario esta na tela de resultado
     When ele clica em "Tirar duvidas"
     Then deve navegar para a tela de perguntas
+
