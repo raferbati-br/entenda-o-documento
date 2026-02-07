@@ -8,6 +8,7 @@ const UNIT_LCOV = path.join(ROOT, "coverage", "lcov.info");
 const E2E_LCOV = path.join(ROOT, "test-results", "playwright", "coverage-report", "lcov.info");
 const OUT_DIR = path.join(ROOT, "test-results", "coverage");
 const OUT_LCOV = path.join(OUT_DIR, "lcov.info");
+const TMP_DIR = path.join(OUT_DIR, "tmp-merge");
 
 function ensureFile(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -20,6 +21,12 @@ function main() {
   ensureFile(UNIT_LCOV);
   ensureFile(E2E_LCOV);
   fs.mkdirSync(OUT_DIR, { recursive: true });
+  fs.mkdirSync(TMP_DIR, { recursive: true });
+
+  const unitTmp = path.join(TMP_DIR, "unit.lcov.info");
+  const e2eTmp = path.join(TMP_DIR, "e2e.lcov.info");
+  fs.copyFileSync(UNIT_LCOV, unitTmp);
+  fs.copyFileSync(E2E_LCOV, e2eTmp);
 
   const merger = path.join(
     ROOT,
@@ -30,7 +37,7 @@ function main() {
 
   const result = spawnSync(
     process.platform === "win32" ? `"${merger}"` : merger,
-    [UNIT_LCOV, E2E_LCOV],
+    [`${TMP_DIR}${path.sep}*.info`, OUT_LCOV],
     { encoding: "utf8", shell: true }
   );
 
@@ -40,13 +47,10 @@ function main() {
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
 
-  const merged = (result.stdout || "").trim();
-  if (!merged) {
+  if (!fs.existsSync(OUT_LCOV) || fs.statSync(OUT_LCOV).size === 0) {
     console.error("Nao foi possivel gerar o LCOV combinado.");
     process.exit(1);
   }
-
-  fs.writeFileSync(OUT_LCOV, merged + "\n");
   console.log(`LCOV combinado salvo em ${OUT_LCOV}`);
 }
 
