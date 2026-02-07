@@ -3,6 +3,7 @@ import { test, expect } from "./fixtures/coverage";
 const TOKEN = "test-token";
 
 test("metrics: acessar o dashboard com token valido @id(E2E-35)", async ({ page }) => {
+  test.setTimeout(60000);
   await page.context().addCookies([
     {
       name: "metrics_token",

@@ -89,9 +89,34 @@ describe("captureStoreServer", () => {
     await deleteCapture("mem-3");
   });
 
-  it("skips cleanup when redis is configured", () => {
+  it("skips cleanup when redis is configured", async () => {
+    const prevUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const prevToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const id = "mem-redis-skip";
+    const base = memoryStats();
+
+    await setCapture(id, {
+      imageBase64: "data:image/jpeg;base64,AA",
+      mimeType: "image/jpeg",
+      createdAt: Date.now() - 20 * 60 * 1000,
+      bytes: 10,
+    });
+
     process.env.UPSTASH_REDIS_REST_URL = "https://example";
     process.env.UPSTASH_REDIS_REST_TOKEN = "token";
     cleanupMemoryStore();
+    expect(memoryStats().count).toBe(base.count + 1);
+
+    if (prevUrl === undefined) {
+      delete process.env.UPSTASH_REDIS_REST_URL;
+    } else {
+      process.env.UPSTASH_REDIS_REST_URL = prevUrl;
+    }
+    if (prevToken === undefined) {
+      delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    } else {
+      process.env.UPSTASH_REDIS_REST_TOKEN = prevToken;
+    }
+    await deleteCapture(id);
   });
 });

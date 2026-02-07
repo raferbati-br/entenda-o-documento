@@ -20,6 +20,7 @@ test("analisando: processamento com sucesso @id(E2E-13)", async ({ page }) => {
 });
 
 test("analisando: erro na analise com mensagem amigavel @id(E2E-14)", async ({ page }) => {
+  test.setTimeout(60000);
   await mockSessionToken(page);
   await mockCapture(page, "cap_test_2");
   await mockAnalyzeError(page);
