@@ -31,15 +31,16 @@ function main() {
   const merger = path.join(
     ROOT,
     "node_modules",
-    ".bin",
-    process.platform === "win32" ? "lcov-result-merger.cmd" : "lcov-result-merger"
+    "lcov-result-merger",
+    "bin",
+    "lcov-result-merger.js"
   );
 
   const globPattern = `${TMP_DIR.split(path.sep).join("/")}` + "/*.info";
   const result = spawnSync(
-    process.platform === "win32" ? `"${merger}"` : merger,
-    [globPattern, OUT_LCOV],
-    { encoding: "utf8", shell: true }
+    process.execPath,
+    [merger, globPattern, OUT_LCOV],
+    { encoding: "utf8" }
   );
 
   if (result.error) {
