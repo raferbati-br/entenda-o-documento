@@ -49,6 +49,12 @@ Acesse http://localhost:3000
 
 ---
 
+## Testes
+
+- Testes unitarios usam Jest; testes E2E usam Playwright. Detalhes em `docs/README.md`.
+
+---
+
 ## Observabilidade, métricas e operações
 
 - Dashboard interno em `/metrics`, protegido por `METRICS_DASHBOARD_TOKEN` (veja `README.md` e `docs/README.md`).  

@@ -14,3 +14,4 @@ npm run test:unit:coverage
 
 ## Observacoes
 - Cobertura e medida sobre `src/`.
+- Framework de teste: Jest.

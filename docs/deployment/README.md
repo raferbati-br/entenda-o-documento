@@ -167,6 +167,8 @@ npm run test:e2e
 npm run test:coverage
 ```
 
+Testes unitarios usam Jest; testes E2E usam Playwright.
+
 ---
 
 ## Arquivos Importantes

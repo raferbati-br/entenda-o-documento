@@ -21,6 +21,7 @@
   - `npm run test:e2e` e `npm run test:e2e:coverage` (detalhes em `tests/e2e/README.md`).
   - `npm run test:load` e `npm run bdd:coverage:load` (detalhes em `tests/load/README.md` e `docs/requirements/README.md`).
   - `npm run test:security` (OWASP ZAP scan, veja `docs/governance/security.md`).
+ - Testes unitarios usam Jest; testes E2E usam Playwright.
 
 ## BDD e cobertura
 - Requisitos funcionais são escritos em Gherkin por módulo: `docs/requirements/functional/`.

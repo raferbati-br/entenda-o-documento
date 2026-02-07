@@ -210,6 +210,8 @@ npm run test:e2e        # Testes E2E
 npm run lint            # ESLint
 ```
 
+Testes unitarios usam Jest; testes E2E usam Playwright.
+
 ### Capacitor CLI
 
 ```bash
