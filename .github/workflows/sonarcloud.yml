@@ -28,7 +28,7 @@ jobs:
         run: npm run lint
 
       - name: Test with coverage
-        run: npm run test:coverage
+        run: npm run test:unit:coverage
 
       - name: SonarCloud scan
         uses: SonarSource/sonarcloud-github-action@v2
