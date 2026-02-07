@@ -19,7 +19,7 @@
     "test:unit": "vitest run --config vitest.config.unit.ts",
     "test:load": "node scripts/run-load-test.mjs",
     "test:security": "node scripts/run-security-scan.mjs",
-    "test:coverage": "npm run test:unit:coverage && npm run test:e2e:coverage && node scripts/report-coverage-summary.mjs",
+    "test:coverage": "jest --coverage",
     "test:e2e:coverage": "set E2E_COVERAGE=1&& set NEXT_DISABLE_TURBOPACK=1&& playwright test && node scripts/report-playwright-coverage.mjs",
     "test:unit:coverage": "node scripts/run-unit-coverage.mjs",
     "bdd:coverage": "npm run bdd:coverage:load && npm run bdd:coverage:e2e && node scripts/report-bdd-summary.mjs",
