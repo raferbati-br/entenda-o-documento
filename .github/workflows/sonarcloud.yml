@@ -24,6 +24,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-next-${{ hashFiles('package-lock.json') }}-${{ hashFiles('next.config.ts', 'src/**', 'public/**') }}
+          restore-keys: |
+            ${{ runner.os }}-next-${{ hashFiles('package-lock.json') }}-
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
@@ -34,6 +42,9 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
+
+      - name: Build
+        run: npm run build
 
       - name: Lint
         run: npm run lint

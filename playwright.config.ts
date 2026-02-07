@@ -2,8 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "tests/e2e",
-  timeout: 30_000,
-  expect: { timeout: 5_000 },
+  timeout: process.env.CI === "true" ? 60_000 : 30_000,
+  expect: { timeout: process.env.CI === "true" ? 10_000 : 5_000 },
+  workers: process.env.CI === "true" ? 1 : undefined,
   use: {
     baseURL: "http://localhost:3000",
     trace: "retain-on-failure",
@@ -11,9 +12,9 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: "npm run build && npm run start",
+    command: process.env.CI === "true" ? "npm run start" : "npm run build && npm run start",
     url: "http://localhost:3000",
-    reuseExistingServer: false,
+    reuseExistingServer: process.env.CI !== "true",
     timeout: 180_000,
     env: {
       API_TOKEN_SECRET: "test-secret",
