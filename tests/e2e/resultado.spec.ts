@@ -8,21 +8,28 @@ import {
   goToResultFromHome,
 } from "./helpers/flow";
 
+declare global {
+  interface Window {
+    __copiedText?: string;
+    __sharedText?: string;
+  }
+}
+
 async function mockClipboardAndShare(page: import("@playwright/test").Page) {
   await page.addInitScript(() => {
-    (window as any).__copiedText = "";
-    (window as any).__sharedText = "";
+    window.__copiedText = "";
+    window.__sharedText = "";
     Object.defineProperty(navigator, "clipboard", {
       value: {
         writeText: async (text: string) => {
-          (window as any).__copiedText = text;
+          window.__copiedText = text;
         },
       },
       configurable: true,
     });
     Object.defineProperty(navigator, "share", {
       value: async (data: { text?: string }) => {
-        (window as any).__sharedText = data?.text || "";
+        window.__sharedText = data?.text || "";
       },
       configurable: true,
     });
@@ -74,10 +81,10 @@ test("resultado: compartilhar ou copiar resultado @id(E2E-21)", async ({ page })
   await goToResultFromHome(page);
 
   await page.getByRole("button", { name: /compartilhar/i }).click();
-  await page.waitForFunction(() => (window as any).__sharedText?.length > 0);
+  await page.waitForFunction(() => window.__sharedText?.length > 0);
 
   await page.getByRole("button", { name: /copiar resposta/i }).click();
-  await page.waitForFunction(() => (window as any).__copiedText?.length > 0);
+  await page.waitForFunction(() => window.__copiedText?.length > 0);
 });
 
 test("resultado: enviar feedback positivo @id(E2E-22)", async ({ page }) => {

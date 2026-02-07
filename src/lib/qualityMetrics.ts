@@ -190,10 +190,17 @@ export async function getQualityMetrics(days = 7) {
       continue;
     }
 
-    const counts = await loadRedisCounts(redis, day);
-    const latency = await loadRedisLatency(redis, day);
+    try {
+      const counts = await loadRedisCounts(redis, day);
+      const latency = await loadRedisLatency(redis, day);
 
-    result.push({ day, counts, latency });
+      result.push({ day, counts, latency });
+    } catch (err) {
+      console.error("[quality-metrics] Redis unavailable, using in-memory metrics.", err);
+      const counts = loadMemoryCounts(day);
+      const latency = loadMemoryLatency(day);
+      result.push({ day, counts, latency });
+    }
   }
 
   return result;

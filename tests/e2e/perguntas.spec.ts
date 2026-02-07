@@ -9,21 +9,28 @@ import {
   goToResultFromHome,
 } from "./helpers/flow";
 
+declare global {
+  interface Window {
+    __copiedText?: string;
+    __sharedText?: string;
+  }
+}
+
 async function mockClipboardAndShare(page: import("@playwright/test").Page) {
   await page.addInitScript(() => {
-    (window as any).__copiedText = "";
-    (window as any).__sharedText = "";
+    window.__copiedText = "";
+    window.__sharedText = "";
     Object.defineProperty(navigator, "clipboard", {
       value: {
         writeText: async (text: string) => {
-          (window as any).__copiedText = text;
+          window.__copiedText = text;
         },
       },
       configurable: true,
     });
     Object.defineProperty(navigator, "share", {
       value: async (data: { text?: string }) => {
-        (window as any).__sharedText = data?.text || "";
+        window.__sharedText = data?.text || "";
       },
       configurable: true,
     });
@@ -45,7 +52,7 @@ async function goToPerguntas(page: import("@playwright/test").Page) {
 test("perguntas: acessar a tela @id(E2E-26)", async ({ page }) => {
   test.setTimeout(60000);
   await goToPerguntas(page);
-  await expect(page.getByText(/tire suas duvidas/i)).toBeVisible();
+  await expect(page.getByText(/tire suas d[uú]vidas/i)).toBeVisible();
 });
 
 test("perguntas: perguntas rapidas @id(E2E-27)", async ({ page }) => {
@@ -84,7 +91,7 @@ test("perguntas: feedback em uma resposta @id(E2E-30)", async ({ page }) => {
 
   await page.getByLabel("Sua pergunta").fill("Qual e o prazo?");
   await page.getByRole("button", { name: /enviar pergunta/i }).click();
-  await expect(page.getByText(/Resposta para feedback/i)).toBeVisible();
+  await expect(page.getByText(/Resposta para feedback/i).first()).toBeVisible();
 
   await page.getByRole("button", { name: /marcar como positivo/i }).first().click();
   await expect(page.getByText(/obrigado pelo feedback/i)).toBeVisible();
@@ -108,10 +115,10 @@ test("perguntas: copiar ou compartilhar uma resposta @id(E2E-31)", async ({ page
   await expect(page.getByText(/Resposta para copiar/i)).toBeVisible();
 
   await page.getByRole("button", { name: /copiar resposta/i }).click();
-  await page.waitForFunction(() => (window as any).__copiedText?.length > 0);
+  await page.waitForFunction(() => window.__copiedText?.length > 0);
 
   await page.getByRole("button", { name: /compartilhar/i }).click();
-  await page.waitForFunction(() => (window as any).__sharedText?.length > 0);
+  await page.waitForFunction(() => window.__sharedText?.length > 0);
 });
 
 test("perguntas: ver documento durante o Q&A @id(E2E-33)", async ({ page }) => {

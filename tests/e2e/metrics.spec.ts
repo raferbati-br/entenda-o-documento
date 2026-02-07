@@ -3,6 +3,13 @@ import { test, expect } from "./fixtures/coverage";
 const TOKEN = "test-token";
 
 test("metrics: acessar o dashboard com token valido @id(E2E-35)", async ({ page }) => {
+  await page.context().addCookies([
+    {
+      name: "metrics_token",
+      value: TOKEN,
+      url: "http://localhost:3000",
+    },
+  ]);
   await page.goto(`/metrics?token=${TOKEN}`);
 
   await expect(page.getByRole("heading", { name: /quality metrics/i })).toBeVisible();

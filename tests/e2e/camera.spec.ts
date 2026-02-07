@@ -7,7 +7,7 @@ test("camera: ver dicas de captura @id(E2E-6)", async ({ page }) => {
   await expect(page.getByText(/letras/i)).toBeVisible();
   await expect(page.getByText(/boa/i)).toBeVisible();
   await expect(page.getByText(/enquadramento/i)).toBeVisible();
-  await expect(page.getByText(/dica/i)).toBeVisible();
+  await expect(page.getByText(/dica:/i)).toBeVisible();
 });
 
 test("camera: tirar foto pela camera @id(E2E-7)", async ({ page }) => {

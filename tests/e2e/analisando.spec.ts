@@ -26,8 +26,8 @@ test("analisando: erro na analise com mensagem amigavel @id(E2E-14)", async ({ p
 
   await goToAnalyzingFromHome(page);
 
-  await expect(page.getByRole("heading", { name: /nao entendi a foto/i })).toBeVisible();
-  await expect(page.getByText(/modelo nao retornou json valido/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /n[aã]o entendi a foto/i })).toBeVisible();
+  await expect(page.getByText(/modelo n[aã]o retornou json v[aá]lido/i)).toBeVisible();
   await expect(page.getByRole("button", { name: /tentar outra foto/i })).toBeVisible();
 });
 
