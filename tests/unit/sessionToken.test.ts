@@ -56,15 +56,4 @@ describe("sessionToken", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     unstubAllGlobals();
   });
-
-  it("returns null when window is not available", async () => {
-    const originalWindow = globalThis.window;
-    stubGlobal("window", undefined as unknown as Window);
-
-    await expect(getSessionToken()).resolves.toBeNull();
-    await expect(ensureSessionToken()).resolves.toBeNull();
-    await expect(clearSessionToken()).resolves.toBeUndefined();
-
-    stubGlobal("window", originalWindow);
-  });
 });

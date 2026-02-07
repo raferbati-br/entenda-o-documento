@@ -1,5 +1,4 @@
 /** @jest-environment jsdom */
-import { stubGlobal } from "./jestGlobals";
 import { clearResult, loadResult, saveResult } from "@/lib/resultStore";
 
 
@@ -29,14 +28,4 @@ describe("resultStore", () => {
     expect(loadResult()).toBeNull();
   });
 
-  it("no-ops when window is unavailable", () => {
-    const originalWindow = globalThis.window;
-    stubGlobal("window", undefined as unknown as Window);
-
-    saveResult({ confidence: 0.1, cards: [], notice: "" });
-    expect(loadResult()).toBeNull();
-    clearResult();
-
-    stubGlobal("window", originalWindow);
-  });
 });

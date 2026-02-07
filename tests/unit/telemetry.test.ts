@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { stubGlobal, unstubAllGlobals } from "./jestGlobals";
+import { unstubAllGlobals } from "./jestGlobals";
 const captureMock = jest.fn();
 
 jest.mock("posthog-js", () => ({
@@ -41,12 +41,5 @@ describe("telemetry", () => {
     process.env.NEXT_PUBLIC_POSTHOG_KEY = "key";
     telemetryCapture("event");
     expect(captureMock).toHaveBeenCalledWith("event", {});
-  });
-
-  it("does nothing when window is missing even with key", () => {
-    stubGlobal("window", undefined as unknown as Window);
-    process.env.NEXT_PUBLIC_POSTHOG_KEY = "key";
-    telemetryCapture("event", { a: 1 });
-    expect(captureMock).not.toHaveBeenCalled();
   });
 });

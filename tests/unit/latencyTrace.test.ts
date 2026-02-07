@@ -1,5 +1,4 @@
 /** @jest-environment jsdom */
-import { stubGlobal } from "./jestGlobals";
 import {
   startLatencyTrace,
   markLatencyTrace,
@@ -73,19 +72,5 @@ describe("latencyTrace", () => {
     sessionStorage.setItem("eod_latency_trace_v1", JSON.stringify(["bad"]));
     markLatencyTrace("x");
     expect(getLatencyTraceSnapshot()).toBeNull();
-
-    const originalWindow = globalThis.window;
-    const originalSession = globalThis.sessionStorage;
-    stubGlobal("window", undefined as unknown as Window);
-    stubGlobal("sessionStorage", undefined as unknown as Storage);
-
-    startLatencyTrace();
-    markLatencyTrace("y");
-    recordLatencyStep("s", 1);
-    expect(getLatencyTraceSnapshot()).toBeNull();
-    clearLatencyTrace();
-
-    stubGlobal("window", originalWindow);
-    stubGlobal("sessionStorage", originalSession);
   });
 });

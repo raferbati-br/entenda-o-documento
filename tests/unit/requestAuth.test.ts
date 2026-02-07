@@ -16,7 +16,7 @@ describe("requestAuth", () => {
 
   it("throws when API_TOKEN_SECRET is missing", () => {
     delete process.env.API_TOKEN_SECRET;
-    expect(() => createSessionToken()).toThrowError("API_TOKEN_SECRET_NOT_SET");
+    expect(() => createSessionToken()).toThrow("API_TOKEN_SECRET_NOT_SET");
   });
 
   it("creates and verifies session token", () => {
