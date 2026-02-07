@@ -57,6 +57,7 @@ next-env.d.ts
 !run-sonar-local.ps1
 !export_sonar_issues.ps1
 !.env.sonar.local.example
+!sonarcloud.yml
 
 # Capacitor / Mobile
 android/
