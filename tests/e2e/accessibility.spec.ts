@@ -8,7 +8,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 test.describe("Accessibility Tests", () => {
   test.beforeEach(async ({ page }) => {
-    await page.emulateMedia({ colorScheme: "light" });
+    await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
   });
 
   test("Home page should not have accessibility violations", async ({ page }) => {
@@ -85,6 +85,10 @@ test.describe("Accessibility Tests", () => {
 
   test("Metrics page should not have accessibility violations", async ({ page }) => {
     await page.goto("/metrics");
+    await page.waitForFunction(() => {
+      const wrapper = document.querySelector('[data-page-transition="true"]');
+      return wrapper ? getComputedStyle(wrapper).opacity === "1" : true;
+    });
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

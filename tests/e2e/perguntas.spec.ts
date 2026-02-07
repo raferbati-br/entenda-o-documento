@@ -52,7 +52,7 @@ async function goToPerguntas(page: import("@playwright/test").Page) {
 test("perguntas: acessar a tela @id(E2E-26)", async ({ page }) => {
   test.setTimeout(60000);
   await goToPerguntas(page);
-  await expect(page.getByText(/tire suas d[uú]vidas/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /tire suas d[uú]vidas/i, level: 4 })).toBeVisible();
 });
 
 test("perguntas: perguntas rapidas @id(E2E-27)", async ({ page }) => {
@@ -98,11 +98,11 @@ test("perguntas: feedback em uma resposta @id(E2E-30)", async ({ page }) => {
 
   await page.getByLabel("Sua pergunta").fill("Qual e o valor?");
   await page.getByRole("button", { name: /enviar pergunta/i }).click();
-  await expect(page.getByText(/Resposta para feedback/i)).toBeVisible();
+  await expect(page.getByText(/Resposta para feedback/i).last()).toBeVisible();
 
-  await page.getByRole("button", { name: /marcar como negativo/i }).last().click();
+  await page.getByRole("button", { name: /marcar como negativo/i }).last().press("Enter");
   await page.getByRole("button", { name: "Incompleta" }).click();
-  await expect(page.getByText(/obrigado pelo feedback/i)).toBeVisible();
+  await expect(page.getByText(/obrigado pelo feedback/i).last()).toBeVisible();
 });
 
 test("perguntas: copiar ou compartilhar uma resposta @id(E2E-31)", async ({ page }) => {

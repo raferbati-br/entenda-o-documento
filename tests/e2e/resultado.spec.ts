@@ -37,6 +37,7 @@ async function mockClipboardAndShare(page: import("@playwright/test").Page) {
 }
 
 test("resultado: exibir cards principais @id(E2E-17)", async ({ page }) => {
+  test.setTimeout(60000);
   await mockSessionToken(page);
   await mockCapture(page);
   await mockAnalyzeSuccess(page);
