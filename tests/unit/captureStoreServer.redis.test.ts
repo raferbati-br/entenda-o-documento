@@ -1,5 +1,3 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-
 type RedisSetCall = { key: string; value: unknown; opts?: { ex: number } };
 
 const redisSetCalls: RedisSetCall[] = [];
@@ -9,7 +7,7 @@ let redisSetError: Error | null = null;
 let redisGetError: Error | null = null;
 let redisDelError: Error | null = null;
 
-vi.mock("@upstash/redis", () => {
+jest.mock("@upstash/redis", () => {
   class Redis {
     async set(key: string, value: unknown, opts?: { ex: number }) {
       if (redisSetError) throw redisSetError;
@@ -39,7 +37,7 @@ describe("captureStoreServer (redis)", () => {
     redisDelError = null;
     process.env.UPSTASH_REDIS_REST_URL = "https://example";
     process.env.UPSTASH_REDIS_REST_TOKEN = "token";
-    vi.resetModules();
+    jest.resetModules();
   });
 
   afterEach(() => {

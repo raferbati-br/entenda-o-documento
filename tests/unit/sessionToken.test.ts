@@ -1,9 +1,9 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach } from "vitest";
+/** @jest-environment jsdom */
+import { stubGlobal, unstubAllGlobals } from "./jestGlobals";
 import { clearSessionToken, ensureSessionToken, getSessionToken } from "@/lib/sessionToken";
 
 function mockFetch(status: number, data: unknown) {
-  vi.stubGlobal("fetch", vi.fn(async () => ({
+  stubGlobal("fetch", jest.fn(async () => ({
     ok: status >= 200 && status < 300,
     status,
     json: async () => data,
@@ -36,7 +36,7 @@ describe("sessionToken", () => {
   });
 
   it("returns null when response json throws", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => ({
+    stubGlobal("fetch", jest.fn(async () => ({
       ok: true,
       status: 200,
       json: async () => {
@@ -49,22 +49,22 @@ describe("sessionToken", () => {
 
   it("returns cached token without calling api", async () => {
     sessionStorage.setItem("eod_session_token_v1", "cached");
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
+    const fetchSpy = jest.fn();
+    stubGlobal("fetch", fetchSpy);
     const token = await ensureSessionToken();
     expect(token).toBe("cached");
     expect(fetchSpy).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
+    unstubAllGlobals();
   });
 
   it("returns null when window is not available", async () => {
     const originalWindow = globalThis.window;
-    vi.stubGlobal("window", undefined as unknown as Window);
+    stubGlobal("window", undefined as unknown as Window);
 
     await expect(getSessionToken()).resolves.toBeNull();
     await expect(ensureSessionToken()).resolves.toBeNull();
     await expect(clearSessionToken()).resolves.toBeUndefined();
 
-    vi.stubGlobal("window", originalWindow);
+    stubGlobal("window", originalWindow);
   });
 });

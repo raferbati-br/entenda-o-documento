@@ -1,13 +1,12 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach, afterAll } from "vitest";
+/** @jest-environment jsdom */
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 
 import { useCaptureObjectUrl } from "@/lib/hooks/useCaptureObjectUrl";
 
-const mockLoadCapture = vi.fn();
-vi.mock("@/lib/captureStore", () => ({
+const mockLoadCapture = jest.fn();
+jest.mock("@/lib/captureStore", () => ({
   loadCapture: (...args: unknown[]) => mockLoadCapture(...args),
 }));
 
@@ -19,13 +18,13 @@ describe("useCaptureObjectUrl", () => {
 
   beforeEach(() => {
     mockLoadCapture.mockReset();
-    URL.createObjectURL = vi.fn(() => "blob:mock-url");
-    URL.revokeObjectURL = vi.fn();
+    URL.createObjectURL = jest.fn(() => "blob:mock-url");
+    URL.revokeObjectURL = jest.fn();
   });
 
   it("sets error and calls onMissing when capture is missing", async () => {
     mockLoadCapture.mockResolvedValue(null);
-    const onMissing = vi.fn();
+    const onMissing = jest.fn();
     let snapshot: { url: string | null; error: string | null } = { url: null, error: null };
 
     function Harness() {
@@ -57,7 +56,7 @@ describe("useCaptureObjectUrl", () => {
 
   it("calls onMissing without setting error when message is empty", async () => {
     mockLoadCapture.mockResolvedValue(null);
-    const onMissing = vi.fn();
+    const onMissing = jest.fn();
     let snapshot: { url: string | null; error: string | null } = { url: null, error: null };
 
     function Harness() {

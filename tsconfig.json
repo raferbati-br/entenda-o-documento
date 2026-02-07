@@ -34,7 +34,6 @@
     "node_modules",
     "tests",
     "test-results",
-    "vitest.config.unit.ts",
     "playwright.config.ts"
   ]
 }

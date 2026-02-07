@@ -1,28 +1,26 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+const mockAnswerQuestionStream = jest.fn();
+const mockRecordQualityCount = jest.fn((name: string) => Promise.resolve(name));
+const mockRecordQualityLatency = jest.fn((name: string, ms: number) => Promise.resolve([name, ms]));
+const mockSerializeQaStreamEvent = jest.fn((event: unknown) => JSON.stringify(event) + "\n");
+const mockBadRequest = jest.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
+const mockCreateRouteContext = jest.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 11 }));
+const mockHandleApiKeyError = jest.fn();
+const mockHandleModelTextError = jest.fn();
+const mockReadJsonRecord = jest.fn();
+const mockRunCommonGuards = jest.fn();
+const mockSafeRecordMetrics = jest.fn();
 
-const mockAnswerQuestionStream = vi.fn();
-const mockRecordQualityCount = vi.fn((name: string) => Promise.resolve(name));
-const mockRecordQualityLatency = vi.fn((name: string, ms: number) => Promise.resolve([name, ms]));
-const mockSerializeQaStreamEvent = vi.fn((event: unknown) => JSON.stringify(event) + "\n");
-const mockBadRequest = vi.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
-const mockCreateRouteContext = vi.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 11 }));
-const mockHandleApiKeyError = vi.fn();
-const mockHandleModelTextError = vi.fn();
-const mockReadJsonRecord = vi.fn();
-const mockRunCommonGuards = vi.fn();
-const mockSafeRecordMetrics = vi.fn();
-
-vi.mock("@/ai/answerQuestion", () => ({
+jest.mock("@/ai/answerQuestion", () => ({
   answerQuestionStream: (...args: unknown[]) => mockAnswerQuestionStream(...args),
 }));
-vi.mock("@/lib/qualityMetrics", () => ({
+jest.mock("@/lib/qualityMetrics", () => ({
   recordQualityCount: (...args: unknown[]) => mockRecordQualityCount(...args),
   recordQualityLatency: (...args: unknown[]) => mockRecordQualityLatency(...args),
 }));
-vi.mock("@/lib/qaStream", () => ({
+jest.mock("@/lib/qaStream", () => ({
   serializeQaStreamEvent: (...args: unknown[]) => mockSerializeQaStreamEvent(...args),
 }));
-vi.mock("@/lib/apiRouteUtils", () => ({
+jest.mock("@/lib/apiRouteUtils", () => ({
   badRequest: (...args: unknown[]) => mockBadRequest(...args),
   createRouteContext: (...args: unknown[]) => mockCreateRouteContext(...args),
   handleApiKeyError: (...args: unknown[]) => mockHandleApiKeyError(...args),
@@ -33,7 +31,7 @@ vi.mock("@/lib/apiRouteUtils", () => ({
   shouldLogApi: () => false,
 }));
 
-vi.mock("next/server", () => {
+jest.mock("next/server", () => {
   class FakeNextResponse {
     body: ReadableStream;
     status: number;
@@ -71,13 +69,13 @@ async function* streamSingleChunk(value: string) {
 describe("api/qa", () => {
   beforeEach(() => {
     mockAnswerQuestionStream.mockReset();
-    mockBadRequest.mockReset();
+    mockBadRequest.mockClear();
     mockHandleApiKeyError.mockReset();
     mockHandleModelTextError.mockReset();
     mockReadJsonRecord.mockReset();
     mockRunCommonGuards.mockReset();
     mockSafeRecordMetrics.mockReset();
-    mockSerializeQaStreamEvent.mockReset();
+    mockSerializeQaStreamEvent.mockClear();
   });
 
   it("validates input", async () => {

@@ -1,16 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
 import { resetAnalysisSession } from "@/lib/analysisSession";
 
-vi.mock("@/lib/resultStore", () => ({
-  clearResult: vi.fn(),
+jest.mock("@/lib/resultStore", () => ({
+  clearResult: jest.fn(),
 }));
 
-vi.mock("@/lib/qaContextStore", () => ({
-  clearQaContext: vi.fn(),
+jest.mock("@/lib/qaContextStore", () => ({
+  clearQaContext: jest.fn(),
 }));
 
-vi.mock("@/lib/captureIdStore", () => ({
-  clearCaptureId: vi.fn(),
+jest.mock("@/lib/captureIdStore", () => ({
+  clearCaptureId: jest.fn(),
 }));
 
 describe("analysisSession", () => {

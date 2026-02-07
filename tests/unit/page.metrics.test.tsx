@@ -1,9 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-vi.mock("@/lib/qualityMetrics", () => ({
-  getQualityMetrics: vi.fn(async () => [
+jest.mock("@/lib/qualityMetrics", () => ({
+  getQualityMetrics: jest.fn(async () => [
     {
       day: "2026-01-01",
       counts: { analyze_total: 1 },

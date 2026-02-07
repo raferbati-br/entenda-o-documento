@@ -1,4 +1,3 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import { deleteCapture, memoryStats, setCapture, getCapture, cleanupMemoryStore } from "@/lib/captureStoreServer";
 
 describe("captureStoreServer", () => {
@@ -44,7 +43,7 @@ describe("captureStoreServer", () => {
   });
 
   it("loads and cleans expired entries in memory store", async () => {
-    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
+    const nowSpy = jest.spyOn(Date, "now").mockReturnValue(1_000_000);
     await setCapture("mem-1", {
       imageBase64: "data:image/jpeg;base64,AA",
       mimeType: "image/jpeg",
@@ -59,7 +58,7 @@ describe("captureStoreServer", () => {
   });
 
   it("keeps non-expired entries during cleanup", async () => {
-    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
+    const nowSpy = jest.spyOn(Date, "now").mockReturnValue(1_000_000);
     await setCapture("mem-2", {
       imageBase64: "data:image/jpeg;base64,AA",
       mimeType: "image/jpeg",

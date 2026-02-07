@@ -1,5 +1,5 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, beforeEach, vi } from "vitest";
+/** @jest-environment jsdom */
+import { stubGlobal } from "./jestGlobals";
 import {
   startLatencyTrace,
   markLatencyTrace,
@@ -25,8 +25,8 @@ describe("latencyTrace", () => {
     const snap = getLatencyTraceSnapshot(Date.now() + 5);
     expect(snap).not.toBeNull();
     expect(snap?.steps.step1).toBe(13);
-    expect(snap?.marks.a).toBeTypeOf("number");
-    expect(readRaw()).toBeTypeOf("string");
+    expect(typeof snap?.marks.a).toBe("number");
+    expect(typeof readRaw()).toBe("string");
   });
 
   it("ignores invalid inputs", () => {
@@ -76,8 +76,8 @@ describe("latencyTrace", () => {
 
     const originalWindow = globalThis.window;
     const originalSession = globalThis.sessionStorage;
-    vi.stubGlobal("window", undefined as unknown as Window);
-    vi.stubGlobal("sessionStorage", undefined as unknown as Storage);
+    stubGlobal("window", undefined as unknown as Window);
+    stubGlobal("sessionStorage", undefined as unknown as Storage);
 
     startLatencyTrace();
     markLatencyTrace("y");
@@ -85,7 +85,7 @@ describe("latencyTrace", () => {
     expect(getLatencyTraceSnapshot()).toBeNull();
     clearLatencyTrace();
 
-    vi.stubGlobal("window", originalWindow);
-    vi.stubGlobal("sessionStorage", originalSession);
+    stubGlobal("window", originalWindow);
+    stubGlobal("sessionStorage", originalSession);
   });
 });

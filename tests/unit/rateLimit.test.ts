@@ -1,9 +1,7 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+const redisIncrMock = jest.fn();
+const redisExpireMock = jest.fn();
 
-const redisIncrMock = vi.fn();
-const redisExpireMock = vi.fn();
-
-vi.mock("@upstash/redis", () => {
+jest.mock("@upstash/redis", () => {
   class Redis {
     async incr(key: string) {
       return redisIncrMock(key);
@@ -32,13 +30,13 @@ describe("rateLimit", () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
     g.__RATE_LIMIT__?.clear();
-    vi.spyOn(Date, "now").mockReturnValue(120_000);
+    jest.spyOn(Date, "now").mockReturnValue(120_000);
     redisIncrMock.mockReset();
     redisExpireMock.mockReset();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     process.env = { ...realEnv };
   });
 

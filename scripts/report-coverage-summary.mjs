@@ -4,9 +4,8 @@ import path from "node:path";
 import coverageLib from "istanbul-lib-coverage";
 
 const ROOT = process.cwd();
-const UNIT_SUMMARY = path.join(ROOT, "coverage", "unit", "coverage-summary.json");
-const UNIT_SUMMARY_FALLBACK = path.join(ROOT, "test-results", "vitest", "coverage-summary.json");
-const UNIT_COVERAGE_JSON = path.join(ROOT, "test-results", "vitest", "coverage-all", "coverage-final.json");
+const UNIT_SUMMARY = path.join(ROOT, "coverage", "coverage-summary.json");
+const UNIT_COVERAGE_JSON = path.join(ROOT, "coverage", "coverage-final.json");
 const E2E_SUMMARY = path.join(ROOT, "test-results", "playwright", "coverage-report", "coverage-summary.json");
 
 function readJson(filePath) {
@@ -25,7 +24,7 @@ function formatPercentNumber(value) {
 }
 
 function readUnitCoverageValue() {
-  const summary = readJson(UNIT_SUMMARY) || readJson(UNIT_SUMMARY_FALLBACK);
+  const summary = readJson(UNIT_SUMMARY);
   if (summary?.total?.lines?.pct !== undefined) {
     return summary.total.lines.pct;
   }

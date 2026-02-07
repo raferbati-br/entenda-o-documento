@@ -1,42 +1,40 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+const mockCleanupMemoryStore = jest.fn();
+const mockIsRedisConfigured = jest.fn();
+const mockIsRedisRequiredAndMissing = jest.fn();
+const mockMemoryStats = jest.fn();
+const mockSetCapture = jest.fn();
+const mockBadRequest = jest.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
+const mockCreateRouteContext = jest.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 7 }));
+const mockReadJsonRecord = jest.fn();
+const mockRunCommonGuards = jest.fn();
 
-const mockCleanupMemoryStore = vi.fn();
-const mockIsRedisConfigured = vi.fn();
-const mockIsRedisRequiredAndMissing = vi.fn();
-const mockMemoryStats = vi.fn();
-const mockSetCapture = vi.fn();
-const mockBadRequest = vi.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
-const mockCreateRouteContext = vi.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 7 }));
-const mockReadJsonRecord = vi.fn();
-const mockRunCommonGuards = vi.fn();
-
-vi.mock("crypto", () => ({
+jest.mock("crypto", () => ({
   default: { randomBytes: () => Buffer.from("abcd", "utf-8") },
   randomBytes: () => Buffer.from("abcd", "utf-8"),
 }));
 
-vi.mock("@/lib/captureStoreServer", () => ({
+jest.mock("@/lib/captureStoreServer", () => ({
   cleanupMemoryStore: () => mockCleanupMemoryStore(),
   isRedisConfigured: () => mockIsRedisConfigured(),
   isRedisRequiredAndMissing: () => mockIsRedisRequiredAndMissing(),
   memoryStats: () => mockMemoryStats(),
   setCapture: (...args: unknown[]) => mockSetCapture(...args),
 }));
-vi.mock("@/lib/apiRouteUtils", () => ({
+jest.mock("@/lib/apiRouteUtils", () => ({
   badRequest: (...args: unknown[]) => mockBadRequest(...args),
   createRouteContext: (...args: unknown[]) => mockCreateRouteContext(...args),
   readJsonRecord: (...args: unknown[]) => mockReadJsonRecord(...args),
   runCommonGuards: (...args: unknown[]) => mockRunCommonGuards(...args),
   shouldLogApi: () => false,
 }));
-vi.mock("@/lib/dataUrl", () => ({
+jest.mock("@/lib/dataUrl", () => ({
   parseDataUrl: (value: string) => {
     const match = /^data:([^;]+);base64,(.+)$/.exec(value);
     if (!match) return null;
     return { mimeType: match[1], base64: match[2] };
   },
 }));
-vi.mock("next/server", () => ({
+jest.mock("next/server", () => ({
   NextResponse: {
     json: (body: unknown, init?: { status?: number }) => ({ body, status: init?.status ?? 200 }),
   },
@@ -51,7 +49,7 @@ describe("api/capture", () => {
     mockIsRedisRequiredAndMissing.mockReset();
     mockMemoryStats.mockReset();
     mockSetCapture.mockReset();
-    mockBadRequest.mockReset();
+    mockBadRequest.mockClear();
     mockReadJsonRecord.mockReset();
     mockRunCommonGuards.mockReset();
   });

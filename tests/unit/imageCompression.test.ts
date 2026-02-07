@@ -1,5 +1,4 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+/** @jest-environment jsdom */
 import { compressBlobToDataUrl } from "@/lib/imageCompression";
 
 
@@ -9,7 +8,7 @@ describe("imageCompression", () => {
   const realWindowCreateImageBitmap = globalThis.window?.createImageBitmap;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   afterEach(() => {
@@ -21,8 +20,8 @@ describe("imageCompression", () => {
   });
 
   it("compresses using createImageBitmap and scales", async () => {
-    const closeMock = vi.fn();
-    globalThis.createImageBitmap = vi.fn().mockResolvedValue({
+    const closeMock = jest.fn();
+    globalThis.createImageBitmap = jest.fn().mockResolvedValue({
       width: 2000,
       height: 1000,
       close: closeMock,
@@ -33,17 +32,17 @@ describe("imageCompression", () => {
 
     const ctx = {
       fillStyle: "",
-      fillRect: vi.fn(),
-      drawImage: vi.fn(),
+      fillRect: jest.fn(),
+      drawImage: jest.fn(),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: "low",
     } as unknown as CanvasRenderingContext2D;
 
-    document.createElement = vi.fn().mockReturnValue({
+    document.createElement = jest.fn().mockReturnValue({
       width: 0,
       height: 0,
-      getContext: vi.fn().mockReturnValue(ctx),
-      toDataURL: vi.fn().mockReturnValue("data:image/jpeg;base64,AAAA"),
+      getContext: jest.fn().mockReturnValue(ctx),
+      toDataURL: jest.fn().mockReturnValue("data:image/jpeg;base64,AAAA"),
     });
 
     const blob = new Blob(["x"], { type: "image/jpeg" });
@@ -57,16 +56,16 @@ describe("imageCompression", () => {
   });
 
   it("throws when canvas context is missing", async () => {
-    globalThis.createImageBitmap = vi.fn().mockResolvedValue({
+    globalThis.createImageBitmap = jest.fn().mockResolvedValue({
       width: 100,
       height: 100,
     } as ImageBitmap);
 
-    document.createElement = vi.fn().mockReturnValue({
+    document.createElement = jest.fn().mockReturnValue({
       width: 0,
       height: 0,
-      getContext: vi.fn().mockReturnValue(null),
-      toDataURL: vi.fn(),
+      getContext: jest.fn().mockReturnValue(null),
+      toDataURL: jest.fn(),
     });
 
     const blob = new Blob(["x"], { type: "image/jpeg" });
@@ -74,12 +73,12 @@ describe("imageCompression", () => {
   });
 
   it("falls back to Image when createImageBitmap fails", async () => {
-    const createObjectUrlSpy = vi.fn(() => "blob:mock");
-    const revokeObjectUrlSpy = vi.fn();
+    const createObjectUrlSpy = jest.fn(() => "blob:mock");
+    const revokeObjectUrlSpy = jest.fn();
     URL.createObjectURL = createObjectUrlSpy;
     URL.revokeObjectURL = revokeObjectUrlSpy;
 
-    globalThis.createImageBitmap = vi.fn().mockRejectedValue(new Error("nope"));
+    globalThis.createImageBitmap = jest.fn().mockRejectedValue(new Error("nope"));
     if (globalThis.window) {
       globalThis.window.createImageBitmap = globalThis.createImageBitmap as typeof globalThis.window.createImageBitmap;
     }
@@ -98,17 +97,17 @@ describe("imageCompression", () => {
 
     const ctx = {
       fillStyle: "",
-      fillRect: vi.fn(),
-      drawImage: vi.fn(),
+      fillRect: jest.fn(),
+      drawImage: jest.fn(),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: "low",
     } as unknown as CanvasRenderingContext2D;
 
-    document.createElement = vi.fn().mockReturnValue({
+    document.createElement = jest.fn().mockReturnValue({
       width: 0,
       height: 0,
-      getContext: vi.fn().mockReturnValue(ctx),
-      toDataURL: vi.fn().mockReturnValue("data:image/jpeg;base64,AA=="),
+      getContext: jest.fn().mockReturnValue(ctx),
+      toDataURL: jest.fn().mockReturnValue("data:image/jpeg;base64,AA=="),
     });
 
     const blob = new Blob(["x"], { type: "image/jpeg" });
@@ -119,7 +118,7 @@ describe("imageCompression", () => {
   });
 
   it("calculates base64 padding bytes", async () => {
-    globalThis.createImageBitmap = vi.fn().mockResolvedValue({
+    globalThis.createImageBitmap = jest.fn().mockResolvedValue({
       width: 10,
       height: 10,
     } as ImageBitmap);
@@ -129,20 +128,20 @@ describe("imageCompression", () => {
 
     const ctx = {
       fillStyle: "",
-      fillRect: vi.fn(),
-      drawImage: vi.fn(),
+      fillRect: jest.fn(),
+      drawImage: jest.fn(),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: "low",
     } as unknown as CanvasRenderingContext2D;
 
-    const toDataURL = vi.fn()
+    const toDataURL = jest.fn()
       .mockReturnValueOnce("data:image/jpeg;base64,AA==")
       .mockReturnValueOnce("data:image/jpeg;base64,AAA=");
 
-    document.createElement = vi.fn().mockReturnValue({
+    document.createElement = jest.fn().mockReturnValue({
       width: 0,
       height: 0,
-      getContext: vi.fn().mockReturnValue(ctx),
+      getContext: jest.fn().mockReturnValue(ctx),
       toDataURL,
     });
 
@@ -155,7 +154,7 @@ describe("imageCompression", () => {
   });
 
   it("keeps dimensions when image is already within max size", async () => {
-    globalThis.createImageBitmap = vi.fn().mockResolvedValue({
+    globalThis.createImageBitmap = jest.fn().mockResolvedValue({
       width: 800,
       height: 600,
     } as ImageBitmap);
@@ -165,17 +164,17 @@ describe("imageCompression", () => {
 
     const ctx = {
       fillStyle: "",
-      fillRect: vi.fn(),
-      drawImage: vi.fn(),
+      fillRect: jest.fn(),
+      drawImage: jest.fn(),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: "low",
     } as unknown as CanvasRenderingContext2D;
 
-    document.createElement = vi.fn().mockReturnValue({
+    document.createElement = jest.fn().mockReturnValue({
       width: 0,
       height: 0,
-      getContext: vi.fn().mockReturnValue(ctx),
-      toDataURL: vi.fn().mockReturnValue("data:image/jpeg;base64,AAAA"),
+      getContext: jest.fn().mockReturnValue(ctx),
+      toDataURL: jest.fn().mockReturnValue("data:image/jpeg;base64,AAAA"),
     });
 
     const blob = new Blob(["x"], { type: "image/jpeg" });
@@ -189,8 +188,8 @@ describe("imageCompression", () => {
     const originalWindow = globalThis.window;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (globalThis as any).window = undefined;
-    URL.createObjectURL = vi.fn(() => "blob:mock");
-    URL.revokeObjectURL = vi.fn();
+    URL.createObjectURL = jest.fn(() => "blob:mock");
+    URL.revokeObjectURL = jest.fn();
 
     class MockImage {
       width = 100;
@@ -206,17 +205,17 @@ describe("imageCompression", () => {
 
     const ctx = {
       fillStyle: "",
-      fillRect: vi.fn(),
-      drawImage: vi.fn(),
+      fillRect: jest.fn(),
+      drawImage: jest.fn(),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: "low",
     } as unknown as CanvasRenderingContext2D;
 
-    document.createElement = vi.fn().mockReturnValue({
+    document.createElement = jest.fn().mockReturnValue({
       width: 0,
       height: 0,
-      getContext: vi.fn().mockReturnValue(ctx),
-      toDataURL: vi.fn().mockReturnValue("data:image/jpeg;base64,AAAA"),
+      getContext: jest.fn().mockReturnValue(ctx),
+      toDataURL: jest.fn().mockReturnValue("data:image/jpeg;base64,AAAA"),
     });
 
     const blob = new Blob(["x"], { type: "image/jpeg" });
@@ -232,8 +231,8 @@ describe("imageCompression", () => {
       delete (globalThis.window as { createImageBitmap?: unknown }).createImageBitmap;
     }
     globalThis.createImageBitmap = undefined;
-    URL.createObjectURL = vi.fn(() => "blob:bad");
-    URL.revokeObjectURL = vi.fn();
+    URL.createObjectURL = jest.fn(() => "blob:bad");
+    URL.revokeObjectURL = jest.fn();
 
     class ErrorImage {
       onload?: () => void;
@@ -245,17 +244,17 @@ describe("imageCompression", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (globalThis as any).Image = ErrorImage;
 
-    document.createElement = vi.fn().mockReturnValue({
+    document.createElement = jest.fn().mockReturnValue({
       width: 0,
       height: 0,
-      getContext: vi.fn().mockReturnValue({
+      getContext: jest.fn().mockReturnValue({
         fillStyle: "",
-        fillRect: vi.fn(),
-        drawImage: vi.fn(),
+        fillRect: jest.fn(),
+        drawImage: jest.fn(),
         imageSmoothingEnabled: false,
         imageSmoothingQuality: "low",
       }),
-      toDataURL: vi.fn().mockReturnValue("data:image/jpeg;base64,AAAA"),
+      toDataURL: jest.fn().mockReturnValue("data:image/jpeg;base64,AAAA"),
     });
 
     const blob = new Blob(["x"], { type: "image/jpeg" });

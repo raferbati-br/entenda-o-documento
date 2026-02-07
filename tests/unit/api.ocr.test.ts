@@ -1,30 +1,28 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+const mockExtractDocumentText = jest.fn();
+const mockGetCapture = jest.fn();
+const mockIsRedisRequiredAndMissing = jest.fn();
+const mockRecordQualityCount = jest.fn((name: string) => Promise.resolve(name));
+const mockRecordQualityLatency = jest.fn((name: string, ms: number) => Promise.resolve([name, ms]));
+const mockBadRequest = jest.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
+const mockCreateRouteContext = jest.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 9 }));
+const mockHandleApiKeyError = jest.fn();
+const mockHandleModelJsonError = jest.fn();
+const mockReadJsonRecord = jest.fn();
+const mockRunCommonGuards = jest.fn();
+const mockSafeRecordMetrics = jest.fn();
 
-const mockExtractDocumentText = vi.fn();
-const mockGetCapture = vi.fn();
-const mockIsRedisRequiredAndMissing = vi.fn();
-const mockRecordQualityCount = vi.fn((name: string) => Promise.resolve(name));
-const mockRecordQualityLatency = vi.fn((name: string, ms: number) => Promise.resolve([name, ms]));
-const mockBadRequest = vi.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
-const mockCreateRouteContext = vi.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 9 }));
-const mockHandleApiKeyError = vi.fn();
-const mockHandleModelJsonError = vi.fn();
-const mockReadJsonRecord = vi.fn();
-const mockRunCommonGuards = vi.fn();
-const mockSafeRecordMetrics = vi.fn();
-
-vi.mock("@/ai/extractDocumentText", () => ({
+jest.mock("@/ai/extractDocumentText", () => ({
   extractDocumentText: (...args: unknown[]) => mockExtractDocumentText(...args),
 }));
-vi.mock("@/lib/captureStoreServer", () => ({
+jest.mock("@/lib/captureStoreServer", () => ({
   getCapture: (...args: unknown[]) => mockGetCapture(...args),
   isRedisRequiredAndMissing: () => mockIsRedisRequiredAndMissing(),
 }));
-vi.mock("@/lib/qualityMetrics", () => ({
+jest.mock("@/lib/qualityMetrics", () => ({
   recordQualityCount: (...args: unknown[]) => mockRecordQualityCount(...args),
   recordQualityLatency: (...args: unknown[]) => mockRecordQualityLatency(...args),
 }));
-vi.mock("@/lib/apiRouteUtils", () => ({
+jest.mock("@/lib/apiRouteUtils", () => ({
   badRequest: (...args: unknown[]) => mockBadRequest(...args),
   createRouteContext: (...args: unknown[]) => mockCreateRouteContext(...args),
   handleApiKeyError: (...args: unknown[]) => mockHandleApiKeyError(...args),
@@ -34,7 +32,7 @@ vi.mock("@/lib/apiRouteUtils", () => ({
   safeRecordMetrics: (...args: unknown[]) => mockSafeRecordMetrics(...args),
   shouldLogApi: () => false,
 }));
-vi.mock("next/server", () => ({
+jest.mock("next/server", () => ({
   NextResponse: {
     json: (body: unknown, init?: { status?: number }) => ({ body, status: init?.status ?? 200 }),
   },
@@ -47,7 +45,7 @@ describe("api/ocr", () => {
     mockExtractDocumentText.mockReset();
     mockGetCapture.mockReset();
     mockIsRedisRequiredAndMissing.mockReset();
-    mockBadRequest.mockReset();
+    mockBadRequest.mockClear();
     mockHandleApiKeyError.mockReset();
     mockHandleModelJsonError.mockReset();
     mockReadJsonRecord.mockReset();

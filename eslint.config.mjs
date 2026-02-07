@@ -34,6 +34,22 @@ const eslintConfig = defineConfig([
       "jsx-a11y/tabindex-no-positive": "error",
     },
   },
+  {
+    files: ["tests/**/*.{test,spec}.{ts,tsx}"],
+    languageOptions: {
+      globals: {
+        jest: "readonly",
+        describe: "readonly",
+        it: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+      },
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

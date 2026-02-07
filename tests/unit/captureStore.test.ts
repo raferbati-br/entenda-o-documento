@@ -1,10 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+const setMock = jest.fn();
+const getMock = jest.fn();
+const delMock = jest.fn();
 
-const setMock = vi.fn();
-const getMock = vi.fn();
-const delMock = vi.fn();
-
-vi.mock("idb-keyval", () => ({
+jest.mock("idb-keyval", () => ({
   set: (...args: unknown[]) => setMock(...args),
   get: (...args: unknown[]) => getMock(...args),
   del: (...args: unknown[]) => delMock(...args),

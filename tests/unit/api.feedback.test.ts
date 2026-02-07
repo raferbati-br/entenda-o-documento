@@ -1,8 +1,6 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-
 let redisIncrCalls: string[] = [];
 
-vi.mock("@upstash/redis", () => {
+jest.mock("@upstash/redis", () => {
   class Redis {
     async incr(key: string) {
       redisIncrCalls.push(key);
@@ -12,12 +10,12 @@ vi.mock("@upstash/redis", () => {
   return { Redis };
 });
 
-const mockBadRequest = vi.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
-const mockCreateRouteContext = vi.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 3 }));
-const mockReadJsonRecord = vi.fn();
-const mockRunCommonGuards = vi.fn();
+const mockBadRequest = jest.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
+const mockCreateRouteContext = jest.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 3 }));
+const mockReadJsonRecord = jest.fn();
+const mockRunCommonGuards = jest.fn();
 
-vi.mock("@/lib/apiRouteUtils", () => ({
+jest.mock("@/lib/apiRouteUtils", () => ({
   badRequest: (...args: unknown[]) => mockBadRequest(...args),
   createRouteContext: (...args: unknown[]) => mockCreateRouteContext(...args),
   readJsonRecord: (...args: unknown[]) => mockReadJsonRecord(...args),
@@ -25,7 +23,7 @@ vi.mock("@/lib/apiRouteUtils", () => ({
   shouldLogApi: () => false,
 }));
 
-vi.mock("next/server", () => ({
+jest.mock("next/server", () => ({
   NextResponse: {
     json: (body: unknown, init?: { status?: number }) => ({ body, status: init?.status ?? 200 }),
   },
@@ -36,7 +34,7 @@ import { POST } from "@/app/api/feedback/route";
 describe("api/feedback", () => {
   beforeEach(() => {
     redisIncrCalls = [];
-    mockBadRequest.mockReset();
+    mockBadRequest.mockClear();
     mockReadJsonRecord.mockReset();
     mockRunCommonGuards.mockReset();
     process.env.UPSTASH_REDIS_REST_URL = "https://example";

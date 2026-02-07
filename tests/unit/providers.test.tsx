@@ -1,46 +1,46 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+/** @jest-environment jsdom */
 import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 
-vi.mock("@mui/material", async () => {
+jest.mock("@mui/material", () => {
   return {
     CssBaseline: () => null,
     ThemeProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
-    useMediaQuery: vi.fn(() => false),
+    useMediaQuery: jest.fn(() => false),
     Box: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   };
 });
 
-vi.mock("@mui/material-nextjs/v15-appRouter", async () => {
+jest.mock("@mui/material-nextjs/v15-appRouter", () => {
   return {
     AppRouterCacheProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   };
 });
 
-const mockEnsureSessionToken = vi.fn();
-vi.mock("@/lib/sessionToken", () => ({
+const mockEnsureSessionToken = jest.fn();
+jest.mock("@/lib/sessionToken", () => ({
   ensureSessionToken: () => mockEnsureSessionToken(),
 }));
 
-const mockBuildTheme = vi.fn(() => ({ palette: { mode: "light" } }));
-vi.mock("@/app/theme", () => ({
+const mockBuildTheme = jest.fn(() => ({ palette: { mode: "light" } }));
+jest.mock("@/app/theme", () => ({
   buildTheme: (...args: unknown[]) => mockBuildTheme(...args),
 }));
 
-const mockCapture = vi.fn();
-const mockInit = vi.fn();
-vi.mock("posthog-js", () => ({
+const mockCapture = jest.fn();
+const mockInit = jest.fn();
+jest.mock("posthog-js", () => ({
+  __esModule: true,
   default: {
     init: (...args: unknown[]) => mockInit(...args),
     capture: (...args: unknown[]) => mockCapture(...args),
   },
 }));
 
-const mockUsePathname = vi.fn();
-const mockUseSearchParams = vi.fn();
-vi.mock("next/navigation", () => ({
+const mockUsePathname = jest.fn();
+const mockUseSearchParams = jest.fn();
+jest.mock("next/navigation", () => ({
   usePathname: () => mockUsePathname(),
   useSearchParams: () => mockUseSearchParams(),
 }));

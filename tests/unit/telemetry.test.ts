@@ -1,9 +1,9 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+/** @jest-environment jsdom */
+import { stubGlobal, unstubAllGlobals } from "./jestGlobals";
+const captureMock = jest.fn();
 
-const captureMock = vi.fn();
-
-vi.mock("posthog-js", () => ({
+jest.mock("posthog-js", () => ({
+  __esModule: true,
   default: {
     capture: (...args: unknown[]) => captureMock(...args),
   },
@@ -22,6 +22,7 @@ describe("telemetry", () => {
 
   afterEach(() => {
     process.env = { ...realEnv };
+    unstubAllGlobals();
   });
 
   it("does nothing when not enabled", () => {
@@ -43,13 +44,9 @@ describe("telemetry", () => {
   });
 
   it("does nothing when window is missing even with key", () => {
-    const originalWindow = globalThis.window;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (globalThis as any).window = undefined;
+    stubGlobal("window", undefined as unknown as Window);
     process.env.NEXT_PUBLIC_POSTHOG_KEY = "key";
     telemetryCapture("event", { a: 1 });
     expect(captureMock).not.toHaveBeenCalled();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (globalThis as any).window = originalWindow;
   });
 });

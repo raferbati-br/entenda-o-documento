@@ -1,4 +1,3 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import crypto from "node:crypto";
 import { createSessionToken, isOriginAllowed, verifySessionToken } from "@/lib/requestAuth";
 
@@ -11,7 +10,7 @@ describe("requestAuth", () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     process.env = { ...realEnv };
   });
 
@@ -22,7 +21,7 @@ describe("requestAuth", () => {
 
   it("creates and verifies session token", () => {
     process.env.API_TOKEN_SECRET = "secret";
-    vi.spyOn(Date, "now").mockReturnValue(100_000);
+    jest.spyOn(Date, "now").mockReturnValue(100_000);
 
     const token = createSessionToken();
     expect(verifySessionToken(token)).toBe(true);
@@ -30,7 +29,7 @@ describe("requestAuth", () => {
 
   it("rejects expired token", () => {
     process.env.API_TOKEN_SECRET = "secret";
-    vi.spyOn(Date, "now").mockReturnValue(100_000);
+    jest.spyOn(Date, "now").mockReturnValue(100_000);
     const token = createSessionToken();
 
     (Date.now as unknown as { mockReturnValue: (value: number) => void }).mockReturnValue(500_000);
@@ -55,7 +54,7 @@ describe("requestAuth", () => {
 
   it("rejects token with invalid signature", () => {
     process.env.API_TOKEN_SECRET = "secret";
-    vi.spyOn(Date, "now").mockReturnValue(100_000);
+    jest.spyOn(Date, "now").mockReturnValue(100_000);
 
     const token = createSessionToken();
     const [payload, sig] = token.split(".");

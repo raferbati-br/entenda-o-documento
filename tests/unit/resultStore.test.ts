@@ -1,5 +1,5 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, beforeEach, vi } from "vitest";
+/** @jest-environment jsdom */
+import { stubGlobal } from "./jestGlobals";
 import { clearResult, loadResult, saveResult } from "@/lib/resultStore";
 
 
@@ -31,12 +31,12 @@ describe("resultStore", () => {
 
   it("no-ops when window is unavailable", () => {
     const originalWindow = globalThis.window;
-    vi.stubGlobal("window", undefined as unknown as Window);
+    stubGlobal("window", undefined as unknown as Window);
 
     saveResult({ confidence: 0.1, cards: [], notice: "" });
     expect(loadResult()).toBeNull();
     clearResult();
 
-    vi.stubGlobal("window", originalWindow);
+    stubGlobal("window", originalWindow);
   });
 });

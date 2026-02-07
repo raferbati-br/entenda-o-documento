@@ -1,10 +1,9 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach } from "vitest";
+/** @jest-environment jsdom */
 import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 
-vi.mock("@mui/material", async () => {
+jest.mock("@mui/material", () => {
   const Wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
   return {
     Box: Wrap,
@@ -14,23 +13,23 @@ vi.mock("@mui/material", async () => {
   };
 });
 
-vi.mock("next/link", async () => {
+jest.mock("next/link", () => {
   return {
     default: ({ children, href }: { children?: ReactNode; href?: string }) => <a href={href ?? "#"}>{children}</a>,
   };
 });
 
-const mockPush = vi.fn();
-vi.mock("next/navigation", () => ({
+const mockPush = jest.fn();
+jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-const mockTelemetry = vi.fn();
-vi.mock("@/lib/telemetry", () => ({ telemetryCapture: (...args: unknown[]) => mockTelemetry(...args) }));
+const mockTelemetry = jest.fn();
+jest.mock("@/lib/telemetry", () => ({ telemetryCapture: (...args: unknown[]) => mockTelemetry(...args) }));
 
-const mockOpenGallery = vi.fn();
-const mockOnFileChange = vi.fn();
-vi.mock("@/lib/hooks/useCaptureInput", () => ({
+const mockOpenGallery = jest.fn();
+const mockOnFileChange = jest.fn();
+jest.mock("@/lib/hooks/useCaptureInput", () => ({
   useCaptureInput: () => ({
     galleryInputRef: { current: null },
     openGallery: mockOpenGallery,
@@ -38,9 +37,9 @@ vi.mock("@/lib/hooks/useCaptureInput", () => ({
   }),
 }));
 
-vi.mock("@/app/_components/IconTextRow", () => ({ default: () => <div>icon-row</div> }));
-vi.mock("@/app/_components/FooterActions", () => ({ default: () => <div>footer-actions</div> }));
-vi.mock("@/app/_components/PageLayout", () => ({
+jest.mock("@/app/_components/IconTextRow", () => ({ default: () => <div>icon-row</div> }));
+jest.mock("@/app/_components/FooterActions", () => ({ default: () => <div>footer-actions</div> }));
+jest.mock("@/app/_components/PageLayout", () => ({
   default: ({ children, header, footer }: { children?: ReactNode; header?: ReactNode; footer?: ReactNode }) => (
     <div>
       {header}
@@ -50,11 +49,11 @@ vi.mock("@/app/_components/PageLayout", () => ({
   ),
 }));
 
-vi.mock("@mui/icons-material/AutoAwesomeRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/LockRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/DescriptionRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/CameraAltRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/PhotoLibraryRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/AutoAwesomeRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/LockRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/DescriptionRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/CameraAltRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/PhotoLibraryRounded", () => ({ default: () => null }));
 
 import HomePage from "@/app/page";
 

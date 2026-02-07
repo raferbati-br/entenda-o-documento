@@ -1,20 +1,18 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-
-vi.mock("@/ai/llmContext", () => ({
-  buildLlmContext: vi.fn(() => ({ model: "test-model", provider: { analyze: vi.fn() } })),
+jest.mock("@/ai/llmContext", () => ({
+  buildLlmContext: jest.fn(() => ({ model: "test-model", provider: { analyze: jest.fn() } })),
 }));
 
-vi.mock("@/lib/promptIds", () => ({
-  getOcrPromptId: vi.fn(),
+jest.mock("@/lib/promptIds", () => ({
+  getOcrPromptId: jest.fn(),
 }));
 
-vi.mock("@/ai/prompts", () => ({
-  getOcrPrompt: vi.fn(),
+jest.mock("@/ai/prompts", () => ({
+  getOcrPrompt: jest.fn(),
 }));
 
-vi.mock("@/lib/text", () => ({
-  redactSensitiveData: vi.fn((text: string) => text.replaceAll(/\d/g, "*")),
-  safeShorten: vi.fn((text: string) => text),
+jest.mock("@/lib/text", () => ({
+  redactSensitiveData: jest.fn((text: string) => text.replaceAll(/\d/g, "*")),
+  safeShorten: jest.fn((text: string) => text),
 }));
 
 import { extractDocumentText } from "@/ai/extractDocumentText";
@@ -23,21 +21,21 @@ import { getOcrPromptId } from "@/lib/promptIds";
 import { getOcrPrompt } from "@/ai/prompts";
 import { redactSensitiveData, safeShorten } from "@/lib/text";
 
-const mockAnalyze = vi.fn();
+const mockAnalyze = jest.fn();
 
 describe("extractDocumentText", () => {
   beforeEach(() => {
     mockAnalyze.mockReset();
-    vi.mocked(buildLlmContext).mockReturnValue({ model: "test-model", provider: { analyze: mockAnalyze } });
-    vi.mocked(getOcrPromptId).mockReset();
-    vi.mocked(getOcrPrompt).mockReset();
-    vi.mocked(redactSensitiveData).mockClear();
-    vi.mocked(safeShorten).mockClear();
+    jest.mocked(buildLlmContext).mockReturnValue({ model: "test-model", provider: { analyze: mockAnalyze } });
+    jest.mocked(getOcrPromptId).mockReset();
+    jest.mocked(getOcrPrompt).mockReset();
+    jest.mocked(redactSensitiveData).mockClear();
+    jest.mocked(safeShorten).mockClear();
   });
 
   it("extracts, redacts, and shortens document text", async () => {
-    vi.mocked(getOcrPromptId).mockReturnValue("entendaDocumento.ocr.v1");
-    vi.mocked(getOcrPrompt).mockReturnValue({
+    jest.mocked(getOcrPromptId).mockReturnValue("entendaDocumento.ocr.v1");
+    jest.mocked(getOcrPrompt).mockReturnValue({
       id: "entendaDocumento.ocr.v1",
       system: "sys",
       user: "user",
@@ -65,8 +63,8 @@ describe("extractDocumentText", () => {
   });
 
   it("returns empty when model output has no documentText", async () => {
-    vi.mocked(getOcrPromptId).mockReturnValue("entendaDocumento.ocr.v1");
-    vi.mocked(getOcrPrompt).mockReturnValue({
+    jest.mocked(getOcrPromptId).mockReturnValue("entendaDocumento.ocr.v1");
+    jest.mocked(getOcrPrompt).mockReturnValue({
       id: "entendaDocumento.ocr.v1",
       system: "sys",
       user: "user",
@@ -80,8 +78,8 @@ describe("extractDocumentText", () => {
   });
 
   it("returns empty when raw output is not a record", async () => {
-    vi.mocked(getOcrPromptId).mockReturnValue("entendaDocumento.ocr.v1");
-    vi.mocked(getOcrPrompt).mockReturnValue({
+    jest.mocked(getOcrPromptId).mockReturnValue("entendaDocumento.ocr.v1");
+    jest.mocked(getOcrPrompt).mockReturnValue({
       id: "entendaDocumento.ocr.v1",
       system: "sys",
       user: "user",

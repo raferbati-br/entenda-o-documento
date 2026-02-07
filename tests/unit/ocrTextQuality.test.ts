@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { evaluateOcrText, isOcrTextSufficient } from "@/lib/ocrTextQuality";
 
 describe("ocrTextQuality", () => {

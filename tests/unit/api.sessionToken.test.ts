@@ -1,23 +1,21 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+const mockRunCommonGuards = jest.fn();
+const mockCreateRouteContext = jest.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 5 }));
+const mockBadRequest = jest.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
+const mockHandleTokenSecretError = jest.fn();
 
-const mockRunCommonGuards = vi.fn();
-const mockCreateRouteContext = vi.fn(() => ({ requestId: "r", ip: "ip", durationMs: () => 5 }));
-const mockBadRequest = vi.fn((msg: string, status?: number) => ({ error: msg, status: status ?? 400 }));
-const mockHandleTokenSecretError = vi.fn();
-
-vi.mock("@/lib/apiRouteUtils", () => ({
+jest.mock("@/lib/apiRouteUtils", () => ({
   runCommonGuards: (...args: unknown[]) => mockRunCommonGuards(...args),
   createRouteContext: (...args: unknown[]) => mockCreateRouteContext(...args),
   badRequest: (...args: unknown[]) => mockBadRequest(...args),
   handleTokenSecretError: (...args: unknown[]) => mockHandleTokenSecretError(...args),
 }));
 
-const mockCreateSessionToken = vi.fn();
-vi.mock("@/lib/requestAuth", () => ({
+const mockCreateSessionToken = jest.fn();
+jest.mock("@/lib/requestAuth", () => ({
   createSessionToken: () => mockCreateSessionToken(),
 }));
 
-vi.mock("next/server", () => ({
+jest.mock("next/server", () => ({
   NextResponse: {
     json: (body: unknown, init?: { status?: number; headers?: Record<string, string> }) => ({
       body,
@@ -33,7 +31,7 @@ describe("api/session-token", () => {
   beforeEach(() => {
     mockRunCommonGuards.mockReset();
     mockCreateSessionToken.mockReset();
-    mockBadRequest.mockReset();
+    mockBadRequest.mockClear();
     mockHandleTokenSecretError.mockReset();
   });
 

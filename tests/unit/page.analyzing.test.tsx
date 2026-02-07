@@ -1,10 +1,9 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach } from "vitest";
+/** @jest-environment jsdom */
 import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 
-vi.mock("framer-motion", async () => {
+jest.mock("framer-motion", () => {
   return {
     motion: {
       div: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
@@ -13,7 +12,7 @@ vi.mock("framer-motion", async () => {
   };
 });
 
-vi.mock("@mui/material", async () => {
+jest.mock("@mui/material", () => {
   const Wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
   return {
     Box: Wrap,
@@ -27,32 +26,32 @@ vi.mock("@mui/material", async () => {
   };
 });
 
-const mockReplace = vi.fn();
-const mockPush = vi.fn();
-vi.mock("next/navigation", () => ({
+const mockReplace = jest.fn();
+const mockPush = jest.fn();
+jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace, push: mockPush }),
 }));
 
-vi.mock("@/lib/captureIdStore", () => ({ loadCaptureId: () => "cap", clearCaptureId: vi.fn() }));
-vi.mock("@/lib/resultStore", () => ({ saveResult: vi.fn() }));
-vi.mock("@/lib/apiClient", () => ({
-  postJsonWithSession: vi.fn(async (url: string) => {
+jest.mock("@/lib/captureIdStore", () => ({ loadCaptureId: () => "cap", clearCaptureId: jest.fn() }));
+jest.mock("@/lib/resultStore", () => ({ saveResult: jest.fn() }));
+jest.mock("@/lib/apiClient", () => ({
+  postJsonWithSession: jest.fn(async (url: string) => {
     if (url === "/api/ocr") {
       return { res: { ok: true, status: 200 }, data: { ok: true, documentText: "texto" } };
     }
     return { res: { ok: true, status: 200 }, data: { ok: true, result: { confidence: 1, cards: [], notice: "" } } };
   }),
 }));
-vi.mock("@/lib/qaContextStore", () => ({ clearQaContext: vi.fn(), saveQaContext: vi.fn() }));
-vi.mock("@/lib/latencyTrace", () => ({ markLatencyTrace: vi.fn(), recordLatencyStep: vi.fn() }));
-vi.mock("@/lib/telemetry", () => ({ telemetryCapture: vi.fn() }));
-vi.mock("@/lib/errorMesages", () => ({ buildAnalyzeFriendlyError: vi.fn() }));
-vi.mock("@/lib/typeGuards", () => ({ isRecord: () => true }));
+jest.mock("@/lib/qaContextStore", () => ({ clearQaContext: jest.fn(), saveQaContext: jest.fn() }));
+jest.mock("@/lib/latencyTrace", () => ({ markLatencyTrace: jest.fn(), recordLatencyStep: jest.fn() }));
+jest.mock("@/lib/telemetry", () => ({ telemetryCapture: jest.fn() }));
+jest.mock("@/lib/errorMesages", () => ({ buildAnalyzeFriendlyError: jest.fn() }));
+jest.mock("@/lib/typeGuards", () => ({ isRecord: () => true }));
 
-vi.mock("@mui/icons-material/AutoAwesomeRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/CameraAltRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/AutoAwesomeRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/CameraAltRounded", () => ({ default: () => null }));
 
-vi.mock("@/app/_components/PageLayout", () => ({
+jest.mock("@/app/_components/PageLayout", () => ({
   default: ({ children, header, footer }: { children?: ReactNode; header?: ReactNode; footer?: ReactNode }) => (
     <div>
       {header}
@@ -61,7 +60,7 @@ vi.mock("@/app/_components/PageLayout", () => ({
     </div>
   ),
 }));
-vi.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
+jest.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
 
 import AnalyzingPage from "@/app/analyzing/page";
 

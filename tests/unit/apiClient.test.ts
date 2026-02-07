@@ -1,9 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { stubGlobal } from "./jestGlobals";
 
-const mockEnsureSessionToken = vi.fn();
-const mockClearSessionToken = vi.fn();
+const mockEnsureSessionToken = jest.fn();
+const mockClearSessionToken = jest.fn();
 
-vi.mock("@/lib/sessionToken", () => ({
+jest.mock("@/lib/sessionToken", () => ({
   ensureSessionToken: () => mockEnsureSessionToken(),
   clearSessionToken: () => mockClearSessionToken(),
 }));
@@ -15,7 +15,7 @@ function mockFetch(response: { status?: number; json?: () => Promise<unknown> })
     status: response.status ?? 200,
     json: response.json ?? (async () => ({})),
   } as Response;
-  vi.stubGlobal("fetch", vi.fn(async () => res));
+  stubGlobal("fetch", jest.fn(async () => res));
   return res;
 }
 
@@ -33,7 +33,7 @@ describe("apiClient", () => {
 
     expect(res.status).toBe(200);
     expect(data).toEqual({ ok: true });
-    const fetchCall = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as unknown as ReturnType<typeof jest.fn>).mock.calls[0];
     expect(fetchCall[0]).toBe("/api/x");
     expect(fetchCall[1].headers["x-session-token"]).toBe("token-1");
   });
@@ -44,7 +44,7 @@ describe("apiClient", () => {
 
     await postJsonWithSession("/api/x", { a: 1 });
 
-    const fetchCall = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as unknown as ReturnType<typeof jest.fn>).mock.calls[0];
     expect(fetchCall[1].headers["x-session-token"]).toBeUndefined();
   });
 

@@ -1,29 +1,28 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import crypto from "node:crypto";
 
-vi.mock("next/server", () => ({
+jest.mock("next/server", () => ({
   NextResponse: {
     json: (body: unknown, init?: { status?: number; headers?: HeadersInit }) =>
       new Response(JSON.stringify(body), { status: init?.status ?? 200, headers: init?.headers }),
   },
 }));
 
-const rateLimitMock = vi.fn();
-const isOriginAllowedMock = vi.fn();
-const verifySessionTokenMock = vi.fn();
-const recordQualityCountMock = vi.fn();
-const recordQualityLatencyMock = vi.fn();
+const rateLimitMock = jest.fn();
+const isOriginAllowedMock = jest.fn();
+const verifySessionTokenMock = jest.fn();
+const recordQualityCountMock = jest.fn();
+const recordQualityLatencyMock = jest.fn();
 
-vi.mock("@/lib/rateLimit", () => ({
+jest.mock("@/lib/rateLimit", () => ({
   rateLimit: (...args: unknown[]) => rateLimitMock(...args),
 }));
 
-vi.mock("@/lib/requestAuth", () => ({
+jest.mock("@/lib/requestAuth", () => ({
   isOriginAllowed: (...args: unknown[]) => isOriginAllowedMock(...args),
   verifySessionToken: (...args: unknown[]) => verifySessionTokenMock(...args),
 }));
 
-vi.mock("@/lib/qualityMetrics", () => ({
+jest.mock("@/lib/qualityMetrics", () => ({
   recordQualityCount: (...args: unknown[]) => recordQualityCountMock(...args),
   recordQualityLatency: (...args: unknown[]) => recordQualityLatencyMock(...args),
 }));
@@ -56,12 +55,12 @@ describe("apiRouteUtils", () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it("creates route context with ip", () => {
-    vi.spyOn(Date, "now").mockReturnValue(1000);
-    vi.spyOn(crypto, "randomUUID").mockReturnValue("uuid");
+    jest.spyOn(Date, "now").mockReturnValue(1000);
+    jest.spyOn(crypto, "randomUUID").mockReturnValue("uuid");
     const req = new Request("https://example.com", { headers: { "x-forwarded-for": "1.2.3.4" } });
     const ctx = createRouteContext(req);
     expect(ctx.requestId).toBe("uuid");
@@ -70,8 +69,8 @@ describe("apiRouteUtils", () => {
   });
 
   it("defaults ip to unknown when header is missing", () => {
-    vi.spyOn(Date, "now").mockReturnValue(1000);
-    vi.spyOn(crypto, "randomUUID").mockReturnValue("uuid");
+    jest.spyOn(Date, "now").mockReturnValue(1000);
+    jest.spyOn(crypto, "randomUUID").mockReturnValue("uuid");
     const req = new Request("https://example.com");
     const ctx = createRouteContext(req);
     expect(ctx.ip).toBe("unknown");
@@ -120,7 +119,7 @@ describe("apiRouteUtils", () => {
     const originalEnv = { ...process.env };
     process.env.NODE_ENV = "production";
     process.env.API_LOGS = "1";
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
     rateLimitMock.mockResolvedValue({ ok: false, remaining: 0, resetSeconds: 5 });
     const ctx = { requestId: "r", ip: "ip", startedAt: 0, durationMs: () => 10 };
 
@@ -189,7 +188,7 @@ describe("apiRouteUtils", () => {
   });
 
   it("records metrics safely", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     await safeRecordMetrics([Promise.resolve(), Promise.reject(new Error("boom"))]);
     expect(warnSpy).toHaveBeenCalled();
   });

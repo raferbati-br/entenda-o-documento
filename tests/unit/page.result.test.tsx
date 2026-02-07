@@ -1,10 +1,9 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it } from "vitest";
+/** @jest-environment jsdom */
 import type { ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 
-vi.mock("@mui/material", async () => {
+jest.mock("@mui/material", () => {
   const Wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
   return {
     Box: Wrap,
@@ -19,31 +18,31 @@ vi.mock("@mui/material", async () => {
   };
 });
 
-vi.mock("@mui/material/styles", () => ({ alpha: () => "rgba(0,0,0,0.1)" }));
+jest.mock("@mui/material/styles", () => ({ alpha: () => "rgba(0,0,0,0.1)" }));
 
-const mockPush = vi.fn();
-vi.mock("next/navigation", () => ({
+const mockPush = jest.fn();
+jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-vi.mock("@/lib/resultStore", () => ({ loadResult: () => ({ confidence: 0.8, cards: [], notice: "" }) }));
-vi.mock("@/lib/qaContextStore", () => ({ loadQaContext: () => "" }));
-vi.mock("@/lib/latencyTrace", () => ({ clearLatencyTrace: vi.fn(), getLatencyTraceSnapshot: () => null }));
-vi.mock("@/lib/telemetry", () => ({ telemetryCapture: vi.fn() }));
-vi.mock("@/lib/errorMesages", () => ({ mapFeedbackError: vi.fn(), mapNetworkError: vi.fn() }));
-vi.mock("@/lib/apiClient", () => ({ postJsonWithSession: vi.fn() }));
-vi.mock("@/lib/analysisSession", () => ({ resetAnalysisSession: vi.fn() }));
-vi.mock("@/lib/hooks/useJumpToEnd", () => ({
-  useJumpToEnd: () => ({ endRef: { current: null }, showJump: false, updateJumpState: vi.fn(), handleScroll: vi.fn(), jumpToEnd: vi.fn() }),
+jest.mock("@/lib/resultStore", () => ({ loadResult: () => ({ confidence: 0.8, cards: [], notice: "" }) }));
+jest.mock("@/lib/qaContextStore", () => ({ loadQaContext: () => "" }));
+jest.mock("@/lib/latencyTrace", () => ({ clearLatencyTrace: jest.fn(), getLatencyTraceSnapshot: () => null }));
+jest.mock("@/lib/telemetry", () => ({ telemetryCapture: jest.fn() }));
+jest.mock("@/lib/errorMesages", () => ({ mapFeedbackError: jest.fn(), mapNetworkError: jest.fn() }));
+jest.mock("@/lib/apiClient", () => ({ postJsonWithSession: jest.fn() }));
+jest.mock("@/lib/analysisSession", () => ({ resetAnalysisSession: jest.fn() }));
+jest.mock("@/lib/hooks/useJumpToEnd", () => ({
+  useJumpToEnd: () => ({ endRef: { current: null }, showJump: false, updateJumpState: jest.fn(), handleScroll: jest.fn(), jumpToEnd: jest.fn() }),
 }));
-vi.mock("@/lib/hooks/useSpeechSynthesis", () => ({
-  useSpeechSynthesis: () => ({ supported: false, isSpeaking: false, error: null, setError: vi.fn(), speak: vi.fn(), speakSequence: vi.fn(), stop: vi.fn() }),
+jest.mock("@/lib/hooks/useSpeechSynthesis", () => ({
+  useSpeechSynthesis: () => ({ supported: false, isSpeaking: false, error: null, setError: jest.fn(), speak: jest.fn(), speakSequence: jest.fn(), stop: jest.fn() }),
 }));
 
-vi.mock("@/app/_components/SectionBlock", () => ({ default: () => <div>section</div> }));
-vi.mock("@/app/_components/FooterActions", () => ({ default: () => <div>footer</div> }));
-vi.mock("@/app/_components/BackHeader", () => ({ default: ({ title }: { title?: ReactNode }) => <div>{title}</div> }));
-vi.mock("@/app/_components/PageLayout", () => ({
+jest.mock("@/app/_components/SectionBlock", () => ({ default: () => <div>section</div> }));
+jest.mock("@/app/_components/FooterActions", () => ({ default: () => <div>footer</div> }));
+jest.mock("@/app/_components/BackHeader", () => ({ default: ({ title }: { title?: ReactNode }) => <div>{title}</div> }));
+jest.mock("@/app/_components/PageLayout", () => ({
   default: ({ children, header, footer }: { children?: ReactNode; header?: ReactNode; footer?: ReactNode }) => (
     <div>
       {header}
@@ -52,18 +51,18 @@ vi.mock("@/app/_components/PageLayout", () => ({
     </div>
   ),
 }));
-vi.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
-vi.mock("@/app/_components/FeedbackActions", () => ({ default: () => <div>feedback</div> }));
+jest.mock("@/app/_components/Notice", () => ({ default: ({ children }: { children?: ReactNode }) => <div>{children}</div> }));
+jest.mock("@/app/_components/FeedbackActions", () => ({ default: () => <div>feedback</div> }));
 
-vi.mock("@mui/icons-material/StopCircleRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/DescriptionRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/InfoRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/EventRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/ListAltRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/HelpOutlineRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/CameraAltRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/WarningRounded", () => ({ default: () => null }));
-vi.mock("@mui/icons-material/VolumeUpRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/StopCircleRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/DescriptionRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/InfoRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/EventRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/ListAltRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/HelpOutlineRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/CameraAltRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/WarningRounded", () => ({ default: () => null }));
+jest.mock("@mui/icons-material/VolumeUpRounded", () => ({ default: () => null }));
 
 import ResultPage from "@/app/result/page";
 

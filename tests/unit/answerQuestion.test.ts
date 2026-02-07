@@ -1,19 +1,17 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-
-vi.mock("@/ai/llmContext", () => ({
-  buildLlmContext: vi.fn(() => ({ model: "test-model", provider: { answer: vi.fn(), answerStream: vi.fn() } })),
+jest.mock("@/ai/llmContext", () => ({
+  buildLlmContext: jest.fn(() => ({ model: "test-model", provider: { answer: jest.fn(), answerStream: jest.fn() } })),
 }));
 
-vi.mock("@/lib/promptIds", () => ({
-  getQaPromptId: vi.fn(),
+jest.mock("@/lib/promptIds", () => ({
+  getQaPromptId: jest.fn(),
 }));
 
-vi.mock("@/ai/prompts", () => ({
-  getQaPrompt: vi.fn(),
+jest.mock("@/ai/prompts", () => ({
+  getQaPrompt: jest.fn(),
 }));
 
-vi.mock("@/lib/text", () => ({
-  safeShorten: vi.fn((text: string) => text.slice(0, 420)),
+jest.mock("@/lib/text", () => ({
+  safeShorten: jest.fn((text: string) => text.slice(0, 420)),
 }));
 
 import { answerQuestion, answerQuestionStream } from "@/ai/answerQuestion";
@@ -22,8 +20,8 @@ import { getQaPromptId } from "@/lib/promptIds";
 import { getQaPrompt } from "@/ai/prompts";
 import { safeShorten } from "@/lib/text";
 
-const mockAnswer = vi.fn();
-const mockAnswerStream = vi.fn();
+const mockAnswer = jest.fn();
+const mockAnswerStream = jest.fn();
 
 async function* streamChunks(chunks: string[]) {
   for (const chunk of chunks) {
@@ -32,7 +30,7 @@ async function* streamChunks(chunks: string[]) {
 }
 
 function setupProvider(withStream = true) {
-  vi.mocked(buildLlmContext).mockReturnValue({
+  jest.mocked(buildLlmContext).mockReturnValue({
     model: "test-model",
     provider: {
       answer: mockAnswer,
@@ -45,15 +43,15 @@ describe("answerQuestion", () => {
   beforeEach(() => {
     mockAnswer.mockReset();
     mockAnswerStream.mockReset();
-    vi.mocked(getQaPromptId).mockReset();
-    vi.mocked(getQaPrompt).mockReset();
-    vi.mocked(safeShorten).mockClear();
+    jest.mocked(getQaPromptId).mockReset();
+    jest.mocked(getQaPrompt).mockReset();
+    jest.mocked(safeShorten).mockClear();
   });
 
   it("renders template and shortens answer", async () => {
     setupProvider(true);
-    vi.mocked(getQaPromptId).mockReturnValue("entendaDocumento.qa.v1");
-    vi.mocked(getQaPrompt).mockReturnValue({
+    jest.mocked(getQaPromptId).mockReturnValue("entendaDocumento.qa.v1");
+    jest.mocked(getQaPrompt).mockReturnValue({
       id: "entendaDocumento.qa.v1",
       system: "sys",
       user: "Q: {{question}} | C: {{context}}",
@@ -80,14 +78,14 @@ describe("answerQuestionStream", () => {
   beforeEach(() => {
     mockAnswer.mockReset();
     mockAnswerStream.mockReset();
-    vi.mocked(getQaPromptId).mockReset();
-    vi.mocked(getQaPrompt).mockReset();
+    jest.mocked(getQaPromptId).mockReset();
+    jest.mocked(getQaPrompt).mockReset();
   });
 
   it("uses provider stream when available", async () => {
     setupProvider(true);
-    vi.mocked(getQaPromptId).mockReturnValue("entendaDocumento.qa.v1");
-    vi.mocked(getQaPrompt).mockReturnValue({
+    jest.mocked(getQaPromptId).mockReturnValue("entendaDocumento.qa.v1");
+    jest.mocked(getQaPrompt).mockReturnValue({
       id: "entendaDocumento.qa.v1",
       system: "sys",
       user: "{{question}}/{{context}}",
@@ -110,8 +108,8 @@ describe("answerQuestionStream", () => {
 
   it("falls back to answer when stream is not available", async () => {
     setupProvider(false);
-    vi.mocked(getQaPromptId).mockReturnValue("entendaDocumento.qa.v1");
-    vi.mocked(getQaPrompt).mockReturnValue({
+    jest.mocked(getQaPromptId).mockReturnValue("entendaDocumento.qa.v1");
+    jest.mocked(getQaPrompt).mockReturnValue({
       id: "entendaDocumento.qa.v1",
       system: "sys",
       user: "{{question}}/{{context}}",

@@ -1,5 +1,4 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach } from "vitest";
+/** @jest-environment jsdom */
 import type { ReactElement } from "react";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
@@ -7,13 +6,13 @@ import { act } from "react";
 
 import { useCaptureInput } from "@/lib/hooks/useCaptureInput";
 
-const mockSaveCapture = vi.fn();
-vi.mock("@/lib/captureStore", () => ({
+const mockSaveCapture = jest.fn();
+jest.mock("@/lib/captureStore", () => ({
   saveCapture: (...args: unknown[]) => mockSaveCapture(...args),
 }));
 
-const mockTelemetry = vi.fn();
-vi.mock("@/lib/telemetry", () => ({
+const mockTelemetry = jest.fn();
+jest.mock("@/lib/telemetry", () => ({
   telemetryCapture: (...args: unknown[]) => mockTelemetry(...args),
 }));
 
@@ -54,8 +53,8 @@ describe("useCaptureInput", () => {
 
     const galleryInput = document.createElement("input");
     const cameraInput = document.createElement("input");
-    const galleryClick = vi.spyOn(galleryInput, "click");
-    const cameraClick = vi.spyOn(cameraInput, "click");
+    const galleryClick = jest.spyOn(galleryInput, "click");
+    const cameraClick = jest.spyOn(cameraInput, "click");
 
     expect(api).not.toBeNull();
     act(() => {
@@ -72,7 +71,7 @@ describe("useCaptureInput", () => {
   });
 
   it("saves selected file, tracks telemetry, and calls onSaved", async () => {
-    const onSaved = vi.fn();
+    const onSaved = jest.fn();
     const telemetry = {
       selected: { name: "capture_selected", data: { flow: "camera" } },
     };

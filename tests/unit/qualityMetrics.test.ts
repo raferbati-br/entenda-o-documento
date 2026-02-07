@@ -1,19 +1,17 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-
 type RedisInstance = {
-  incr: ReturnType<typeof vi.fn>;
-  incrby: ReturnType<typeof vi.fn>;
-  get: ReturnType<typeof vi.fn>;
+  incr: ReturnType<typeof jest.fn>;
+  incrby: ReturnType<typeof jest.fn>;
+  get: ReturnType<typeof jest.fn>;
 };
 
 const redisInstances: RedisInstance[] = [];
 let redisGetMap = new Map<string, number>();
 
-vi.mock("@upstash/redis", () => {
-  const Redis = vi.fn(function Redis(this: RedisInstance) {
-    this.incr = vi.fn();
-    this.incrby = vi.fn();
-    this.get = vi.fn((key: string) => redisGetMap.get(String(key)));
+jest.mock("@upstash/redis", () => {
+  const Redis = jest.fn(function Redis(this: RedisInstance) {
+    this.incr = jest.fn();
+    this.incrby = jest.fn();
+    this.get = jest.fn((key: string) => redisGetMap.get(String(key)));
     redisInstances.push(this);
   });
 
@@ -33,19 +31,19 @@ function clearRedisEnv() {
 }
 
 async function loadMetricsModule() {
-  vi.resetModules();
+  jest.resetModules();
   return await import("@/lib/qualityMetrics");
 }
 
 beforeEach(() => {
   redisInstances.length = 0;
   redisGetMap = new Map<string, number>();
-  vi.clearAllMocks();
+  jest.clearAllMocks();
   clearRedisEnv();
 });
 
 afterEach(() => {
-  vi.useRealTimers();
+  jest.useRealTimers();
 });
 
 describe("quality metrics", () => {
@@ -100,8 +98,8 @@ describe("quality metrics", () => {
   });
 
   it("records latency via redis and computes averages from redis values", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-01-21T12:00:00Z"));
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-21T12:00:00Z"));
     setRedisEnv();
     const { recordQualityLatency, getQualityMetrics } = await loadMetricsModule();
     const date = new Date("2026-01-21T12:00:00Z");

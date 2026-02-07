@@ -1,5 +1,5 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+/** @jest-environment jsdom */
+import { stubGlobal, unstubAllGlobals } from "./jestGlobals";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 import { useSpeechSynthesis } from "@/lib/hooks/useSpeechSynthesis";
@@ -39,17 +39,17 @@ describe("useSpeechSynthesis", () => {
 
   beforeEach(() => {
     lastUtterance = null;
-    vi.stubGlobal("SpeechSynthesisUtterance", MockUtterance);
-    const speak = vi.fn((utterance: MockUtterance) => {
+    stubGlobal("SpeechSynthesisUtterance", MockUtterance);
+    const speak = jest.fn((utterance: MockUtterance) => {
       lastUtterance = utterance;
     });
-    const cancel = vi.fn();
-    vi.stubGlobal("speechSynthesis", { speak, cancel });
+    const cancel = jest.fn();
+    stubGlobal("speechSynthesis", { speak, cancel });
   });
 
   afterEach(() => {
     document.body.innerHTML = "";
-    vi.unstubAllGlobals();
+    unstubAllGlobals();
   });
 
   it("speaks text and updates state", () => {
@@ -72,7 +72,7 @@ describe("useSpeechSynthesis", () => {
   });
 
   it("sets error when unsupported", () => {
-    vi.unstubAllGlobals();
+    unstubAllGlobals();
     const { getState } = renderHook({ unsupportedMessage: "nao" });
 
     act(() => {
@@ -127,13 +127,13 @@ describe("useSpeechSynthesis", () => {
   });
 
   it("sets error when speak throws", () => {
-    vi.unstubAllGlobals();
-    vi.stubGlobal("SpeechSynthesisUtterance", MockUtterance);
-    vi.stubGlobal("speechSynthesis", {
+    unstubAllGlobals();
+    stubGlobal("SpeechSynthesisUtterance", MockUtterance);
+    stubGlobal("speechSynthesis", {
       speak: () => {
         throw new Error("boom");
       },
-      cancel: vi.fn(),
+      cancel: jest.fn(),
     });
 
     const { getState } = renderHook({ errorMessage: "erro" });
@@ -146,8 +146,8 @@ describe("useSpeechSynthesis", () => {
   });
 
   it("swallows errors when cancel throws during stop", () => {
-    vi.stubGlobal("speechSynthesis", {
-      speak: vi.fn(),
+    stubGlobal("speechSynthesis", {
+      speak: jest.fn(),
       cancel: () => {
         throw new Error("cancel-fail");
       },
@@ -194,7 +194,7 @@ describe("useSpeechSynthesis", () => {
   });
 
   it("speaks sequence and advances", () => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
     const { getState } = renderHook();
 
     act(() => {
@@ -208,11 +208,11 @@ describe("useSpeechSynthesis", () => {
     });
 
     act(() => {
-      vi.runAllTimers();
+      jest.runAllTimers();
     });
 
     expect(lastUtterance?.text).toBe("b");
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   it("stops sequence when only blank parts are provided", () => {
@@ -270,8 +270,9 @@ describe("useSpeechSynthesis", () => {
   });
 
   it("clears pending sequence timer on stop", () => {
-    vi.useFakeTimers();
-    const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+    jest.useFakeTimers();
+    const clearSpy = jest.fn();
+    stubGlobal("clearTimeout", clearSpy);
     const { getState } = renderHook();
 
     act(() => {
@@ -287,16 +288,16 @@ describe("useSpeechSynthesis", () => {
     });
 
     expect(clearSpy).toHaveBeenCalled();
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   it("bails out when a queued sequence callback runs after stop", () => {
     let scheduled: (() => void) | null = null;
-    const setSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation((cb) => {
+    const setSpy = jest.spyOn(globalThis, "setTimeout").mockImplementation((cb) => {
       scheduled = cb as () => void;
       return 123 as unknown as ReturnType<typeof setTimeout>;
     });
-    vi.spyOn(globalThis, "clearTimeout").mockImplementation(() => undefined);
+    stubGlobal("clearTimeout", jest.fn(() => undefined));
     const { getState } = renderHook();
 
     act(() => {
@@ -337,7 +338,7 @@ describe("useSpeechSynthesis", () => {
   });
 
   it("sets error when sequence is unsupported", () => {
-    vi.unstubAllGlobals();
+    unstubAllGlobals();
     const { getState } = renderHook({ unsupportedMessage: "nao" });
 
     act(() => {
@@ -348,8 +349,8 @@ describe("useSpeechSynthesis", () => {
   });
 
   it("cleans up on unmount even if cancel throws", () => {
-    vi.stubGlobal("speechSynthesis", {
-      speak: vi.fn(),
+    stubGlobal("speechSynthesis", {
+      speak: jest.fn(),
       cancel: () => {
         throw new Error("cancel-fail");
       },

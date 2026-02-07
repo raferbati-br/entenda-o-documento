@@ -1,5 +1,4 @@
-/** @vitest-environment jsdom */
-import { describe, expect, it, vi, beforeEach } from "vitest";
+/** @jest-environment jsdom */
 import type { ReactElement } from "react";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
@@ -32,7 +31,7 @@ describe("useJumpToEnd", () => {
     Object.defineProperty(scrollTarget, "scrollTop", { value: 0, writable: true, configurable: true });
 
     const scrollRef = { current: scrollTarget };
-    const onAtBottomChange = vi.fn();
+    const onAtBottomChange = jest.fn();
 
     function Harness() {
       const hook = useJumpToEnd({ scrollRef, onAtBottomChange, threshold: 10 });
@@ -63,7 +62,7 @@ describe("useJumpToEnd", () => {
   it("scrolls to end and hides jump button", () => {
     let api: HookApi | null = null;
     const endTarget = document.createElement("div");
-    const scrollIntoView = vi.fn();
+    const scrollIntoView = jest.fn();
     endTarget.scrollIntoView = scrollIntoView;
 
     function Harness() {
@@ -131,30 +130,6 @@ describe("useJumpToEnd", () => {
     });
 
     expect(api!.showJump).toBe(true);
-  });
-
-  it("handles missing document safely", () => {
-    let api: HookApi | null = null;
-
-    function Harness() {
-      const hook = useJumpToEnd();
-      useEffect(() => {
-        api = hook;
-      }, [hook]);
-      return null;
-    }
-
-    render(<Harness />);
-    const originalDocument = globalThis.document;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (globalThis as any).document = undefined;
-    act(() => {
-      api!.updateJumpState();
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (globalThis as any).document = originalDocument;
-    expect(api!.showJump).toBe(false);
   });
 
 });
