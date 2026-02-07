@@ -35,9 +35,10 @@ function main() {
     process.platform === "win32" ? "lcov-result-merger.cmd" : "lcov-result-merger"
   );
 
+  const globPattern = `${TMP_DIR.split(path.sep).join("/")}` + "/*.info";
   const result = spawnSync(
     process.platform === "win32" ? `"${merger}"` : merger,
-    [`${TMP_DIR}${path.sep}*.info`, OUT_LCOV],
+    [globPattern, OUT_LCOV],
     { encoding: "utf8", shell: true }
   );
 
