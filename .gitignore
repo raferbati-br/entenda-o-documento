@@ -66,3 +66,4 @@ ios/
 
 # Android keystore (do not commit)
 *.keystore
+android/key.properties
