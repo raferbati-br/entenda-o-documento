@@ -24,7 +24,6 @@ import {
   Snackbar,
 } from "@mui/material";
 
-import StopCircleRoundedIcon from "@mui/icons-material/StopCircleRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import EventRoundedIcon from "@mui/icons-material/EventRounded";
@@ -32,7 +31,6 @@ import ListAltRoundedIcon from "@mui/icons-material/ListAltRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
-import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
 import FooterActions from "../_components/FooterActions";
 import BackHeader from "../_components/BackHeader";
 import PageLayout from "../_components/PageLayout";
@@ -44,26 +42,6 @@ import JumpToEndFab from "../_components/JumpToEndFab";
 type CardT = { id: string; title: string; text: string };
 const ACTION_BAR_HEIGHT = 88;
 const JUMP_BUTTON_OFFSET = ACTION_BAR_HEIGHT + 12;
-const SUMMARY_PAUSE_MS = 350;
-
-function splitSummary(text: string) {
-  const lines = text.split(/\n+/);
-  const parts: string[] = [];
-  for (const line of lines) {
-    let current = "";
-    for (const ch of line) {
-      current += ch;
-      if (ch === "." || ch === "!" || ch === "?") {
-        const trimmed = current.trim();
-        if (trimmed) parts.push(trimmed);
-        current = "";
-      }
-    }
-    const tail = current.trim();
-    if (tail) parts.push(tail);
-  }
-  return parts;
-}
 
 function confidenceToInfo(confidence: number) {
   if (confidence < 0.45) return { label: "Baixa", color: "error.main", bg: "error.lighter", text: ERROR_MESSAGES.LOW_CONFIDENCE };
@@ -205,7 +183,6 @@ export default function ResultPage() {
     error: ttsError,
     setError: setTtsError,
     speak,
-    speakSequence,
     stop,
   } = useSpeechSynthesis({
     lang: "pt-BR",
@@ -218,7 +195,6 @@ export default function ResultPage() {
   // Share State
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const [ttsMode, setTtsMode] = useState<"summary" | null>(null);
 
   useEffect(() => {
     if (!result) {
@@ -231,8 +207,6 @@ export default function ResultPage() {
     const timeoutId = globalThis.setTimeout(() => setTtsError(null), 3000);
     return () => globalThis.clearTimeout(timeoutId);
   }, [ttsError, setTtsError]);
-
-  const activeTtsMode = isSpeaking ? ttsMode : null;
 
   useEffect(() => {
     if (!result) return;
@@ -302,9 +276,6 @@ export default function ResultPage() {
     return parts;
   }, [cardMap, result?.notice]);
 
-  const summaryText = useMemo(() => cardMap["whatSays"]?.text?.trim() || "", [cardMap]);
-  const summaryParts = useMemo(() => splitSummary(summaryText), [summaryText]);
-
   // Função de Compartilhar
   const handleShare = async () => {
     telemetryCapture("share_click");
@@ -339,29 +310,18 @@ export default function ResultPage() {
 
   // Funções de Áudio
   const speakText = fullText.replaceAll("*", "");
-  const isSummarySpeaking = isSpeaking && activeTtsMode === "summary";
 
   function stopSpeaking() {
     stop();
-    setTtsMode(null);
   }
 
   function startSpeaking() {
     stop({ withMessage: false });
-    setTtsMode(null);
     speak(speakText);
-  }
-
-  function startSummarySpeaking() {
-    if (!summaryParts.length) return;
-    stop({ withMessage: false });
-    setTtsMode("summary");
-    speakSequence(summaryParts, SUMMARY_PAUSE_MS);
   }
 
   function newDoc() {
     stop({ withMessage: false });
-    setTtsMode(null);
     resetAnalysisSession();
     router.push("/camera");
   }
@@ -430,20 +390,6 @@ export default function ResultPage() {
               icon={<InfoRoundedIcon fontSize="inherit" />}
               title={cardMap["whatSays"]?.title || "O que diz"}
               text={cardMap["whatSays"]?.text}
-              actions={
-                ttsSupported ? (
-                  <Button
-                    size="small"
-                    variant="text"
-                    startIcon={isSummarySpeaking ? <StopCircleRoundedIcon /> : <VolumeUpRoundedIcon />}
-                    onClick={isSummarySpeaking ? stopSpeaking : startSummarySpeaking}
-                    disabled={!summaryParts.length}
-                    aria-label={isSummarySpeaking ? "Parar resumo em audio" : "Ouvir resumo em audio"}
-                  >
-                    {isSummarySpeaking ? "Parar resumo" : "Ouvir resumo"}
-                  </Button>
-                ) : null
-              }
             />
             <SectionBlock
               icon={<EventRoundedIcon fontSize="inherit" />}

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { loadCaptureId, clearCaptureId } from "@/lib/captureIdStore";
 import type { AnalysisResult } from "@/lib/resultStore";
 import { saveResult } from "@/lib/resultStore";
-import { motion, AnimatePresence } from "framer-motion"; // Instale: npm install framer-motion
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"; // Instale: npm install framer-motion
 import { postJsonWithSession } from "@/lib/apiClient";
 import { clearQaContext, saveQaContext } from "@/lib/qaContextStore";
 import { UI_TEXTS } from "@/lib/constants";
@@ -86,6 +86,7 @@ export default function AnalyzingPage() {
   const router = useRouter();
   const ran = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const [step, setStep] = useState(0);
   const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
@@ -205,8 +206,8 @@ export default function AnalyzingPage() {
         <Container maxWidth="xs" sx={{ textAlign: "center" }}>
           {/* Ícone Pulsando */}
           <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-            transition={{ repeat: Infinity, duration: 2 }}
+            animate={prefersReducedMotion ? { scale: 1, opacity: 1 } : { scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+            transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 2 }}
           >
             <Box
               sx={{
@@ -231,10 +232,10 @@ export default function AnalyzingPage() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
-                initial={{ opacity: 0, y: 10 }}
+                initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.5 }}
+                exit={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
+                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5 }}
               >
                 <Typography variant="h5" fontWeight={800} gutterBottom color="text.primary">
                   {steps[step]}
@@ -249,6 +250,7 @@ export default function AnalyzingPage() {
 
           {/* Barra de Progresso */}
           <LinearProgress
+            aria-label="Progresso da análise"
             sx={{
               height: 6,
               borderRadius: 4,

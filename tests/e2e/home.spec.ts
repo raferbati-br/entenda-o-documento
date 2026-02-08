@@ -26,3 +26,17 @@ test("home: iniciar captura pela camera @id(E2E-4)", async ({ page }) => {
     .click();
   await expect(page).toHaveURL(/\/camera/);
 });
+
+test("home: ajustar fonte e contraste @id(E2E-39)", async ({ page }) => {
+  await page.goto("/");
+
+  const initialFontSize = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+
+  await page.getByRole("button", { name: "Aumentar tamanho da fonte" }).click();
+  const increasedFontSize = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+
+  expect(Number.parseFloat(increasedFontSize)).toBeGreaterThan(Number.parseFloat(initialFontSize));
+
+  await page.getByRole("button", { name: "Alternar alto contraste" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-contrast", "high");
+});

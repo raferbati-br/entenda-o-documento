@@ -45,6 +45,7 @@ e cenarios de carga.
 | E2E-36 | Bloquear acesso sem token valido | /metrics | `metrics.feature` | `metrics.spec.ts` |
 | E2E-37 | Baixa confianca no resultado | /result | `fluxo-geral.feature` | `resultado.spec.ts` |
 | E2E-38 | Duvidas apos ver o resultado | /result, /perguntas | `fluxo-geral.feature` | `perguntas.spec.ts` |
+| E2E-39 | Ajustar fonte e contraste para leitura | / | `fluxo-geral.feature` | `home.spec.ts` |
 
 Rastreabilidade funcional -> carga:
 - Tags `@load(LOAD-...)` nos cenarios funcionais sao oficiais e conectam cenarios de negocio

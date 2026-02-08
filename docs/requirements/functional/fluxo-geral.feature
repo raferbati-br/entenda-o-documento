@@ -35,3 +35,11 @@ Feature: Fluxo geral end-to-end
     Then deve conseguir enviar uma pergunta
     And deve receber uma resposta
 
+  @e2e @id(E2E-39)
+  Scenario: Ajustar fonte e contraste para leitura
+    Given que o usuario acessa a pagina inicial
+    When ele aumenta o tamanho da fonte
+    And ele ativa o modo de alto contraste
+    Then deve ver o conteudo com fonte maior sem quebrar o layout
+    And deve ver a interface com alto contraste
+

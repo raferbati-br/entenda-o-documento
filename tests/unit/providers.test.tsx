@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement, ReactNode, ButtonHTMLAttributes } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 
@@ -9,6 +9,15 @@ jest.mock("@mui/material", () => {
     ThemeProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
     useMediaQuery: jest.fn(() => false),
     Box: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    Paper: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    Stack: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    Button: (
+      props: ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode; startIcon?: ReactNode; endIcon?: ReactNode }
+    ) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { children, startIcon, endIcon, ...rest } = props;
+      return <button {...rest}>{children}</button>;
+    },
   };
 });
 
@@ -66,6 +75,7 @@ describe("Providers", () => {
     mockInit.mockReset();
     mockUsePathname.mockReset();
     mockUseSearchParams.mockReset();
+    window.localStorage.clear();
     delete process.env.NEXT_PUBLIC_POSTHOG_KEY;
     delete process.env.NEXT_PUBLIC_POSTHOG_HOST;
   });
@@ -100,5 +110,24 @@ describe("Providers", () => {
 
     expect(mockInit).toHaveBeenCalledTimes(1);
     expect(mockCapture).toHaveBeenCalledWith("page_view", { path: "/perguntas", search: "q=1" });
+  });
+
+  it("restores accessibility preferences from storage", async () => {
+    window.localStorage.setItem("eod_font_scale", "1.2");
+    window.localStorage.setItem("eod_high_contrast", "true");
+    mockUsePathname.mockReturnValue("/");
+    mockUseSearchParams.mockReturnValue({ toString: () => "" });
+
+    render(
+      <Providers>
+        <div>child</div>
+      </Providers>
+    );
+
+    await act(async () => {});
+
+    expect(document.documentElement.style.getPropertyValue("--font-scale")).toBe("1.2");
+    expect(document.documentElement.dataset.contrast).toBe("high");
+    expect(mockBuildTheme).toHaveBeenCalledWith("light", true);
   });
 });
