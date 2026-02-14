@@ -32,11 +32,17 @@ test("home: ajustar fonte e contraste @id(E2E-39)", async ({ page }) => {
 
   const initialFontSize = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
 
-  await page.getByRole("button", { name: "Aumentar tamanho da fonte" }).click();
+  await page
+    .getByRole("button", { name: "Leitura e acessibilidade" })
+    .or(page.getByRole("link", { name: "Leitura e acessibilidade" }))
+    .click();
+  await expect(page).toHaveURL(/\/acessibilidade/);
+
+  await page.getByRole("radio", { name: "Muito grande" }).check();
   const increasedFontSize = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
 
   expect(Number.parseFloat(increasedFontSize)).toBeGreaterThan(Number.parseFloat(initialFontSize));
 
-  await page.getByRole("button", { name: "Alternar alto contraste" }).click();
+  await page.getByRole("radio", { name: "Alto contraste" }).check();
   await expect(page.locator("html")).toHaveAttribute("data-contrast", "high");
 });

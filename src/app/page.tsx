@@ -7,13 +7,14 @@ import { telemetryCapture } from "@/lib/telemetry";
 import { useCaptureInput } from "@/lib/hooks/useCaptureInput";
 import { UI_TEXTS } from "@/lib/constants";
 
-import { Box, Divider, Stack, Typography } from "@mui/material";
+import { Box, Button, Divider, Stack, Typography } from "@mui/material";
 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
 import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
+import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import IconTextRow from "./_components/IconTextRow";
 import FooterActions from "./_components/FooterActions";
 import PageLayout from "./_components/PageLayout";
@@ -46,6 +47,18 @@ export default function HomePage() {
         contentPaddingTop={4}
         footer={
           <FooterActions
+            leadingContent={
+              <Button
+                component={Link}
+                href="/acessibilidade"
+                size="small"
+                variant="text"
+                startIcon={<TuneRoundedIcon fontSize="small" />}
+                sx={{ alignSelf: "flex-start", px: 1.5 }}
+              >
+                Leitura e acessibilidade
+              </Button>
+            }
             secondary={{
               label: UI_TEXTS.GALLERY_BUTTON,
               startIcon: <PhotoLibraryRoundedIcon />,
