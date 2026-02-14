@@ -1,15 +1,27 @@
+const isDevelopment = process.env.NODE_ENV === 'development';
+const configuredServerUrl = process.env.CAPACITOR_SERVER_URL?.trim();
+
 const capacitorConfig = {
   appId: 'br.raferbati.entendaodocumento',
   appName: 'Entenda o Documento',
   webDir: 'out',
-  server: {
-    // Development: uses localhost with HTTP
-    // Production: set CAPACITOR_SERVER_URL to an HTTPS URL (e.g., https://your-domain.com)
-    url: process.env.CAPACITOR_SERVER_URL || 'http://localhost:3000',
-    cleartext: process.env.NODE_ENV === 'development',
-    androidScheme: 'https',
-    iosScheme: 'https',
-  },
+  server: configuredServerUrl
+    ? {
+        // Production and staging: explicit remote URL (prefer HTTPS)
+        url: configuredServerUrl,
+        cleartext: configuredServerUrl.startsWith('http://'),
+        androidScheme: 'https',
+        iosScheme: 'https',
+      }
+    : isDevelopment
+      ? {
+          // Local development only
+          url: 'http://10.0.2.2:3000',
+          cleartext: true,
+          androidScheme: 'https',
+          iosScheme: 'https',
+        }
+      : undefined,
   plugins: {
     Keyboard: {
       resize: 'native',
@@ -27,7 +39,7 @@ const capacitorConfig = {
   android: {
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: process.env.NODE_ENV === 'development',
+    webContentsDebuggingEnabled: isDevelopment,
   },
 };
 
